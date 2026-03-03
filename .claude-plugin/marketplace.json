@@ -1,0 +1,24 @@
+{
+  "name": "nushell-skills",
+  "owner": {
+    "name": "nushell-prophet"
+  },
+  "metadata": {
+    "description": "Claude Code skills for opinionated Nushell development",
+    "pluginRoot": "./plugins"
+  },
+  "plugins": [
+    {
+      "name": "nushell-completions",
+      "source": "./plugins/nushell-completions",
+      "description": "Generate Nushell custom completions for CLI commands. Use when creating completers, adding tab-completion to extern commands, or building context-aware argument suggestions.",
+      "version": "1.0.0"
+    },
+    {
+      "name": "nushell-style",
+      "source": "./plugins/nushell-style",
+      "description": "Load this skill when editing, writing, or reviewing any .nu file. Provides opinionated Nushell patterns, pipeline composition, command choices, and formatting conventions.",
+      "version": "1.0.0"
+    }
+  ]
+}

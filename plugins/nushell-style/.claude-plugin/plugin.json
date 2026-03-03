@@ -1,0 +1,5 @@
+{
+  "name": "nushell-style",
+  "description": "Opinionated Nushell patterns, pipeline composition, command choices, and formatting conventions",
+  "version": "1.0.0"
+}

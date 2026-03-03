@@ -1,0 +1,5 @@
+{
+  "name": "nushell-completions",
+  "description": "Generate Nushell custom completions for CLI commands",
+  "version": "1.0.0"
+}
