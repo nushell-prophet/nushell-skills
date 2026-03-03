@@ -16,6 +16,7 @@ description: Load this skill when editing, writing, or reviewing any .nu file. P
 | [nuon.md](references/nuon.md) | NUON format, data serialization, config files |
 | [testing.md](references/testing.md) | nutest framework, snapshots, coverage |
 | [toolkit.md](references/toolkit.md) | toolkit.nu, repo utilities, commit conventions |
+| [mcp.md](references/mcp.md) | Nushell as MCP server (`nu --mcp`), tools, persistent state |
 
 ---
 
