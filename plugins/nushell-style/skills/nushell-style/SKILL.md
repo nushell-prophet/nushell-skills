@@ -58,6 +58,7 @@ Write code that an experienced nushell user can quickly apprehend. Leverage impl
 |---------|---------|-----|
 | `update field {\|row\| $row.field \| str upcase}` | `update field { str upcase }` | Closure receives field value directly |
 | `each {\|x\| $x \| str trim}` | `each { str trim }` | `$in` implicit, pipeline flows |
+| `$list \| each { str trim }` | `$list \| str trim` | Many commands accept `list<string>` directly (see below) |
 | `where {\|row\| $row.status == "active"}` | `where status == "active"` | `where` has field shorthand |
 | `$data \| each { $in \| process }` | `$data \| each { process }` | `$in` passed automatically to first command |
 
@@ -81,6 +82,33 @@ Write code that an experienced nushell user can quickly apprehend. Leverage impl
 | Membership | `in` operator | Multiple `or` conditions |
 | Field extraction | `get --optional` | `each {$in.field?} \| compact` |
 | Negation | `$x !~ ...` | `not ($x =~ ...)` |
+| List element ops | `$list \| str trim` | `$list \| each { str trim }` |
+
+### Skip `each` When Commands Accept `list<string>`
+
+Many commands accept both `string` and `list<string>` input — they operate on each element automatically. Wrapping them in `each` is redundant.
+
+**Heuristic:** Check `input_output` types. If a command lists both `string` and `list<string>` as input, pipe the list directly.
+
+```nushell
+# Check a command's accepted input types
+help str trim | get input_output
+# => [{input: string, output: string}, {input: list<string>, output: list<string>}, ...]
+```
+
+Common command families that accept `list<string>` directly: `str` (19 commands), `path` (9), `split` (4), `into` (4), `ansi` (3), `url` (2), `fill`.
+
+```nushell
+# Preferred                          # Avoid
+$list | str trim                     # $list | each { str trim }
+$list | path expand                  # $list | each { path expand }
+$list | ansi strip                   # $list | each { ansi strip }
+$list | str replace 'a' 'b'         # $list | each { str replace 'a' 'b' }
+$list | split row ','                # $list | each { split row ',' }
+$list | url encode                   # $list | each { url encode }
+```
+
+`each` IS needed when the command does not accept `list` input, or when the closure does more than a single command call.
 
 ---
 
