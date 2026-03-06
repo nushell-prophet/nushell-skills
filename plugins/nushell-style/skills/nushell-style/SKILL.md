@@ -168,6 +168,22 @@ When in doubt, prefer script mode (`nu script.nu subcommand`) — it's simpler a
 
 → See [Nushell Scripts docs](https://www.nushell.sh/book/scripts.html#subcommands)
 
+### Module Naming Rule
+
+When a file is named after the command (e.g., `greet.nu`), the command **must** be named `main`, not the file name:
+
+```nushell
+# File: greet.nu
+
+# WRONG — "Can't export ... named same as the module"
+export def greet [name: string] { $"Hello ($name)" }
+
+# CORRECT — `main` becomes the module's default command
+export def main [name: string] { $"Hello ($name)" }
+```
+
+After `use greet.nu`, call it as `greet "world"` — `main` is replaced by the module name. This applies to `def`, `extern`, and `const`.
+
 ---
 
 ## Quick Reference
@@ -204,6 +220,7 @@ When in doubt, prefer script mode (`nu script.nu subcommand`) — it's simpler a
 - Break the pipeline flow unnecessarily
 - Remove existing comments (preserve user's context)
 - Remove `export` from helpers to "make them private" (use mod.nu instead)
+- Name a command the same as its file (use `main` instead — see Module Naming Rule)
 
 ---
 
