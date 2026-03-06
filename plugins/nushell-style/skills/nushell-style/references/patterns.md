@@ -45,9 +45,9 @@ Note: `$in` IS needed when you must capture the value in a variable:
 ```nushell
 # $in needed: value used in multiple places
 export def extract-timestamps []: table -> record {
-    let $input = $in
+    let input = $in
 
-    let $ts = $input | get timestamp?
+    let ts = $input | get timestamp?
 
     {
         first: ($ts | first)

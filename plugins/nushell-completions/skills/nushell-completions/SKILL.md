@@ -1,6 +1,6 @@
 ---
 name: nushell-completions
-description: Generate Nushell custom completions for CLI commands. Use when creating completers, adding tab-completion to extern commands, or building context-aware argument suggestions.
+description: This skill should be used when generating Nushell custom completions, writing completer functions, adding tab-completion to extern commands, using string@completer annotations, inline @[...] completion lists, or the @complete attribute. Relevant when the user asks to "add completions," "write a completer," "create an extern with tab completion," or "build context-aware argument suggestions" in Nushell.
 ---
 
 # Nushell Custom Completions
@@ -82,7 +82,7 @@ def "nu-complete git branches" [context: string] {
 def my-cmd [
     remote: string@"nu-complete git remotes"
     branch: string@"nu-complete git branches"
-] { ... }
+] { }
 ```
 
 ## Completer Patterns
@@ -143,10 +143,10 @@ export extern main [...]
 ## Completer Signature Options
 
 ```nu
-def completer [] { ... }                          # simple
-def completer [context: string] { ... }           # with command line
-def completer [context: string, pos: int] { ... } # with cursor position
-def completer [spans: list<string>] { ... }       # for @complete (list of args)
+def completer [] { }                              # simple
+def completer [context: string] { }               # with command line
+def completer [context: string, pos: int] { }     # with cursor position
+def completer [spans: list<string>] { }           # for @complete (list of args)
 ```
 
 ## Best Practices

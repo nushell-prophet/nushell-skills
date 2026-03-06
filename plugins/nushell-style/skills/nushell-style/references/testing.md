@@ -185,7 +185,7 @@ def run-snapshot-test [name: string output_file: string command_src: closure] {
 For tests that don't need embedded source headers:
 
 ```nushell
-def run-integration-test [name: string, command_src: closure] {
+def run-integration-test [name: string command_src: closure] {
     try {
         do $command_src
 

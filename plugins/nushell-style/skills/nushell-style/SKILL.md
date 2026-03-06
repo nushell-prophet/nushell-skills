@@ -1,6 +1,6 @@
 ---
 name: nushell-style
-description: Load this skill when editing, writing, or reviewing any .nu file. Provides opinionated Nushell patterns, pipeline composition, command choices, and formatting conventions.
+description: This skill should be used when writing, editing, reviewing, or debugging Nushell (.nu) files. Covers opinionated pipeline composition, command choices (where vs filter, match vs if/else, get --optional), formatting conventions (Topiary), type signatures, module structure, testing with nutest (unit tests, snapshot tests, @example attributes, coverage), NUON data format, toolkit.nu patterns, nu --ide-check debugging, and the Nushell MCP server. Relevant when the user says "write nushell code," "review my .nu file," "nushell style," "nushell best practices," "format nushell," "nushell pipeline," "nutest," "NUON," "nu --ide-check," or "nushell MCP."
 ---
 
 # Nushell Code Style Guide
@@ -26,27 +26,11 @@ description: Load this skill when editing, writing, or reviewing any .nu file. P
 nu --ide-check 10 file.nu | nu --stdin -c 'lines | each { from json } | where type == "diagnostic"'
 ```
 
-With line numbers and source context (replace `FILE` with path):
-
-```bash
-nu -c 'let c = open --raw FILE; let l = $c | lines; nu --ide-check 10 FILE | lines | each { from json } | where type == "diagnostic" | each {|d| let n = ($c | str substring 0..<$d.span.start | split row "\n" | length); {line: $n, message: $d.message, source: ($l | get ($n - 1) | str trim), span: ($c | str substring $d.span.start..<$d.span.end)}} | uniq'
-```
-
-Both run from bash. See [debugging.md](references/debugging.md) for the full nushell command.
+For line-number-aware diagnostics with source context, see the `diagnose` function in [debugging.md](references/debugging.md).
 
 ## Agent Tip: `!=` and `!~` in Bash
 
-**⚠ `nu -c` breaks `!=` and `!~`** — the Bash tool escapes `!` → `\!` regardless of quoting. Use a heredoc wrapper:
-
-```bash
-nu -c "$(cat << 'EOF'
-if $x != null { print "yes" }
-$data | where name !~ "skip"
-EOF
-)"
-```
-
-Or use a temp file for longer code. See [testing.md](references/testing.md) for details.
+The Bash tool escapes `!` → `\!`, breaking `!=` and `!~` in `nu -c`. Use a heredoc or temp file instead. See [testing.md](references/testing.md) for workarounds.
 
 ---
 

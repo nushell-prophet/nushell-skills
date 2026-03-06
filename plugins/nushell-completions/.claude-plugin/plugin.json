@@ -1,5 +1,5 @@
 {
   "name": "nushell-completions",
-  "description": "Generate Nushell custom completions for CLI commands",
-  "version": "1.0.0"
+  "description": "Generate Nushell custom completions — completer functions, string@completer annotations, inline @[...] lists, @complete attribute, extern definitions",
+  "version": "1.1.0"
 }

@@ -1,11 +1,30 @@
 # Nushell MCP Server
 
-Nushell has a built-in MCP (Model Context Protocol) server, started with `nu --mcp`. It runs as a stdio server and exposes Nushell's shell capabilities as tools.
+Nushell has a built-in MCP (Model Context Protocol) server, started with `nu --mcp`. Included by default since v0.110. It exposes Nushell's shell capabilities as tools.
+
+## Transport
+
+| Transport | Flag | Default | Since |
+|-----------|------|---------|-------|
+| stdio | `nu --mcp` | Yes | 0.110 |
+| HTTP | `nu --mcp --mcp-transport http` | port 8080 | 0.111 |
+
+Set a custom HTTP port with `--mcp-port`:
+
+```bash
+nu --mcp --mcp-transport http --mcp-port 3000
+```
+
+HTTP transport supports request cancellation, 30-minute idle session cleanup, and structured error codes with line/column details.
 
 ## Adding to Claude Code
 
 ```bash
+# stdio (default)
 claude mcp add --transport stdio nushell -- nu --mcp
+
+# HTTP
+claude mcp add --transport http nushell --url http://localhost:8080
 ```
 
 ## Tools

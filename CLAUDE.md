@@ -68,7 +68,7 @@ Skill content is Markdown. The `SKILL.md` files use YAML frontmatter (`name`, `d
 
 - Keep `SKILL.md` as a quick-reference entry point with tables and checklists
 - Put detailed examples and explanations in `references/*.md`
-- Ensure code examples use idiomatic Nushell (the style guide should exemplify itself)
+- Ensure code examples follow the opinionated conventions in the style guide
 
 ## Commit Conventions
 

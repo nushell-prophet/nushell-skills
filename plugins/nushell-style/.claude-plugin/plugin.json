@@ -1,5 +1,5 @@
 {
   "name": "nushell-style",
-  "description": "Opinionated Nushell patterns, pipeline composition, command choices, and formatting conventions",
-  "version": "1.0.0"
+  "description": "Opinionated Nushell patterns, pipeline composition, command choices, formatting (Topiary), testing (nutest), NUON, debugging (--ide-check), toolkit.nu, and MCP server conventions for .nu files",
+  "version": "1.1.0"
 }
