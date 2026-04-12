@@ -1,6 +1,6 @@
 ---
 name: nushell-style
-description: This skill should be used when writing, editing, reviewing, or debugging Nushell (.nu) files. Covers opinionated pipeline composition, command choices (where vs filter, match vs if/else, get --optional), formatting conventions (Topiary), type signatures, module structure, testing with nutest (unit tests, snapshot tests, @example attributes, coverage), NUON data format, toolkit.nu patterns, nu --ide-check debugging, and the Nushell MCP server. Relevant when the user says "write nushell code," "review my .nu file," "nushell style," "nushell best practices," "format nushell," "nushell pipeline," "nutest," "NUON," "nu --ide-check," or "nushell MCP."
+description: This skill should be used when writing, editing, reviewing, or debugging Nushell (.nu) files. Covers opinionated pipeline composition, command choices (where vs filter, match vs if/else, get --optional), formatting conventions (Topiary), type signatures, module structure, testing with nutest (unit tests, snapshot tests, @example attributes, coverage), NUON data format, toolkit.nu patterns, nu --ide-check debugging, the Nushell MCP server, and migration guide for updating scripts across Nushell versions (0.100–0.112: breaking changes, renamed commands, new idioms). Relevant when the user says "write nushell code," "review my .nu file," "nushell style," "nushell best practices," "format nushell," "nushell pipeline," "nutest," "NUON," "nu --ide-check," "nushell MCP," "update nushell script," "nushell breaking changes," or "nushell migration."
 ---
 
 # Nushell Code Style Guide
@@ -17,6 +17,7 @@ description: This skill should be used when writing, editing, reviewing, or debu
 | [testing.md](references/testing.md) | nutest framework, snapshots, coverage |
 | [toolkit.md](references/toolkit.md) | toolkit.nu, repo utilities, commit conventions |
 | [mcp.md](references/mcp.md) | Nushell as MCP server (`nu --mcp`), tools, persistent state |
+| [migration.md](references/migration.md) | Breaking changes, renamed commands, new idioms (0.100 → 0.112) |
 
 ---
 
