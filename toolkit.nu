@@ -75,8 +75,8 @@ export def 'main install-locally' [
 
     if not $force {
         let dirty = $managed_skills
-        | each { $"($global_dir)/($in)" }
-        | where { has-uncommitted-changes $in }
+            | each { $"($global_dir)/($in)" }
+            | where { has-uncommitted-changes $in }
         if ($dirty | is-not-empty) {
             print $"(ansi yellow)⚠(ansi reset) Uncommitted changes in destination:"
             $dirty | each { print $"  ($in)" }
