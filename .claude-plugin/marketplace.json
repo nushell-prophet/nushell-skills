@@ -19,6 +19,12 @@
       "source": "./plugins/nushell-style",
       "description": "Opinionated Nushell patterns, pipeline composition, command choices, formatting (Topiary), testing (nutest), NUON, debugging (--ide-check), toolkit.nu, and MCP server conventions for .nu files.",
       "version": "1.3.0"
+    },
+    {
+      "name": "nushell-history",
+      "source": "./plugins/nushell-history",
+      "description": "Inspect and rewrite the Nushell sqlite command history — `history --long | where ...` recipes and `nu-history-tools` mutation flows (retag cwd, remove, etc.)",
+      "version": "0.1.0"
     }
   ]
 }

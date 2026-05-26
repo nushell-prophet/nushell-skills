@@ -1,0 +1,5 @@
+{
+  "name": "nushell-history",
+  "description": "Inspect and rewrite the Nushell sqlite command history — `history --long | where ...` recipes and `nu-history-tools` mutation flows (retag cwd, remove, etc.)",
+  "version": "0.1.0"
+}
