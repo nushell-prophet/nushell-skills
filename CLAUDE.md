@@ -4,10 +4,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What This Is
 
-A Claude Code plugin marketplace providing opinionated Nushell development skills. It contains two plugins distributed via the Claude Code plugin system:
+A Claude Code plugin marketplace providing opinionated Nushell development skills. It contains three plugins distributed via the Claude Code plugin system:
 
 - **nushell-completions** — teaches Claude to generate Nushell tab-completion definitions (inline lists, custom completers, `extern` definitions, module naming)
 - **nushell-style** — opinionated Nushell style guide (pipeline patterns, command choices, formatting, testing, debugging)
+- **nushell-history** — inspecting and rewriting the user's sqlite command history (`history --long | where ...` recipes, `nu-history-tools` mutation flows)
 
 ## Architecture
 
@@ -30,6 +31,10 @@ plugins/
         testing.md                 # nutest framework, snapshots, coverage
         toolkit.md                 # toolkit.nu patterns, commit conventions
         mcp.md                     # nu --mcp server, tools, persistent state
+  nushell-history/
+    .claude-plugin/plugin.json     # Plugin manifest
+    skills/nushell-history/
+      SKILL.md                     # History inspection + mutation reference
 toolkit.nu                         # Dev convenience commands (not distributed)
 ```
 
