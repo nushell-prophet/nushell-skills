@@ -34,7 +34,7 @@ renamed commands, and new idioms. Versions noted as `(v0.NNN)`.
 | `du` | `--all (-a)` | `--long (-l)` | 0.101 |
 | `watch` | `--debounce-ms` | `--debounce` (duration) | removed 0.112 |
 | `metadata set` | `--merge` | closure form | removed 0.112 |
-| `metadata set` | `--datasource-ls` | `--path-columns [name]` | deprecated 0.111 |
+| `metadata set` | `--datasource-ls` | `--path-columns [name]` | removed 0.113 (deprecated 0.111) |
 | `kill` | `-0` / `-9` shorthand | `-s 0` / `-s 9` (long signal form) | removed 0.113 |
 | `watch` | closure argument | bare `watch path` stream + `for`/`each` | deprecated 0.113 |
 | `grid` | implicit record handling | explicit `(column)` argument | deprecated 0.113 |
@@ -347,6 +347,35 @@ open data.xlsx | from xlsx -r null      # treat all rows as data
 open data.xlsx | from xlsx -r 0         # old default
 ```
 
+### `to yaml` now quotes ambiguous string values (v0.113)
+
+Previously emitted bare `off` / `on` / `yes` / `no` / `0.0.0.0:8444` etc.,
+which re-parse as booleans or invalid YAML. Now wrapped in single quotes.
+Scripts that compared the round-tripped text need updating.
+
+```nushell
+'{"value": "off"}' | from json | to yaml
+# before: value: off
+# after:  value: 'off'
+```
+
+### `to csv` / `to tsv` now stream and fail on schema drift (v0.113)
+
+Rows are written as they arrive instead of buffered. If a later row
+introduces a new column, the export errors mid-stream.
+
+```nushell
+# fix 1: declare columns up front
+$rows | to csv --columns [a b c]
+# fix 2: collect first when the schema is variable
+$rows | collect | to csv
+```
+
+### `ls` no longer sets `source` metadata (v0.113)
+
+Paired with the `metadata set --datasource-ls` removal. Code that inspected
+`$result | metadata | get source` and matched `"ls"` needs another signal.
+
 ### `into datetime` no longer parses human strings (v0.104)
 
 ```nushell
@@ -530,3 +559,21 @@ If set, solely responsible for formatting — `table` no longer runs on top. Set
 ### Env var names case-insensitive (v0.111)
 
 All `$env` lookups are case-insensitive on all OSes.
+
+### History config fields locked after REPL start (v0.113)
+
+These fields are read once at startup by reedline; setting them from the
+REPL is now a hard error instead of silently ignored. Set them in
+`config.nu` (or via `--config` / env vars) and restart.
+
+```nushell
+# locked: error if assigned from REPL
+$env.config.history.path
+$env.config.history.max_size
+$env.config.history.file_format
+$env.config.history.isolation
+
+# still mutable from REPL — re-read every prompt
+$env.config.history.sync_on_enter
+$env.config.history.ignore_space_prefixed
+```
