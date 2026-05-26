@@ -499,14 +499,23 @@ def ls [] { echo "custom" }
 %ls  # => real ls output
 ```
 
-### Dynamic `%($cmd)` dispatch (v0.113)
+### Dynamic `%` sigil dispatch (v0.113)
 
-The `%` sigil accepts a parenthesized expression, so the builtin to invoke
-can be chosen at runtime.
+`%$cmd` and `%($cmd)` resolve the builtin to invoke at runtime. **Only
+builtins are eligible** — custom commands, aliases, and externals fail with
+`command_not_found`. Use this when you stored a builtin name in a variable
+and need to call it without `eval`-style string interpretation; arguments
+are forwarded as parsed values.
 
 ```nushell
-let cmd = if $use_real { "ls" } else { "echo" }
-%($cmd) /tmp                 # runs the chosen builtin, bypassing any shadow
+let cmd = 'echo'
+%$cmd 'hello'        # => hello
+%('echo') 'world'    # => world
+%($cmd) 'hello'      # => hello
+
+def custom_cmd [] { 'nope' }
+let c = 'custom_cmd'
+%($c)                # error: only builtins resolve
 ```
 
 ### Fish-style abbreviations (v0.113)
@@ -581,6 +590,26 @@ open file.txt | explore regex
 ```nushell
 ls | to nuon --list-of-records --indent 2
 # => [{name: "foo", ...}, {name: "bar", ...}]
+```
+
+### `to nuon --no-commas` (v0.113)
+
+Omit the optional commas — handy when generating NUON for diff-friendly
+inclusion in source files.
+
+```nushell
+{a: 1 b: 2} | to nuon --no-commas
+```
+
+### `save` preserves TOML comments and formatting (v0.113)
+
+Round-tripping a TOML file no longer strips comments, blank lines, or
+inline-table layout. `Cargo.toml` style files can now be programmatically
+edited without losing context.
+
+```nushell
+open Cargo.toml | update package.version "1.1.0" | save Cargo.toml
+# comments above [package], inline tables, etc. all survive
 ```
 
 ### `to md --list` (v0.110)
@@ -690,6 +719,46 @@ kv set key val --table project_settings
 use std; log set-level DEBUG
 ```
 
+### `std-rfc/str lcp` — longest common prefix (v0.113)
+
+```nushell
+use std-rfc/str *
+["foobar" "foobaz" "foo123"] | lcp   # => "foo"
+```
+
+### `std-rfc/iter prod` — cartesian product (v0.113)
+
+```nushell
+use std-rfc/iter *
+[a b] | prod [1 2]   # => [[a 1] [a 2] [b 1] [b 2]]
+```
+
+### `std-rfc/iter recurse` multiple cell paths (v0.113)
+
+Pass several cell paths to descend into multiple shapes in one call.
+
+### `std-rfc/url` (v0.113)
+
+Concise URL manipulation: edit query params, path segments, scheme, etc.,
+without round-tripping through `url parse` / `url join`.
+
+```nushell
+use std-rfc/url *
+"https://example.com/a?x=1" | url set-query y 2
+```
+
+### `std-rfc/pb` — terminal progress bars via OSC 9;4 (v0.113)
+
+Sets the host terminal's taskbar/dock progress (where supported — iTerm,
+WezTerm, ConEmu, etc.).
+
+```nushell
+use std-rfc/pb
+try {
+    0..<10 | each {|x| sleep 200ms; pb set-idx $x 10 }
+} catch { pb error } finally { pb clear }
+```
+
 ---
 
 ## Tables & Display
@@ -759,4 +828,28 @@ ls | metadata access {|m| error make {msg: "bad", label: {text: "here", span: $m
 
 # enable path rendering in custom tables
 glob * | wrap path | metadata set --path-columns [path]
+```
+
+### `metadata access` closure can mutate caller env (v0.113)
+
+Previously the closure ran in an isolated scope. Now it behaves like
+`do --env`, so `$env` assignments and `cd` inside the closure leak out.
+
+```nushell
+ls | metadata access {|m| $env.LAST_LISTED = $m.span.start }
+# $env.LAST_LISTED is set in the caller after the pipeline
+```
+
+### `pre_prompt` / `env_change` hooks can edit the commandline (v0.113)
+
+Hooks can rewrite the buffer the user is about to submit (e.g. inject a
+prefix, rewrite a deprecated command). Previously they were read-only.
+
+### `ansi gradient --fgnamed` / `--list` (v0.113)
+
+Named gradients replace having to spell out start/end hex codes.
+
+```nushell
+"banner" | ansi gradient --fgnamed rainbow
+ansi gradient --list   # show all named palettes
 ```
