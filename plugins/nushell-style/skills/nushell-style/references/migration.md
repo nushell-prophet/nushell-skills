@@ -1,4 +1,4 @@
-# Nushell Migration Guide (0.100 → 0.112)
+# Nushell Migration Guide (0.100 → 0.113)
 
 When updating Nushell scripts, consult this reference for breaking changes,
 renamed commands, and new idioms. Versions noted as `(v0.NNN)`.
@@ -35,6 +35,9 @@ renamed commands, and new idioms. Versions noted as `(v0.NNN)`.
 | `watch` | `--debounce-ms` | `--debounce` (duration) | removed 0.112 |
 | `metadata set` | `--merge` | closure form | removed 0.112 |
 | `metadata set` | `--datasource-ls` | `--path-columns [name]` | deprecated 0.111 |
+| `kill` | `-0` / `-9` shorthand | `-s 0` / `-s 9` (long signal form) | removed 0.113 |
+| `watch` | closure argument | bare `watch path` stream + `for`/`each` | deprecated 0.113 |
+| `grid` | implicit record handling | explicit `(column)` argument | deprecated 0.113 |
 
 ---
 
@@ -287,6 +290,61 @@ cp --all * /tmp   # use --all to include dotfiles
 # before: open file.md => raw string
 # after:  open file.md => parsed AST (from md)
 open --raw file.md   # for raw string
+```
+
+### `from md` default output is concise rows (v0.113)
+
+```nushell
+# before (0.112): open file.md => full AST (type, position, attrs, children)
+# after  (0.113): open file.md => concise human-friendly rows
+open file.md --raw | from md --verbose   # full AST as before
+```
+
+### `parse` no longer auto-splits external streams (v0.113)
+
+Byte/string streams from external processes are no longer implicitly split by
+lines before `parse`. Pipe through `lines` first.
+
+```nushell
+# before
+^cat file.log | parse -r '(?P<level>\w+)\s+(?P<msg>.+)'
+# after
+^cat file.log | lines | parse -r '(?P<level>\w+)\s+(?P<msg>.+)'
+```
+
+### `kill -0` no longer accepted as shorthand (v0.113)
+
+`kill -0` used to send signal 0 but now errors (was also a footgun — could
+terminate nushell itself). Use the long form.
+
+```nushell
+# before: kill -0 1234
+# after:  kill -s 0 1234   # signal 0 = check if process exists
+# same for: kill -9 pid => kill -s 9 pid
+```
+
+### `mkdir -v` / `mv -v` / `rm -v` return tables (v0.113)
+
+Verbose flags now return queryable structured tables instead of human text.
+Scripts that parsed the text output need to consume the table columns.
+
+```nushell
+mkdir -v a/b/c
+# => [[path created error]; [a true ""] [a/b true ""] [a/b/c true ""]]
+
+mv -v src dst   # columns: source, destination, message
+rm -v old.txt   # columns: path, …
+```
+
+### `from xlsx --header-row` default change (v0.113)
+
+Default is now the first non-empty row (was row 0). Pass `--header-row null`
+for no header, or an explicit 0-indexed integer to restore old behavior.
+
+```nushell
+open data.xlsx                          # first non-empty row as header
+open data.xlsx | from xlsx -r null      # treat all rows as data
+open data.xlsx | from xlsx -r 0         # old default
 ```
 
 ### `into datetime` no longer parses human strings (v0.104)
