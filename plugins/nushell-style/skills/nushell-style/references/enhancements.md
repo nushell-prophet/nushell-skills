@@ -1,4 +1,4 @@
-# New Nushell Features for Better Scripts (0.100 → 0.112)
+# New Nushell Features for Better Scripts (0.100 → 0.113)
 
 Modern idioms and new capabilities to improve existing Nushell code.
 Version noted as `(v0.NNN)`.
@@ -60,6 +60,19 @@ watch . | where operation == Write and path like "*.md" | each { md-lint $in.pat
 ### `par-each` streams results as they complete (v0.112)
 
 Unordered `par-each` no longer blocks until all items finish.
+
+### `peek` — inspect a stream without collecting (v0.113)
+
+Captures the first `n` elements into the pipeline metadata while letting the
+stream continue flowing. Useful for logging or debugging without forcing
+`collect`.
+
+```nushell
+ls **/*.rs
+| peek 3                     # first 3 entries stashed in metadata
+| where size > 10kb
+| metadata access {|m| print $m.peek; $in }
+```
 
 ---
 
@@ -486,6 +499,30 @@ def ls [] { echo "custom" }
 %ls  # => real ls output
 ```
 
+### Dynamic `%($cmd)` dispatch (v0.113)
+
+The `%` sigil accepts a parenthesized expression, so the builtin to invoke
+can be chosen at runtime.
+
+```nushell
+let cmd = if $use_real { "ls" } else { "echo" }
+%($cmd) /tmp                 # runs the chosen builtin, bypassing any shadow
+```
+
+### Fish-style abbreviations (v0.113)
+
+Syntax-aware expansions triggered on space/enter, configured via
+`$env.config.abbreviations`. Unlike aliases, the expanded text is visible and
+editable before submission.
+
+```nushell
+$env.config.abbreviations = {
+    gco: "git checkout"
+    ll:  "ls -la"
+}
+# typing `gco<space>` expands to `git checkout `
+```
+
 ### Command group aliasing (v0.111)
 
 ```nushell
@@ -557,11 +594,12 @@ ls | to nuon --list-of-records --indent 2
 
 No more broken markdown tables from data containing `|`.
 
-### `from md` — structured markdown parsing (v0.112)
+### `from md` — structured markdown parsing (v0.112, refined v0.113)
 
 ```nushell
-open README.md  # returns AST, not raw string
-open --raw README.md  # for raw string
+open README.md             # 0.113: concise human-friendly rows
+open README.md | from md --verbose  # full AST (type, position, attrs, children)
+open --raw README.md       # raw string
 ```
 
 ### `to text --no-newline` (v0.100)
@@ -680,6 +718,33 @@ if (config use-colors) { $"(ansi green)ok(ansi reset)" } else { "ok" }
 
 ```nushell
 random uuid -v 7  # time-ordered UUID v7
+```
+
+### Structured verbose for `mkdir` / `mv` / `rm` (v0.113)
+
+`-v` now returns queryable tables instead of human text — scripts can filter
+on the result.
+
+```nushell
+mkdir -v a/b/c | where created     # only paths actually created
+mv -v *.log archive/ | get message
+rm -v old/*                        # one row per path
+```
+
+### `idx` — in-memory filesystem index (v0.113)
+
+Fast fuzzy file/path lookup and content search backed by an in-process index.
+Persisted with `export`/`import`.
+
+```nushell
+idx init ~/repos                       # build index
+idx find "skill"                       # fuzzy match files and dirs
+idx search --regex 'TODO\(\w+\)'       # content search across indexed files
+idx dirs                               # which directories are indexed
+idx status                             # memory / counts
+idx export ~/.cache/idx.bin            # persist
+idx import ~/.cache/idx.bin            # restore
+idx drop                               # free memory
 ```
 
 ### `$env.NU_BACKTRACE = 1` (v0.103)
