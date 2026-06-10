@@ -24,7 +24,7 @@ export def 'main test' [
 
 export def 'main test-unit' [--json] { ... }
 export def 'main test-integration' [--json --update] { ... }
-export def 'main release' [--major (-M) --minor (-m)] { ... }
+export def 'main release' [--major --minor] { ... }
 ```
 
 ## Common Subcommands

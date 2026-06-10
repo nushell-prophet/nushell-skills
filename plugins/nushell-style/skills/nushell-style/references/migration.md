@@ -14,7 +14,7 @@ renamed commands, and new idioms. Versions noted as `(v0.NNN)`.
 | `fmt` | `format number` | removed 0.103 |
 | `split-by` | `group-by` (multiple groupers) | removed 0.102 |
 | `date to-record` | `into record` | removed 0.102 |
-| `date to-table` | `into record \| transpose \| transpose -r` | removed 0.102 |
+| `date to-table` | `into record \| transpose \| transpose --header-row` | removed 0.102 |
 | `utouch` | `touch` | removed 0.102 |
 | `into value` (type inference) | `detect type` | 0.108 |
 | `into value --columns` | `detect type --columns` | removed 0.112 |
@@ -35,7 +35,7 @@ renamed commands, and new idioms. Versions noted as `(v0.NNN)`.
 | `watch` | `--debounce-ms` | `--debounce` (duration) | removed 0.112 |
 | `metadata set` | `--merge` | closure form | removed 0.112 |
 | `metadata set` | `--datasource-ls` | `--path-columns [name]` | removed 0.113 (deprecated 0.111) |
-| `kill` | `-0` / `-9` shorthand | `-s 0` / `-s 9` (long signal form) | removed 0.113 |
+| `kill` | `-0` / `-9` shorthand | `--signal 0` / `--signal 9` | removed 0.113 |
 | `watch` | closure argument | bare `watch path` stream + `for`/`each` | deprecated 0.113 |
 | `grid` | implicit record handling | explicit `(column)` argument | deprecated 0.113 |
 
@@ -206,8 +206,8 @@ Catches type annotation violations at runtime when enabled.
 ### `find` is case-sensitive by default (v0.107)
 
 ```nushell
-["Foo" "bar"] | find foo       # no match
-["Foo" "bar"] | find -i foo    # matches "Foo"
+["Foo" "bar"] | find foo                  # no match
+["Foo" "bar"] | find --ignore-case foo    # matches "Foo"
 ```
 
 ### Cell-paths are case-sensitive by default (v0.105)
@@ -307,9 +307,9 @@ lines before `parse`. Pipe through `lines` first.
 
 ```nushell
 # before
-^cat file.log | parse -r '(?P<level>\w+)\s+(?P<msg>.+)'
+^cat file.log | parse --regex '(?P<level>\w+)\s+(?P<msg>.+)'
 # after
-^cat file.log | lines | parse -r '(?P<level>\w+)\s+(?P<msg>.+)'
+^cat file.log | lines | parse --regex '(?P<level>\w+)\s+(?P<msg>.+)'
 ```
 
 ### `kill -0` no longer accepted as shorthand (v0.113)
@@ -319,21 +319,21 @@ terminate nushell itself). Use the long form.
 
 ```nushell
 # before: kill -0 1234
-# after:  kill -s 0 1234   # signal 0 = check if process exists
-# same for: kill -9 pid => kill -s 9 pid
+# after:  kill --signal 0 1234   # signal 0 = check if process exists
+# same for: kill -9 pid => kill --signal 9 pid
 ```
 
-### `mkdir -v` / `mv -v` / `rm -v` return tables (v0.113)
+### `mkdir --verbose` / `mv --verbose` / `rm --verbose` return tables (v0.113)
 
 Verbose flags now return queryable structured tables instead of human text.
 Scripts that parsed the text output need to consume the table columns.
 
 ```nushell
-mkdir -v a/b/c
+mkdir --verbose a/b/c
 # => [[path created error]; [a true ""] [a/b true ""] [a/b/c true ""]]
 
-mv -v src dst   # columns: source, destination, message
-rm -v old.txt   # columns: path, …
+mv --verbose src dst   # columns: source, destination, message
+rm --verbose old.txt   # columns: path, …
 ```
 
 ### `from xlsx --header-row` default change (v0.113)
@@ -343,8 +343,8 @@ for no header, or an explicit 0-indexed integer to restore old behavior.
 
 ```nushell
 open data.xlsx                          # first non-empty row as header
-open data.xlsx | from xlsx -r null      # treat all rows as data
-open data.xlsx | from xlsx -r 0         # old default
+open data.xlsx | from xlsx --header-row null   # treat all rows as data
+open data.xlsx | from xlsx --header-row 0      # old default
 ```
 
 ### `to yaml` now quotes ambiguous string values (v0.113)
@@ -396,7 +396,7 @@ Datetime values now format as RFC2822/RFC3339. Use `format date` first for custo
 
 ### `http post` sends pretty JSON (v0.107)
 
-Body size increased. Use `to json -r` before piping if compact JSON needed.
+Body size increased. Use `to json --raw` before piping if compact JSON needed.
 
 ### `mktemp` without template (v0.111)
 

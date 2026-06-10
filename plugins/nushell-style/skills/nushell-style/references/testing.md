@@ -169,7 +169,7 @@ def run-snapshot-test [name: string output_file: string command_src: closure] {
 
     try {
         $command_text + (char nl) + (do $command_src)
-        | save -f $output_file
+        | save --force $output_file
 
         let diff = do { ^git diff --quiet $output_file } | complete
         let status = if $diff.exit_code == 0 { 'passed' } else { 'changed' }
@@ -206,12 +206,12 @@ Use `par-each --keep-order` for concurrent test execution with deterministic out
 glob z_examples/*/*.md --exclude [*/*_with_no_output* */*_customized*]
 | par-each --keep-order {|file|
     run-integration-test $file {
-        numd run $file --eval (open -r config.nu)
+        numd run $file --eval (open --raw config.nu)
     }
 }
 # Chain additional test variants
 | append (run-integration-test 'variant_width20' {
-    numd run $file --echo --eval '$env.numd.table-width = 20' | save -f $target
+    numd run $file --echo --eval '$env.numd.table-width = 20' | save --force $target
 })
 ```
 
@@ -335,7 +335,7 @@ run-snapshot-test 'coverage' 'tests/output/coverage.yaml' {
     let public_api = open module/mod.nu
     | lines
     | where $it =~ '^\s+"'
-    | each { str trim | str replace -r '^"([^"]+)".*' '$1' }
+    | each { str trim | str replace --regex '^"([^"]+)".*' '$1' }
 
     # Find untested public commands
     let untested = glob module/*.nu tests/*.nu

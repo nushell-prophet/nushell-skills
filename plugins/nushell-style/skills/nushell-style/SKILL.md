@@ -69,6 +69,7 @@ Write code that an experienced nushell user can quickly apprehend. Leverage impl
 | Field extraction | `get --optional` | `each {$in.field?} \| compact` |
 | Negation | `$x !~ ...` | `not ($x =~ ...)` |
 | List element ops | `$list \| str trim` | `$list \| each { str trim }` |
+| Flags in code | `save --force` | `save -f` (short flags) |
 
 ### Skip `each` When Commands Accept `list<string>`
 
@@ -223,6 +224,8 @@ After `use greet.nu`, call it as `greet "world"` — `main` is replaced by the m
 - Remove existing comments (preserve user's context)
 - Remove `export` from helpers to "make them private" (use mod.nu instead)
 - Name a command the same as its file (use `main` instead — see Module Naming Rule)
+- Use short flags in code (`save -f`, `open -r`) — write the long form (`save --force`, `open --raw`); short flags are for interactive typing
+- Declare short flag aliases (`--force (-f)`) in command signatures unless the user explicitly asks for them
 
 ---
 
@@ -231,7 +234,7 @@ After `use greet.nu`, call it as `greet "world"` — `main` is replaced by the m
 - Run `topiary format <file>` when available — it is the canonical formatter
 - Empty blocks: `{ }` with space
 - Closures: `{ expr }` with spaces
-- Flags: `--flag (-f)` with space
+- Flags: `--flag (-f)` with space (declare a short alias only on explicit user request)
 - Records: multi-line, no trailing comma
 - Variables: `let x =` (no `$` on left)
 

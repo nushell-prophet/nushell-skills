@@ -28,6 +28,8 @@ Single-expression closures have spaces inside braces:
 
 ## Flag Spacing
 
+Declare a short alias only when the user explicitly asks for one. When present, separate it from the long name with a space:
+
 ```nushell
 # Preferred
 --noinit (-n)
@@ -73,8 +75,8 @@ No `$` prefix on left-hand side:
 
 ```nushell
 # Preferred
-let original_md = open -r $file
+let original_md = open --raw $file
 
 # Avoid (older style)
-let $original_md = open -r $file
+let $original_md = open --raw $file
 ```

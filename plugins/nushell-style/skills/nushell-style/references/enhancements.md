@@ -160,7 +160,7 @@ try { fail } catch {|e| $e.rendered }           # pre-formatted string
 
 ```nushell
 # before
-$record | transpose k v | where v != null | transpose -r
+$record | transpose k v | where v != null | transpose --header-row
 
 # after
 {a: 1, b: null, c: 3} | compact   # => {a: 1, c: 3}
@@ -438,7 +438,7 @@ http get --full $url | get urls   # redirect chain
 ### Unix domain sockets (v0.109)
 
 ```nushell
-http get -U /var/run/docker.sock http://localhost/containers/json
+http get --unix-socket /var/run/docker.sock http://localhost/containers/json
 ```
 
 ### `url parse --base` (v0.112)
@@ -634,7 +634,7 @@ open --raw README.md       # raw string
 ### `to text --no-newline` (v0.100)
 
 ```nushell
-[a b] | to text -n  # no trailing newline
+[a b] | to text --no-newline  # no trailing newline
 ```
 
 ### `format number --no-prefix` (v0.106)
@@ -786,18 +786,18 @@ if (config use-colors) { $"(ansi green)ok(ansi reset)" } else { "ok" }
 ### `random uuid` with version (v0.103)
 
 ```nushell
-random uuid -v 7  # time-ordered UUID v7
+random uuid --version 7  # time-ordered UUID v7
 ```
 
 ### Structured verbose for `mkdir` / `mv` / `rm` (v0.113)
 
-`-v` now returns queryable tables instead of human text — scripts can filter
-on the result.
+`--verbose` now returns queryable tables instead of human text — scripts can
+filter on the result.
 
 ```nushell
-mkdir -v a/b/c | where created     # only paths actually created
-mv -v *.log archive/ | get message
-rm -v old/*                        # one row per path
+mkdir --verbose a/b/c | where created     # only paths actually created
+mv --verbose *.log archive/ | get message
+rm --verbose old/*                        # one row per path
 ```
 
 ### `idx` — in-memory filesystem index (v0.113)

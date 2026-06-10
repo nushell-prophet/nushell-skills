@@ -68,7 +68,7 @@ Use empty `{ }` for the branch that passes through unchanged:
 
 # Pass through on true condition
 | if $echo { } else {
-    save -f $file
+    save --force $file
 }
 
 # Multiple chained conditions
@@ -223,7 +223,7 @@ export def classify-block-action [
 $record
 | items {|k v|
     $v
-    | str replace -r '^\s*(\S)' '  $1'
+    | str replace --regex '^\s*(\S)' '  $1'
     | str join (char nl)
     | $"($k):\n($in)"
 }
