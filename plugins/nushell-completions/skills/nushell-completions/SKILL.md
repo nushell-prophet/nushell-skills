@@ -70,7 +70,8 @@ def "nu-complete branches" [] {
 
 # Context-aware (uses previous arguments)
 def "nu-complete git branches" [context: string] {
-    let remote = $context | split words | get 2?
+    # split row ' ', not split words — split words breaks on hyphens (my-cmd → [my, cmd])
+    let remote = $context | split row ' ' | get 1?
     if $remote != null {
         git branch --remotes | lines | str trim | where { str starts-with $remote }
     } else {
