@@ -20,7 +20,7 @@ NUON is Nushell's native data format—a superset of JSON that supports most Nus
 | Comments | not supported | `# comment` |
 | Closures/Blocks | N/A | **not supported** |
 
-**Key point:** Any valid JSON is valid NUON, but NUON cannot serialize closures or blocks.
+**Key point:** Any valid JSON is valid NUON, but NUON cannot serialize closures or blocks. `to nuon --serialize` is the escape hatch: it renders a closure as its source string (`{|| 1 } | to nuon --serialize` → `"{|| 1 }"`), so it survives the export but deserializes as a string, not a closure.
 
 ## Converting Data
 
