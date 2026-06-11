@@ -78,9 +78,9 @@ Many commands accept both `string` and `list<string>` input — they operate on 
 **Heuristic:** Check `input_output` types. If a command lists both `string` and `list<string>` as input, pipe the list directly.
 
 ```nushell
-# Check a command's accepted input types
-help str trim | get input_output
-# => [{input: string, output: string}, {input: list<string>, output: list<string>}, ...]
+# Check a command's accepted input types (help <cmd> returns rendered text, not data)
+help commands | where name == 'str trim' | get input_output.0
+# => [[input, output]; [string, string], [list<string>, list<string>], ...]
 ```
 
 Common command families that accept `list<string>` directly: `str` (19 commands), `path` (9), `split` (4), `into` (4), `ansi` (3), `url` (2), `fill`.
@@ -91,11 +91,12 @@ $list | str trim                     # $list | each { str trim }
 $list | path expand                  # $list | each { path expand }
 $list | ansi strip                   # $list | each { ansi strip }
 $list | str replace 'a' 'b'         # $list | each { str replace 'a' 'b' }
-$list | split row ','                # $list | each { split row ',' }
 $list | url encode                   # $list | each { url encode }
 ```
 
 `each` IS needed when the command does not accept `list` input, or when the closure does more than a single command call.
+
+**Shape caveat:** `split row` on a list flattens all results into a single list (`['a,b' 'c,d'] | split row ','` → `[a b c d]`), unlike `each { split row ',' }` which keeps one sublist per element. Other `split` commands (`chars`, `words`) keep sublists.
 
 ---
 
