@@ -28,7 +28,7 @@ Then install the plugins you want:
 
 `toolkit.nu` provides convenience commands for skill development:
 
-```nushell
+```nushell no-run
 nu toolkit.nu vendor           # Copy from ~/.claude/skills into plugin directories
 nu toolkit.nu install-locally  # Copy from plugin directories to ~/.claude/skills for testing
 ```
