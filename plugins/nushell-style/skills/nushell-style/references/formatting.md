@@ -32,11 +32,11 @@ Declare a short alias only when the user explicitly asks for one. When present, 
 
 ```nushell
 # Preferred
---noinit (-n)
+--keep-order (-k)
 --restore (-r)
 
 # Avoid
---noinit(-n)
+--keep-order(-k)
 ```
 
 ## Multi-line Records
