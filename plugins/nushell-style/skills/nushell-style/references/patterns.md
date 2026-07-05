@@ -13,12 +13,12 @@ let row_type = $file_lines
     str trim --right
     | if $in =~ '^```' { } else { 'text' }
 }
-| scan --noinit 'text' {|curr prev| ... }
+| scan --fold 'text' {|curr prev| ... }
 
 # Avoid
 let row_type = $file_lines | each {
     str trim --right | if $in =~ '^```' { } else { 'text' }
-} | scan --noinit 'text' {|curr prev| ... }
+} | scan --fold 'text' {|curr prev| ... }
 ```
 
 ## Omit Redundant `$in |` Prefix
@@ -88,23 +88,25 @@ Use `scan` from the standard library (`std/iter`) for sequences with state:
 use std/iter scan
 
 # State machine for tracking fence context
-| scan 'text' {|curr_fence prev_fence|
+| scan --fold 'text' {|curr_fence prev_fence|
     match $curr_fence {
         'text' => { if $prev_fence == 'closing-fence' { 'text' } else { $prev_fence } }
         '```' => { if $prev_fence == 'text' { '```' } else { 'closing-fence' } }
         _ => { $curr_fence }
     }
 }
-
-# Use --noinit (-n) to exclude the initial value from results
-| scan --noinit 'text' {|curr prev| ... }
 ```
+
+Since 0.114 `scan` mirrors `reduce`: the seed goes in `--fold` (and stays in
+the output); without `--fold` the first element seeds. The old positional
+init and `--noinit` are gone — for the `--noinit` behavior (seed excluded
+from output), follow `--fold $init` with `| skip 1`.
 
 ## `window` for Adjacent Elements
 
 ```nushell
 | window --remainder 2
-| scan 0 {|window index|
+| scan --fold 0 {|window index|
     if $window.0 == $window.1? { $index } else { $index + 1 }
 }
 ```
