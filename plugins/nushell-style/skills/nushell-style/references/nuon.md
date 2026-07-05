@@ -31,7 +31,8 @@ NUON is Nushell's native data format—a superset of JSON that supports most Nus
 # Convert from NUON
 '{name: test, count: 42}' | from nuon
 
-# Pretty print with indentation
+# Pretty print with indentation (0.114+: --pretty is shorthand for --indent 2)
+$data | to nuon --pretty
 $data | to nuon --indent 2
 
 # Compact single-line output
@@ -217,6 +218,18 @@ $data | to nuon             # convert to NUON string
 '...' | from nuon           # parse NUON string
 
 # Pretty printing
+$data | to nuon --pretty    # 0.114+: --indent 2 shorthand
 $data | to nuon --indent 4  # indented output
 $data | to nuon --tabs      # use tabs instead of spaces
+```
+
+With any indentation flag, `to nuon` (0.114+) aligns table columns:
+
+```nushell
+[[name, age]; [Alice, 30], [Bob, 25]] | to nuon --pretty
+# [
+#   [name,  age];
+#   [Alice, 30],
+#   [Bob,   25]
+# ]
 ```
