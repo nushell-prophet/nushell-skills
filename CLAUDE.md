@@ -85,6 +85,10 @@ Skill content is Markdown. The `SKILL.md` files use YAML frontmatter (`name`, `d
 - Put detailed examples and explanations in `references/*.md`
 - Ensure code examples follow the opinionated conventions in the style guide
 
+## Versioning
+
+`nushell-style` tracks Nushell in its **minor** segment (DefinitelyTyped-style): `1.<nushell-minor>.<patch>`, e.g. `1.114.0` covers Nushell 0.114, and `1.114.1`, `1.114.2`… are our own edits between Nushell releases. Bump the minor when a new Nushell release is folded in. The other plugins version independently.
+
 ## Commit Conventions
 
 Use Conventional Commits: `feat:`, `fix:`, `refactor:`, `docs:`, `chore:`, `test:`
