@@ -67,6 +67,16 @@ The canonical source of skill content can live in either location depending on t
 
 The managed skills list is defined as `const managed_skills` in `toolkit.nu`.
 
+## Local Nushell Sources (fact-check against these, not WebFetch)
+
+Sibling directories of this repo hold canonical Nushell material. When updating skills for a new Nushell release or verifying a claim, read these instead of fetching the web:
+
+| Path | Contents |
+|---|---|
+| `../nushell-docs/` | Sparse shallow clone of nushell.github.io (`blog/`, `book/`, `cookbook/`, `commands/`). Release notes: `blog/<date>-nushell_v0_<minor>_<patch>.md`. Refresh with `git pull` (or `claude-nu fetch-nushell-docs`). Default lookup target — small and fast to grep. |
+| `../nushell.github.io/` | Full clone incl. `lang-guide/`, `contributor-book/`, translations. The user works in it (branches, stashes) — no destructive git commands. |
+| `../nushell/` | Nushell source. Ground truth for command signatures (`crates/nu-command/`, `crates/nu-cli/`) and std (`crates/nu-std/std/`). Release-note prose is sometimes imprecise — verify flags and behavior here. |
+
 ## Editing Skills
 
 Skill content is Markdown. The `SKILL.md` files use YAML frontmatter (`name`, `description`) and can reference files in a `references/` subdirectory. When editing:
