@@ -15,6 +15,7 @@ Generate completions for Nushell commands following these patterns.
 | `string@$const_list` | Const variable | 0.108+ |
 | `string@completer` | Custom completer function | all |
 | `@complete fn` | Command-wide completer | 0.108+ |
+| `commandline complete` | Reuse nushell's own suggestions | 0.114+ |
 
 ## Inline Completions (Nu 0.108+)
 
@@ -85,6 +86,27 @@ def my-cmd [
     branch: string@"nu-complete git branches"
 ] { }
 ```
+
+## Reusing Built-in Completions (Nu 0.114+)
+
+`commandline complete` returns the suggestions nushell itself would offer for a given string (cursor assumed at the end). Use it inside completers to wrap built-in path/flag completion instead of reimplementing it:
+
+```nu
+# Directory suggestions for a partial path
+'./a' | commandline complete --type directory   # --type: directory | glob | path
+
+# All flags of a command, as records with descriptions
+'%ls -' | commandline complete --detailed
+
+# In a completer: complete paths, then filter
+def "nu-complete nu-scripts" [context: string] {
+    $context | split row ' ' | last
+    | commandline complete --type path
+    | where $it ends-with '.nu'
+}
+```
+
+Without `--detailed` the output is `list<string>`; with it, records in the shape custom completers return (`value`, `description`, `style`). Without piped input it completes the current commandline buffer.
 
 ## Completer Patterns
 
