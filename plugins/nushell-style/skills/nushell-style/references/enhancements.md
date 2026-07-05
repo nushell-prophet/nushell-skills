@@ -1,4 +1,4 @@
-# New Nushell Features for Better Scripts (0.100 → 0.113)
+# New Nushell Features for Better Scripts (0.100 → 0.114)
 
 Modern idioms and new capabilities to improve existing Nushell code.
 Version noted as `(v0.NNN)`.
@@ -74,6 +74,21 @@ ls **/*.rs
 | metadata access {|m| print $m.peek; $in }
 ```
 
+### `run` — scripts as pipeline stages (v0.114)
+
+A `.nu` script can now sit in the middle of a pipeline. The script body is the
+transform (implicit `$in` as usual), or a `def main` entry point if defined.
+Execution is isolated — the script's definitions don't leak into the session.
+Resolution: cwd / `NU_LIB_DIRS` / explicit path (not `PATH`).
+
+```nushell
+# shout.nu contains just:  str uppercase
+"Hello Nushell!" | run shout.nu | str camel-case
+
+# re-running a file that changes on disk: use --full-reparse
+watch . --glob=*.nu | each { run --full-reparse ./test.nu }
+```
+
 ---
 
 ## Error Handling
@@ -128,12 +143,18 @@ Error on empty input instead of returning nothing.
 [] | first --strict  # => error (instead of silent null)
 ```
 
-### Catch error record: `json` and `rendered` columns (v0.100)
+### Catch error record: structured access (v0.100, reworked v0.114)
 
 ```nushell
-try { fail } catch {|e| $e.json | from json }  # structured access
-try { fail } catch {|e| $e.rendered }           # pre-formatted string
+try { fail } catch {|e| $e.details }   # 0.114+: structured record, no deserialization
+try { fail } catch {|e| $e.rendered }  # pre-formatted string
+# pre-0.114: $e.json | from json  ($e.json removed in 0.114)
 ```
+
+Since 0.114 each label also carries a `location` record — file name plus
+file-relative `start`/`end` offsets — which makes external error-reporting
+tools feasible (the raw `span` offsets are into nushell's whole internal
+source buffer, not the file).
 
 ---
 
@@ -147,6 +168,35 @@ try { fail } catch {|e| $e.rendered }           # pre-formatted string
 
 {b: [1 2]} | merge deep --strategy=append {b: [3 4]}
 # => {b: [1 2 3 4]}
+```
+
+### `union` / `intersect` / `difference` — built-in set operations (v0.114)
+
+Deduplicated, order-preserving, work on scalars and records alike.
+
+```nushell
+[1 2 3 4] | union [3 4 5 6]        # => [1 2 3 4 5 6]
+[1 2 3 4] | intersect [3 4 5 6]    # => [3 4]
+[1 2 3 4] | difference [3 4 5 6]   # => [1 2]
+[{a: 1} {a: 2}] | union [{a: 2} {a: 3}]   # records compare structurally
+```
+
+Replaces hand-rolled `append | uniq` (union), `where $it in $other`
+(intersect), `where $it not-in $other` (difference) — with dedup included.
+
+### `combinations` / `permutations` (v0.114)
+
+Lazily streamed.
+
+```nushell
+[1 2 3] | combinations 2   # => [[1 2] [1 3] [2 3]]
+[1 2 3] | permutations     # => 6 orderings
+```
+
+### `append` takes multiple values (v0.114)
+
+```nushell
+[1] | append 2 3 4   # => [1 2 3 4]  (was: | append 2 | append 3 ...)
 ```
 
 ### `chunk-by` — group consecutive elements (v0.101)
@@ -315,6 +365,30 @@ $data | find "term" --no-highlight  # no ANSI in output
 char eol  # "\r\n" on Windows, "\n" elsewhere
 ```
 
+### `split row --right` / `split column --right` (v0.114)
+
+`--number $n` splits from the left; add `--right` to keep the split points
+rightmost — the classic "separate the version suffix" case:
+
+```nushell
+'some-package-1.0' | split row '-' --number 2           # [some, package-1.0]
+'some-package-1.0' | split row '-' --number 2 --right   # [some-package, 1.0]
+```
+
+### SemVer as a first-class value (v0.114)
+
+`into semver` parses; the value sorts correctly, decomposes with
+`into record`, rebuilds from a record, bumps without string surgery, and
+matches ranges. Replaces `split row '.' | into int` sorting hacks.
+
+```nushell
+'1.2.3-alpha.1' | into semver | semver bump release      # => 1.2.3
+'1.2.3' | semver bump minor                              # => 1.3.0
+['2.0.0' '1.10.0' '1.2.0'] | each { into semver } | sort # correct numeric order
+'1.2.3' | into semver | $in in ('>=1.0.0' | into semver-range)  # => true
+'1.2.3-alpha.1+b.2' | into semver | into record  # major/minor/patch/pre/build
+```
+
 ---
 
 ## Dates & Time
@@ -453,6 +527,11 @@ http get --unix-socket /var/run/docker.sock http://localhost/containers/json
 "a=1&b=2" | url split-query  # => [[key, value]; [a, 1], [b, 2]]
 ```
 
+### Error responses use the body as message (v0.114)
+
+`http` error messages now carry the response body — usually the API's actual
+explanation — instead of just the status line.
+
 ---
 
 ## Completions
@@ -575,6 +654,45 @@ unlet $big
 open file.txt | explore regex
 ```
 
+### `--` end-of-options delimiter (v0.114)
+
+Pass flag-looking values as positionals without quoting tricks:
+
+```nushell
+process -- --verbose -x foo   # rest param gets ["--verbose", "-x", "foo"]
+```
+
+### `ignore` stream and error controls (v0.114)
+
+```nushell
+noisy-cmd | ignore --stderr        # swallow stderr, keep stdout
+noisy-cmd | ignore --stdout        # swallow stdout, keep stderr
+ext-cmd | ignore --show-errors     # still surface errors + LAST_EXIT_CODE
+```
+
+### `commandline complete` — query nushell's own completions (v0.114)
+
+Returns what Tab would suggest — usable inside custom completers or scripts:
+
+```nushell
+commandline complete                              # for current buffer
+'./a' | commandline complete --type directory     # directory suggestions
+'%ls -' | commandline complete --detailed         # flags with descriptions
+```
+
+### `random pass` — password generation (v0.114)
+
+```nushell
+random pass --chars 20 --require-each-type
+# flags: --no-uppercase/--no-lowercase/--no-numbers/--no-symbols, ...
+```
+
+### `is-terminal` detects redirection (v0.114)
+
+Now defaults to `--stdout` and reports `false` when output is piped,
+captured, or redirected — `if (is-terminal) { fancy } else { plain }` finally
+works in all four cases (`| $in`, `o> file`, subexpression capture, terminal).
+
 ---
 
 ## Serialization & Formats
@@ -599,6 +717,32 @@ inclusion in source files.
 
 ```nushell
 {a: 1 b: 2} | to nuon --no-commas
+```
+
+### `to nuon --pretty` and aligned table columns (v0.114)
+
+`--pretty` (`-p`) is shorthand for `--indent 2`. With any of `--indent` /
+`--tabs` / `--pretty`, table columns are now aligned:
+
+```nushell
+[[name, age]; [Alice, 30], [Bob, 25]] | to nuon --pretty
+# [
+#   [name,  age];
+#   [Alice, 30],
+#   [Bob,   25]
+# ]
+```
+
+### KDL format support (v0.114)
+
+`from kdl` / `to kdl` (KDL v2.0.0). Nodes become
+`{name, args, props, children}` rows.
+
+### `url encode` / `url decode` handle non-UTF-8 (v0.114)
+
+```nushell
+'£ rates' | encode iso-8859-1 | url encode              # binary input ok
+'%A3%20rates' | url decode --binary | decode iso-8859-1 # binary output opt-in
 ```
 
 ### `save` preserves TOML comments and formatting (v0.113)
@@ -759,6 +903,13 @@ try {
 } catch { pb error } finally { pb clear }
 ```
 
+### More std commands stream (v0.114)
+
+`std/iter intersperse` / `flat-map`, `std-rfc/conversions into list`, and
+`std-rfc/tables select/reject column-slices` no longer collect their input;
+`std-rfc/iter only` consumes at most 2 items. Safe in long/unbounded
+pipelines now.
+
 ---
 
 ## Tables & Display
@@ -816,6 +967,12 @@ idx import ~/.cache/idx.bin            # restore
 idx drop                               # free memory
 ```
 
+0.114 refinements: `idx init` content-indexes by default; hits print relative
+to cwd; imported snapshots are fully queryable; `idx search` takes `[` / `?`
+literally (globs still filter *which files* to search:
+`idx search pattern */tests/*`); and `--context 2` / `--context -3..5` adds
+surrounding lines to matches.
+
 ### `$env.NU_BACKTRACE = 1` (v0.103)
 
 Enable nushell-level backtraces for debugging error chains.
@@ -828,6 +985,15 @@ ls | metadata access {|m| error make {msg: "bad", label: {text: "here", span: $m
 
 # enable path rendering in custom tables
 glob * | wrap path | metadata set --path-columns [path]
+```
+
+### Width-priority columns in `table` (v0.114)
+
+Tag columns that must keep their width when the terminal is narrow —
+untagged wide columns get truncated first:
+
+```nushell
+ps -l | select name command pid | metadata set --table-width-priority-columns [pid]
 ```
 
 ### `metadata access` closure can mutate caller env (v0.113)
