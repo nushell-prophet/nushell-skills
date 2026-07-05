@@ -42,7 +42,7 @@ Write code that an experienced nushell user can quickly apprehend. Leverage impl
 
 | Verbose | Concise | Why |
 |---------|---------|-----|
-| `update field {\|row\| $row.field \| str upcase}` | `update field { str upcase }` | Closure receives field value directly |
+| `update field {\|row\| $row.field \| str uppercase}` | `update field { str uppercase }` | Closure receives field value directly |
 | `each {\|x\| $x \| str trim}` | `each { str trim }` | `$in` implicit, pipeline flows |
 | `$list \| each { str trim }` | `$list \| str trim` | Many commands accept `list<string>` directly (see below) |
 | `where {\|row\| $row.status == "active"}` | `where status == "active"` | `where` has field shorthand |
