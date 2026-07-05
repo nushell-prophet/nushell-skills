@@ -46,7 +46,7 @@ let x = 42
 $x  # → 42
 ```
 
-**Structured output** — native Nushell commands return NUON, not text. No need to pipe to `to json`.
+**Structured output** — native Nushell commands return NUON, not text. No need to pipe to `to json`. Since 0.114 the evaluation result is emitted as NUON directly (previously it was wrapped as an escaped string inside the response — 0.114 also uses raw strings `r#'...'#` to cut escaping), and success/error responses are additionally exposed as MCP `structuredContent` JSON for clients that support structured tool output.
 
 **History** — `$history` stores all previous command outputs as `list<any>`:
 
