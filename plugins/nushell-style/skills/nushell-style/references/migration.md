@@ -1,4 +1,4 @@
-# Nushell Migration Guide (0.100 → 0.113)
+# Nushell Migration Guide (0.100 → 0.114)
 
 When updating Nushell scripts, consult this reference for breaking changes,
 renamed commands, and new idioms. Versions noted as `(v0.NNN)`.
@@ -25,6 +25,9 @@ renamed commands, and new idioms. Versions noted as `(v0.NNN)`.
 | `do --ignore-program-errors` | `do --ignore-errors (-i)` | deprecated 0.101 |
 | `job tag` | `job describe` | 0.112 |
 | `polars fetch` | (removed, no replacement) | 0.108 |
+| `str upcase` | `str uppercase` | deprecated 0.114 |
+| `str downcase` | `str lowercase` | deprecated 0.114 |
+| `std/clip` `copy` / `paste` | `clip copy52` / `paste52` (OSC 52), or `clip copy` / `paste` under the `native-clip` experimental option | removed 0.114 |
 
 ### Renamed Flags
 
@@ -37,7 +40,9 @@ renamed commands, and new idioms. Versions noted as `(v0.NNN)`.
 | `metadata set` | `--datasource-ls` | `--path-columns [name]` | removed 0.113 (deprecated 0.111) |
 | `kill` | `-0` / `-9` shorthand | `--signal 0` / `--signal 9` | removed 0.113 |
 | `watch` | closure argument | bare `watch path` stream + `for`/`each` | deprecated 0.113 |
-| `grid` | implicit record handling | explicit `(column)` argument | deprecated 0.113 |
+| `grid` | implicit record handling | explicit `(column)` argument | removed 0.114 (deprecated 0.113) |
+| `from xlsx` / `from ods` | `--header-row` | `--noheaders` / `--first-row` | removed 0.114 (added 0.113) |
+| `std/iter scan` | positional init + `--noinit` | `--fold` (omit for no initial value) | 0.114 |
 
 ---
 
@@ -199,6 +204,94 @@ Error values passed as pipeline input or arguments now cause immediate return.
 
 Catches type annotation violations at runtime when enabled.
 
+### `enforce-runtime-annotations` on by default (v0.114)
+
+Runtime type checking of `let` annotations is now opt-out. Scripts whose
+annotations only "passed" because the value was never checked will start
+erroring. Disable if needed:
+
+```nushell
+NU_EXPERIMENTAL_OPTIONS="enforce-runtime-annotations=false" nu
+# or: nu --experimental-options '[enforce-runtime-annotations=false]'
+```
+
+### Much stricter parse-time type checking (v0.114)
+
+Several inference improvements move errors from runtime to parse time.
+Annotations that previously "seemed fine" may now be rejected — usually they
+were wrong all along.
+
+- Command output types are inferred from pipeline input type
+  (`"foo" | str uppercase | let x` → `$x` is `string`, not `any`)
+- `$in` is typed from the surrounding pipeline (`2 | $in + "foo"` is now a
+  parse error)
+- `let` bindings mid-/end-pipeline get the pipeline input type
+- Optional params and flags *without a default* are now `oneof<T, nothing>`,
+  not `T` — code that assumed `T` may need a `default` value or a null check
+- Inside a `def`, the body is checked against the declared input/output
+  signature (`def foo []: string -> any { accepts-int }` is a parse error)
+- `if`/`match` expression output types are unions of branch types; without a
+  fallback branch, `nothing` is included
+
+### Submodules are no longer implicitly imported (v0.114)
+
+`use foo` no longer brings `foo`'s exported sub-modules into scope. Re-export
+them explicitly:
+
+```nushell
+export module foo {
+    export module sub {
+        export def baz [] {}
+    }
+    export use sub    # required in 0.114 to keep `foo sub baz` working
+}
+```
+
+Note: the explicit `export use` does *not* run the submodule's `export-env`
+block — same as the old implicit behavior.
+
+### Catch error record: `json` field replaced by `details` (v0.114)
+
+The error record in `catch` blocks no longer has a `json` field. The new
+`details` field holds the same data as a structured record — no `from json`
+step. Labels additionally carry a `location` record (file name + file-relative
+`start`/`end` offsets).
+
+```nushell
+# before: try { fail } catch {|e| $e.json | from json }
+# after:  try { fail } catch {|e| $e.details }
+```
+
+### `std/iter scan` signature now matches `reduce` (v0.114)
+
+Initial value moves from positional to `--fold`; `--noinit` is gone —
+omitting `--fold` seeds with the first element (which stays in the output).
+
+```nushell
+# before: [1 2 3] | iter scan 0 {|x, acc| $x + $acc}            # [0 1 3 6]
+# after:  [1 2 3] | iter scan --fold 0 {|x, acc| $x + $acc}     # [0 1 3 6]
+
+# before: [1 2 3] | iter scan 0 --noinit {|x, acc| $x + $acc}   # [1 3 6]
+# after:  [1 2 3] | iter scan --fold 0 {|x, acc| $x + $acc} | skip 1
+# (plain `iter scan {|x, acc| ...}` seeds with the first element instead)
+```
+
+### `std/iter find-index` returns `null` on no match (v0.114)
+
+Was `-1`. Update sentinel checks: `if $idx == -1` → `if $idx == null`.
+
+### `--` ends flag parsing (v0.114)
+
+POSIX-style end-of-options for built-in and custom commands: everything after
+`--` is positional, even if it starts with `-`. The `--` itself is consumed —
+to pass a literal `--` as a value, write it twice (`cmd -- --`). For
+`def --wrapped` and `extern` commands, `--` is still passed through unchanged.
+
+```nushell
+def greet [--upper, name] { if $upper { $name | str uppercase } else { $name } }
+greet -- -Alice   # "-Alice" is a positional value, not an unknown flag
+```
+
 ---
 
 ## Command Behavior Changes
@@ -358,6 +451,46 @@ Scripts that compared the round-tripped text need updating.
 # before: value: off
 # after:  value: 'off'
 ```
+
+### `to yaml` quotes fewer strings again (v0.114)
+
+Follow-up to the 0.113 change: only values that would re-parse as non-strings
+(`off`, `yes`, numbers) stay quoted; plain scalars like paths and
+`host:port` strings are emitted bare per YAML 1.2 rules. Multiline strings now
+use `|-` block scalars. Text-comparing scripts churn again; a full YAML rework
+is announced for 0.115.
+
+```yaml
+# 0.113:  path: '/dev/stdout'      0.114:  path: /dev/stdout
+# both:   value: 'off'
+```
+
+### `from xlsx` / `from ods` reworked (v0.114)
+
+- Signatures corrected: they return a *record* with one table per sheet (the
+  old signature claimed `table`); `from ods` input is `binary`, not `string`
+- 0.113's `--header-row` flag is removed. New flags: `--noheaders` (same as
+  the csv/tsv flag) and `--first-row $n` (start reading at row *n*;
+  `--first-row 0` keeps leading empty rows that are otherwise skipped)
+- `datetime` import now works for ods too, and more datetime formats parse
+- Values that can't be coerced now import as `string`/`float` instead of `null`
+- New `--prefer-integers` imports whole-number floats as `int`
+
+### Float ranges use fractional steps (v0.114)
+
+`0.1..0.3` now yields `[0.1 0.2 0.3]` (was just `[0.1]` — step defaulted
+to 1). Values are rounded to the step's precision, removing artifacts like
+`0.30000000000000004`.
+
+### Empty `{}` row condition parses as closure (v0.114)
+
+`1..3 | where {}` was "expected bool, found record" — now `{}` in row-condition
+position is an empty closure (returns nothing → empty result).
+
+### `is-terminal` defaults to `--stdout` and detects redirection (v0.114)
+
+`is-terminal | $in`, `let x = (is-terminal)`, and `is-terminal o> file` now
+correctly report `false` where they previously reported the terminal state.
 
 ### `to csv` / `to tsv` now stream and fail on schema drift (v0.113)
 

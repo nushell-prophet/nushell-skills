@@ -17,7 +17,7 @@ description: This skill should be used when writing, editing, reviewing, or debu
 | [testing.md](references/testing.md) | nutest framework, snapshots, coverage |
 | [toolkit.md](references/toolkit.md) | toolkit.nu, repo utilities, commit conventions |
 | [mcp.md](references/mcp.md) | Nushell as MCP server (`nu --mcp`), tools, persistent state |
-| [migration.md](references/migration.md) | Breaking changes, renamed commands, new idioms (0.100 → 0.113) |
+| [migration.md](references/migration.md) | Breaking changes, renamed commands, new idioms (0.100 → 0.114) |
 | [enhancements.md](references/enhancements.md) | New features to improve existing scripts (0.100 → 0.113) |
 
 ---
