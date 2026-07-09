@@ -120,6 +120,8 @@ use nutest
 nutest run-tests --path tests/ --match-suites 'test_commands' --returns table
 ```
 
+A well-built runner auto-detects its consumer: a terminal gets a human view (failures + a summary), a pipe or redirect gets JSON. Force with `--json` / `--pretty`; `--all` lists passing tests too. See [toolkit.md](toolkit.md) "Output Mode: auto-detect, failures-only" for the pattern and why `is-terminal --stdout` (not `$nu.is-interactive`) is the right signal.
+
 ## Snapshot/Integration Tests
 
 Snapshot tests run commands and save output to files committed to git. `git diff` reveals behavioral changes.
@@ -132,7 +134,9 @@ Snapshot tests run commands and save output to files committed to git. `git diff
 4. Optionally `--update` to stage changed files
 
 ```nushell
-export def 'main test-integration' [--json --update] {
+# Pure: collects rows and prints nothing. The entry point picks the output mode
+# and renders — see toolkit.md "Output Mode: auto-detect, failures-only".
+def collect-integration-results [--update]: nothing -> table {
     let results = [
         (run-snapshot-test 'dependencies' 'tests/output/deps.yaml' {
             glob tests/assets/*.nu | dependencies ...$in | to yaml
@@ -145,11 +149,12 @@ export def 'main test-integration' [--json --update] {
     if $update {
         $results | where status == 'changed' | each {|r|
             ^git add $r.file
-            print $"(ansi green)Staged:(ansi reset) ($r.file)"
+            # stderr, so the note never corrupts JSON on stdout in machine mode
+            print -e $"(ansi green)Staged:(ansi reset) ($r.file)"
         }
     }
 
-    if $json { $results | to json --raw } else { $results }
+    $results
 }
 ```
 
@@ -173,9 +178,9 @@ def run-snapshot-test [name: string output_file: string command_src: closure] {
 
         let diff = do { ^git diff --quiet $output_file } | complete
         let status = if $diff.exit_code == 0 { 'passed' } else { 'changed' }
-        {type: 'integration' name: $name status: $status file: $output_file}
-    } catch {
-        {type: 'integration' name: $name status: 'failed' file: $output_file}
+        {type: 'integration' name: $name status: $status file: $output_file message: null}
+    } catch {|err|
+        {type: 'integration' name: $name status: 'failed' file: $output_file message: $err.msg}
     }
 }
 ```
@@ -191,9 +196,9 @@ def run-integration-test [name: string command_src: closure] {
 
         let diff = do { ^git diff --quiet $name } | complete
         let status = if $diff.exit_code == 0 { 'passed' } else { 'changed' }
-        {type: 'integration' name: ($name | path basename) status: $status file: $name}
-    } catch {
-        {type: 'integration' name: ($name | path basename) status: 'failed' file: $name}
+        {type: 'integration' name: ($name | path basename) status: $status file: $name message: null}
+    } catch {|err|
+        {type: 'integration' name: ($name | path basename) status: 'failed' file: $name message: $err.msg}
     }
 }
 ```
