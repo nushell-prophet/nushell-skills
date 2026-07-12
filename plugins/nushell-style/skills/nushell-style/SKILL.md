@@ -34,6 +34,17 @@ For line-number-aware diagnostics with source context, see the `diagnose` functi
 
 The Bash tool escapes `!` → `\!`, breaking `!=` and `!~` in `nu -c`. Use a heredoc or temp file instead. See [testing.md](references/testing.md) for workarounds.
 
+## Agent Tip: Literal `(` in Interpolated Strings
+
+`\(` is an escape **only** in double-quoted interpolation `$"..."`. In `$'...'` the backslash is literal and `(` still starts a subexpression — parens cannot be escaped there at all.
+
+```nushell
+$"($header), changed \(trailing whitespace only\)"   # ✓ → H, changed (trailing whitespace only)
+$'($header), changed \(trailing whitespace only\)'   # ✗ tries to run `trailing` as a command
+```
+
+If the string needs both interpolation and literal parens, use `$"..."`.
+
 ---
 
 ## Conciseness for Advanced Users
@@ -226,6 +237,7 @@ After `use greet.nu`, call it as `greet "world"` — `main` is replaced by the m
 - Remove `export` from helpers to "make them private" (use mod.nu instead)
 - Name a command the same as its file (use `main` instead — see Module Naming Rule)
 - Use short flags in code (`save -f`, `open -r`) — write the long form (`save --force`, `open --raw`); short flags are for interactive typing
+- Write `\(` inside `$'...'` — single-quote interpolation has no escapes; literal parens need `$"..."` (see Agent Tip above)
 - Declare short flag aliases (`--force (-f)`) in command signatures unless the user explicitly asks for them
 
 ---
