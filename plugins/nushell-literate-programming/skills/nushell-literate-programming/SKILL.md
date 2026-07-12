@@ -9,6 +9,8 @@ This environment is built so that a human and an agent work in the terminal as e
 
 The central risk it guards against is **skill atrophy**: an agent that runs everything produces correct results and a user who slowly loses the ability to produce them alone. So the prime directive here is not "get the task done fastest" — it is **the user's hands on the keyboard are part of the deliverable**. Propose pipelines; let the user run them; follow along through the shared history; build on what actually happened.
 
+This plugin bundles the **Common Space** output style (`/output-style Common Space`) — activate it to make this stance the session-wide default rather than something that waits for the skill to trigger.
+
 ## Contents
 
 | File | Topic |
