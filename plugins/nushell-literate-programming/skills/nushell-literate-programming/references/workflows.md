@@ -72,15 +72,15 @@ git diff   # exactly what changed in the outside world
 
 Same shape for `@example` results (`dotnu examples-update module.nu`) and for whole tutorial documents (`numd run docs/*.md`). The rhythm is always: **commit → refresh → read the diff**.
 
-## 5. The AI-companion loop
+## 5. The companion loop — user and agent in one terminal
 
-For an agent working alongside the user, literate tooling changes what "explaining" means — instead of describing what a command does, produce a document that proves it:
+The full interaction protocol lives in `common-space.md`; this is how the literate tooling carries it:
 
-- **Answer with a runnable doc.** Write the explanation as markdown with `nu` blocks, then `numd run answer.md --echo` to verify every claim before showing it. Wrong output = wrong explanation, caught before the user sees it.
-- **Preview, never clobber.** `--echo` and `--dry-run` first; the in-place run only on committed files. numd's git gate enforces this, honor it rather than reaching for `--ignore-git-check`.
-- **Respect the clean environment.** Blocks run under `nu -n`: `use` the modules a block needs inside the doc itself. That is a feature — the doc then works for any reader, not just this machine.
-- **Archive decisions.** After a substantial session: `claude-nu export-session 'topic' | claude-nu save-markdown` — the conversation lands in `docs/sessions/` where git preserves the reasoning. Before re-solving a problem, `claude-nu -f 'topic'` to check whether a past session already solved it.
-- **Teach through captures.** When the user asks "what did that do?", `copy-out` or `example` the exchange and annotate it — the snippet is already in the shared `# =>` dialect.
+- **The agent proposes, the user runs.** Answers to "how do I X" arrive as snippets with expected `# =>` output; the user executes them in the REPL and the agent follows along through the shared sqlite history (`history --long | last 5` — command, `exit_status`, `duration`). No pasting required.
+- **Drafts are the agent's, refreshes are the user's.** The agent verifies a drafted doc with `numd run draft.md --echo` before showing it — wrong output means wrong explanation, caught early. But the in-place `numd run` on the user's documents, and reading the resulting `git diff`, is the user's ritual. The git gate exists so they can run it fearlessly.
+- **The user shows, the agent reads.** `copy-out` and `example` lift what just happened in the terminal into `# =>`-annotated snippets that paste straight into the conversation — the reverse channel that replaces screenshots and retyping.
+- **Both respect the clean environment.** Blocks run under `nu -n`: `use` the modules a block needs inside the doc itself, so it works for any reader on any machine.
+- **The user archives decisions.** After a substantial session: `claude-nu export-session 'topic' | claude-nu save-markdown` puts the conversation in `docs/sessions/` under git. Before re-solving a problem: `claude-nu -f 'topic'` — and when the same ask keeps recurring, that's the cue to turn it into a snippet the user practices instead of a task the agent repeats.
 
 ## 6. Debugging and profiling, literate-style
 

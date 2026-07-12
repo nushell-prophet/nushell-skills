@@ -23,8 +23,8 @@
     {
       "name": "nushell-literate-programming",
       "source": "./plugins/nushell-literate-programming",
-      "description": "Literate programming in Nushell — numd (executable markdown documents), dotnu (scripts that embed their own output), REPL session capture, and companion workflows with nu-goodies and claude-nu for docs that never drift from reality",
-      "version": "0.1.0"
+      "description": "A common space for user and agent in the Nushell terminal — the agent proposes, the user runs, both share the `# =>` dialect. numd (executable markdown), dotnu (scripts that embed their own output), REPL capture, and nu-goodies/claude-nu companions, framed to grow the user's fluency instead of replacing it",
+      "version": "0.2.0"
     },
     {
       "name": "nushell-history",
