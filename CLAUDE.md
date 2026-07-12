@@ -77,6 +77,10 @@ Sibling directories of this repo hold canonical Nushell material. When updating 
 | `../nushell.github.io/` | Full clone incl. `lang-guide/`, `contributor-book/`, translations. The user works in it (branches, stashes) — no destructive git commands. |
 | `../nushell/` | Nushell source. Ground truth for command signatures (`crates/nu-command/`, `crates/nu-cli/`) and std (`crates/nu-std/std/`). Release-note prose is sometimes imprecise — verify flags and behavior here. |
 
+## Highest-Priority Guidance Lives Elsewhere
+
+The skills in this repo aren't always loaded — a session only pulls a skill in when its trigger matches. But Nushell is the main tool in the cozy sandbox environment, so the most critical pitfalls and rules must not depend on skill activation. Put those in `../cozy/docker-files/global-claude.md` (baked into every sandbox session as global memory); keep this repo's skills for the full, detailed guidance.
+
 ## Editing Skills
 
 Skill content is Markdown. The `SKILL.md` files use YAML frontmatter (`name`, `description`) and can reference files in a `references/` subdirectory. When editing:
