@@ -2,7 +2,7 @@
 # These are NOT part of the distributed plugins — they help maintain skill content.
 
 const skills_global_dir = '~/.claude/skills'
-const managed_skills = ['nushell-style' 'nushell-completions' 'nushell-history']
+const managed_skills = ['nushell-style' 'nushell-completions' 'nushell-history' 'nushell-literate-programming']
 
 # Check if a path has uncommitted changes in its git repository
 def has-uncommitted-changes [path: path]: nothing -> bool {

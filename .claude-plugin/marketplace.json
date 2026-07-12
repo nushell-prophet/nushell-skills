@@ -21,6 +21,12 @@
       "version": "1.114.2"
     },
     {
+      "name": "nushell-literate-programming",
+      "source": "./plugins/nushell-literate-programming",
+      "description": "Literate programming in Nushell — numd (executable markdown documents), dotnu (scripts that embed their own output), REPL session capture, and companion workflows with nu-goodies and claude-nu for docs that never drift from reality",
+      "version": "0.1.0"
+    },
+    {
       "name": "nushell-history",
       "source": "./plugins/nushell-history",
       "description": "Inspect and rewrite the Nushell sqlite command history — `history --long | where ...` recipes and `nu-history-tools` mutation flows (retag cwd, remove, etc.)",
