@@ -26,7 +26,7 @@ copy-out 3     # from 3rd-to-last through the last command
 copy-out 3 1   # 3rd-to-last and last, separately
 ```
 
-`--cwd` prepends a `# $(pwd)` line; `--echo` returns instead of copying. This is REPL archaeology: the terminal itself becomes the source of a literate snippet. `delete-prompts` is the cleanup twin — removes the last N prompts from scrollback before a screenshot.
+`--cwd` prepends a comment line with the working directory; `--echo` returns instead of copying. This is REPL archaeology: the terminal itself becomes the source of a literate snippet. `delete-prompts` is the cleanup twin — removes the last N prompts from scrollback before a screenshot.
 
 ### `hist-to-script` — a session's history as a script
 
@@ -56,7 +56,7 @@ Load with `use claude-nu`. Claude Code stores every session as JSONL under `~/.c
 
 ```nushell
 claude-nu projects                    # all projects, most recent first; rows pipe into sessions
-claude-nu sessions                    # this project's sessions: summary, timestamps, files touched, agents...
+claude-nu sessions                    # this project's sessions: summary, timestamps, user messages...
 claude-nu sessions --last --columns token_usage
 claude-nu messages 'regex'            # user messages matching a regex
 claude-nu -f 'monorepo' --all-projects   # search user messages across every project
@@ -77,8 +77,8 @@ claude-nu sessions | sort-by last_timestamp | last | claude-nu export-session | 
 Combine with nu-goodies for review-before-export:
 
 ```nushell
-claude-nu messages --all-sessions | fzf-preview --content   # skim every past prompt with preview
-claude-nu messages --all-sessions | in-vd                   # or explore them in VisiData
+claude-nu sessions | claude-nu messages | fzf-preview --content   # skim past prompts with preview
+claude-nu sessions | claude-nu messages | in-vd                   # or explore them in VisiData
 ```
 
 ### `ask` — one-shot Claude inside a pipeline

@@ -65,7 +65,7 @@ All executors run in a clean `nu -n` process — no user config, no `$env` leaka
 
 - Hand-write `# => ` lines — they are volatile; every refresh overwrites them
 - Rely on interactive config inside blocks — executors run `nu -n`; `use` modules explicitly in the doc
-- Use `--ignore-git-check` as a habit — it exists for untracked scratch files, not for skipping review
-- Expect isolation between blocks in one numd file — they share a process; use `new-instance` when a block must be clean
+- Use `--ignore-git-check` as a habit — untracked files already pass the gate; the flag skips review of tracked changes
+- Expect isolation between blocks in one numd file — they share a process; `new-instance` isolates a block only combined with `try`
 - Mistype fence options and hope — unknown options are hard errors by design (a typo'd `no-run` must not execute)
 - Paste command output into docs manually — that's the drift the whole toolchain exists to prevent

@@ -30,8 +30,8 @@ Options go after the language in the infostring, comma-separated: ```` ```nu try
 | `no-run` | Don't execute — the block is illustration only |
 | `no-output` | Execute, but capture no output (setup blocks) |
 | `try` | Wrap in `try {} catch {\|error\| $error}` — for demonstrating errors |
-| `new-instance` | Run in a fresh `nu -c` subprocess — combine with `try` for nicely formatted error messages |
-| `separate-block` | Put output in a following ` ```output-numd ` block instead of inline `# =>` |
+| `new-instance` | Run in a fresh `nu -c` subprocess for nicely formatted error messages — only honored together with `try` (`try, new-instance`); alone it has no effect |
+| `separate-block` | Put output in a following ` ```output-numd ` block instead of inline (lines still carry the `# =>` prefix) |
 | `run-once` | Execute once, then the fence is rewritten to `no-run` with output frozen — for side effects that must not repeat |
 
 `numd list-fence-options` returns this table at the prompt.
@@ -139,7 +139,7 @@ Renders markdown documentation for a module (all commands) or one command (`numd
 
 ## Gotchas
 
-- **Shared state**: blocks run in one process. A `def` in block 1 exists in block 10. Good for tutorials, surprising if you expect isolation — use `new-instance` for a block that must be clean.
+- **Shared state**: blocks run in one process. A `def` in block 1 exists in block 10. Good for tutorials, surprising if you expect isolation — and note there is no pure isolation option: `new-instance` only takes effect together with `try`.
 - **Working directory** is where `numd run` was invoked; relative paths in blocks resolve against it.
 - **Errors abort the save.** If any block errors, the file is left untouched (the error is reported). Use the `try` fence option for blocks that are *supposed* to error.
 - **Trailing comment on a block's last line is stripped** before execution — don't end a block with a line whose `#` is not really a comment.

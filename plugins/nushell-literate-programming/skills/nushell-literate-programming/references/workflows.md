@@ -92,7 +92,7 @@ dotnu extract-module-command dotnu/ embeds-update --vars --output /tmp/dbg.nu
 # edit the let-bindings between #dotnu-vars-start/-end, then:
 source /tmp/dbg.nu                  # run a module command's body as a flat script
 
-debug profile { expensive-pipeline } | format profile   # nu-goodies: span tree with bars
+debug profile --spans { expensive-pipeline } | format profile   # nu-goodies: span tree with bars
 ```
 
 ## 7. Module hygiene as one-liners

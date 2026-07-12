@@ -120,4 +120,4 @@ Splits a script on blank lines and wraps each block in a ```` ```nu ```` fence â
 - Default is **save in place** for `embeds-update`, `expand-code`, `examples-update`, `set-x`; use `--echo` (or pipe a string in) to preview. Same discipline as numd: commit first, run, read the diff.
 - `embed-add` needs sqlite history and remembers `--capture-path` per session.
 - All execution paths use a clean `nu -n` â€” reproducible, but blind to your config.
-- CRLF is normalized to LF; output always ends with a single trailing newline.
+- On Windows, CRLF is normalized to LF; output always ends with a single trailing newline.
