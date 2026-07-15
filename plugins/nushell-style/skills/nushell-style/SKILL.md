@@ -24,11 +24,17 @@ description: This skill should be used when writing, editing, reviewing, or debu
 
 ## Agent Tip: Syntax Checking
 
+When you finish writing or editing a `.nu` file, check it:
+
+```nushell
+dotnu diagnose file.nu
+```
+
+It filters `nu --ide-check` output to real diagnostics and resolves byte spans to line numbers with source context — see [debugging.md](references/debugging.md). Without dotnu, the raw fallback is:
+
 ```bash
 nu --ide-check 10 file.nu | nu --stdin -c 'lines | each { from json } | where type == "diagnostic"'
 ```
-
-For line-number-aware diagnostics with source context, see the `diagnose` function in [debugging.md](references/debugging.md).
 
 ## Agent Tip: `!=` and `!~` in Bash
 
