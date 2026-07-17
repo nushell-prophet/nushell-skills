@@ -299,16 +299,14 @@ ls | length | print $in
 ### Workflow
 
 ```nushell
-# 1. Setup capture environment
-dotnu embeds-setup my-script.nu
+# 1. Add capture point interactively (from REPL after running a command);
+#    --capture-path names the target file once, later calls remember it
+some-command | dotnu embed-add --capture-path my-script.nu
 
-# 2. Add capture point interactively (from REPL after running a command)
-some-command | dotnu embed-add
-
-# 3. Update all embedded outputs in a file
+# 2. Update all embedded outputs in a file
 dotnu embeds-update my-script.nu
 
-# 4. Remove all embedded outputs (clean script)
+# 3. Remove all embedded outputs (clean script)
 open my-script.nu | dotnu embeds-remove
 ```
 
