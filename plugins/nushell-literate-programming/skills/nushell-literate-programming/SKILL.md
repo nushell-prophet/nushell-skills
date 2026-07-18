@@ -64,6 +64,7 @@ Four modules, all preloaded in cozy sandboxes (elsewhere: `use numd`, `use dotnu
 | Command docs that must match real signatures | generate-region around `numd doc '<cmd>'` |
 | `@example --result` values gone stale | `dotnu examples-update` |
 | Pin an external fact (`tool --help`, API shape) and watch it drift | capture file + `dotnu embeds-update`, diff with git |
+| A spec whose claims should be provable against a live system | paired dotnu exercise doc — workflows.md, flow 8 |
 | Which script block is slow / what does no test cover | `dotnu set-x` / `dependencies \| filter-commands-with-no-tests` |
 | Turn a working session into a permanent doc | `claude-nu export-session \| claude-nu save-markdown` |
 | Find how a past session solved something | `claude-nu -f 'regex' [--all-projects]` |

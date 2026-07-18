@@ -72,6 +72,8 @@ git diff   # exactly what changed in the outside world
 
 Same shape for `@example` results (`dotnu examples-update module.nu`) and for whole tutorial documents (`numd run docs/*.md`). The rhythm is always: **commit → refresh → read the diff**.
 
+The same shape also points inward: a capture file can pin facts about a system *under construction*, not just the outside world. Then `embeds-update` doubles as a cross-repo regression test — refresh the doc, and any behavior change in the modules it `use`s lands in the diff. Flow 8 grows this into a full pattern.
+
 ## 5. The companion loop — user and agent in one terminal
 
 The full interaction protocol lives in `common-space.md`; this is how the literate tooling carries it:
@@ -111,3 +113,14 @@ glob my-module/*.nu | append (glob tests/*.nu)
 #**end
 # refresh with: dotnu expand-code mod.nu
 ```
+
+## 8. The proof companion — a spec that cannot lie
+
+Sibling of flow 3, one level up: flow 3 keeps a README honest about one tool; a proof companion keeps a prose spec honest about a *system*. Next to the spec lives a dotnu file where each claim of the spec gets a runnable read query, evidence embedded as `# =>` lines. Writes into the system stay out of the executable path — quoted as comments where their results are read (see dotnu.md, "One-shot side effects").
+
+The maintenance loop is the usual commit → `dotnu embeds-update` → read the diff, but the diff means more here. When the embedded outputs are deterministic — content hashes, CIDs, sorted lists — an empty diff is not "docs current": it is a reproducibility check of the whole system, and a non-empty diff means the *system* drifted from the spec. The doc doubles as an integration test across every repo it `use`s, at zero extra cost, because it is just the doc.
+
+Two conventions complete the pattern:
+
+- **A committed refresh is a dated verification pass.** The doc's git history is an audit log — this author re-ran the queries on that date, and this is what the system answered. The file's history of changes, passes included, is versioned alongside the code it verifies.
+- **The regeneration header.** Atomic diffs are the rule, but a format change can force wholesale regeneration — every embed differs at once. Record the why in the file's header comment (what changed, which versions), so the wholesale diff carries its own intent.
