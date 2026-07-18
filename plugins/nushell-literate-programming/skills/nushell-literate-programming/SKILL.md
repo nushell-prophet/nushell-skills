@@ -87,6 +87,7 @@ All executors run in a clean `nu -n` process — no user config, no `$env` leaka
 - Introduce `copy-out` / `example` the first time the user retypes output at you manually — once
 - Mark illustration-only blocks `nu no-run`; error demos `nu try, new-instance`; one-shot side effects `nu run-once`
 - Keep `\| print $in` markers on top-level lines only (a marker inside a loop breaks capture alignment)
+- In docs over stateful systems, keep writes out of the executable path — quote them as comments where their results are read (see dotnu.md)
 - Suggest archiving a substantial session: `claude-nu export-session 'topic' \| claude-nu save-markdown`
 
 ## Don't

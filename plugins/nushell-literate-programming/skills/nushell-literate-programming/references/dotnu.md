@@ -46,6 +46,18 @@ After `dotnu embeds-update file.nu`:
 - Keep `| print $in` on **top-level** lines only. A marker inside a `def` or a loop that fires more than once produces more captures than capture points, and dotnu fail-fasts on the mismatch.
 - Captures run under `nu -n` in the script's own directory — your interactive `$env` and config are invisible. Output reflects a bare Nushell, which is what makes it reproducible.
 
+### One-shot side effects — keep writes out of the executable path
+
+numd marks a block `run-once`; dotnu has no such fence — and doesn't need one. A doc over a stateful system (an append-only store, a graph, a ledger) embeds only *reads*. The writes ran once, outside the doc; quote each one as a comment at the point where its result is read:
+
+```nushell
+#   written once:  nu-cybergraph link add <new> <old>   (×22)
+ls cybergraph/links | length | print $in
+# => 30
+```
+
+The doc stays idempotent — `embeds-update` can re-run it forever — while the reader still gets the write → read story in source order. If the underlying tool has its own idempotence guard (a duplicate write fails loudly), note that in the header comment: an accidental re-run of the quoted write then trips the guard instead of corrupting state.
+
 ## `dotnu expand-code` — pipelines that write code
 
 The inverse of embeds: a `#** <pipeline>` directive line generates real code lines between itself and a `#**end` marker. Re-running refreshes only the generated lines.
