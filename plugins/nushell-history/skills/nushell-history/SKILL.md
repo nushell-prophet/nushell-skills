@@ -5,7 +5,31 @@ description: This skill should be used when inspecting, querying, or rewriting t
 
 # Nushell history — inspect and rewrite
 
-The user's command history is in a sqlite database (file_format = sqlite). Use the builtin `history` command for reading and `nu-history-tools` for mutation. Never hand-roll SQL against `history.sqlite3` — the builtin and the module already cover every case.
+The user's command history is in a sqlite database (file_format = sqlite). Use the builtin `history` command for reading and `nu-history-tools` for mutation. Never hand-roll SQL against `history.sqlite3` — the builtin, the module, and `open ... | get history` already cover every case.
+
+## Locate the history
+
+The user's history is always the sqlite file in the nushell config dir — `~/.config/nushell/history.sqlite3`. Resolve it robustly the same way `nu-history-tools` does:
+
+```nu
+let db = $nu.history-path | str replace 'txt' 'sqlite3'
+```
+
+Two traps when running inside an agent's nushell instance (MCP server, embedded REPL):
+
+- `$nu.history-path` can point at a `history.txt` even when `$env.config.history.file_format` is `sqlite` — don't treat it as the source of truth; the sqlite file next to it is.
+- The `history` builtin reads whatever the *current instance's* history config points to, which may be the agent's own (often empty) store, not the user's.
+
+So before trusting the builtin, verify: `history --long | last 2` must show the user's recent commands (compare with the tail of the sqlite db). If it does, prefer the builtin — friendlier columns, decoded timestamps. If not, read the db directly (no SQL needed):
+
+```nu
+open ($nu.history-path | str replace 'txt' 'sqlite3') | get history
+| last 20
+| update start_timestamp {$in * 1_000_000 | into datetime}   # stored as unix epoch ms
+| select id start_timestamp cwd command_line exit_status
+```
+
+Direct reads use the sqlite column names (see *Schema gotcha* below).
 
 ## Inspection (read-only)
 
