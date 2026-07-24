@@ -20,6 +20,17 @@ Two traps when running inside an agent's nushell instance (MCP server, embedded 
 - `$nu.history-path` can point at a `history.txt` even when `$env.config.history.file_format` is `sqlite` — don't treat it as the source of truth; the sqlite file next to it is.
 - The `history` builtin reads whatever the *current instance's* history config points to, which may be the agent's own (often empty) store, not the user's.
 
+In the cozy container the file is `/home/agent/.config/nushell/history.sqlite3` — that is the user's real history, the one their interactive panes write to. The `cwd` values inside it look like macOS paths (`/Users/user/git/...`) because the workspace is mounted there; that is the *same* machine you are on, not the host. A `$nu.history-path` of `/home/agent/...` while the user's prompt shows `/Users/user/...` is normal — never conclude from it that you are looking at a different machine's history.
+
+With no nushell session of your own (bash tool only), read it directly; open it read-only so a stray write can never touch the user's history:
+
+```sh
+sqlite3 'file:/home/agent/.config/nushell/history.sqlite3?mode=ro' \
+  "SELECT id, session_id, exit_status, command_line FROM history ORDER BY id DESC LIMIT 20;"
+```
+
+The sqlite WAL sits next to the db, so the newest commands are visible only if you let sqlite read it — which the URI above does. `session_id` groups commands by nu process, i.e. by pane: consecutive commands with different ids came from different panes, and a new id means the user restarted nu there.
+
 So before trusting the builtin, verify: `history --long | last 2` must show the user's recent commands (compare with the tail of the sqlite db). If it does, prefer the builtin — friendlier columns, decoded timestamps. If not, read the db directly (no SQL needed):
 
 ```nu
