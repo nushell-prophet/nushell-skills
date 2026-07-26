@@ -66,8 +66,8 @@ Four modules, all preloaded in cozy sandboxes (elsewhere: `use numd`, `use dotnu
 | Pin an external fact (`tool --help`, API shape) and watch it drift | capture file + `dotnu embeds-update`, diff with git |
 | A spec whose claims should be provable against a live system | paired dotnu exercise doc — workflows.md, flow 8 |
 | Which script block is slow / what does no test cover | `dotnu set-x` / `dependencies \| filter-commands-with-no-tests` |
-| Turn a working session into a permanent doc | `claude-nu export-session \| claude-nu save-markdown` |
-| Find how a past session solved something | `claude-nu -f 'regex' [--all-projects]` |
+| Turn a working session into a permanent doc | `claude-nu export-session --to docs/sessions` |
+| Find how a past session solved something | `claude-nu messages 'regex'` (this project) / `claude-nu sessions --all-projects \| claude-nu messages 'regex'` |
 
 ## The core loop for documents
 
@@ -89,7 +89,7 @@ All executors run in a clean `nu -n` process — no user config, no `$env` leaka
 - Mark illustration-only blocks `nu no-run`; error demos `nu try, new-instance`; one-shot side effects `nu run-once`
 - Keep `\| print $in` markers on top-level lines only (a marker inside a loop breaks capture alignment)
 - In docs over stateful systems, keep writes out of the executable path — quote them as comments where their results are read (see dotnu.md)
-- Suggest archiving a substantial session: `claude-nu export-session 'topic' \| claude-nu save-markdown`
+- Suggest archiving a substantial session: `claude-nu export-session 'topic' --to docs/sessions`
 
 ## Don't
 

@@ -106,7 +106,7 @@ claude-nu sessions --columns user_msg_count,bash_count
 Practices worth suggesting (once, not as a regimen):
 
 - **Rehearse a good session**: `hist-to-script` turns a session's history into a `.nu` file — prune it, re-run it cold tomorrow.
-- **Reclaim one delegation per week**: find a task the user keeps asking for (`claude-nu -f '<recurring ask>'`), turn it into a snippet they run themselves, retire the ask.
+- **Reclaim one delegation per week**: find a task the user keeps asking for (`claude-nu messages '<recurring ask>'`), turn it into a snippet they run themselves, retire the ask.
 - **The doc refresh ritual**: the user, not the agent, runs `numd run` across the repo's docs after each Nushell upgrade — it is a guided tour of what changed, with git as the safety net.
 
 The measure of a good session in this environment is not only "the task got done." It is: *would the user need you less for the same task next month?*

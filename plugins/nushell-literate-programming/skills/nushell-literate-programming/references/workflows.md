@@ -82,7 +82,7 @@ The full interaction protocol lives in `common-space.md`; this is how the litera
 - **Drafts are the agent's, refreshes are the user's.** The agent verifies a drafted doc with `numd run draft.md --echo` before showing it — wrong output means wrong explanation, caught early. But the in-place `numd run` on the user's documents, and reading the resulting `git diff`, is the user's ritual. The git gate exists so they can run it fearlessly.
 - **The user shows, the agent reads.** `copy-out` and `example` lift what just happened in the terminal into `# =>`-annotated snippets that paste straight into the conversation — the reverse channel that replaces screenshots and retyping.
 - **Both respect the clean environment.** Blocks run under `nu -n`: `use` the modules a block needs inside the doc itself, so it works for any reader on any machine.
-- **The user archives decisions.** After a substantial session: `claude-nu export-session 'topic' | claude-nu save-markdown` puts the conversation in `docs/sessions/` under git. Before re-solving a problem: `claude-nu -f 'topic'` — and when the same ask keeps recurring, that's the cue to turn it into a snippet the user practices instead of a task the agent repeats.
+- **The user archives decisions.** After a substantial session: `claude-nu export-session 'topic' --to docs/sessions` puts the conversation in `docs/sessions/` under git. Before re-solving a problem: `claude-nu messages 'topic'` — and when the same ask keeps recurring, that's the cue to turn it into a snippet the user practices instead of a task the agent repeats.
 
 ## 6. Debugging and profiling, literate-style
 

@@ -58,8 +58,8 @@ Load with `use claude-nu`. Claude Code stores every session as JSONL under `~/.c
 claude-nu projects                    # all projects, most recent first; rows pipe into sessions
 claude-nu sessions                    # this project's sessions: summary, timestamps, user messages...
 claude-nu sessions --last --columns token_usage
-claude-nu messages 'regex'            # user messages matching a regex
-claude-nu -f 'monorepo' --all-projects   # search user messages across every project
+claude-nu messages 'regex'            # this project's user messages matching a regex
+claude-nu sessions --all-projects | claude-nu messages 'monorepo'   # ...across every project
 ```
 
 Useful columns beyond the defaults (`--columns` or `--all-columns`): `bash_commands`, `skill_invocations`, `tool_errors`, `git_branch`, `token_usage`, `edited_files`, `read_files`.
@@ -69,10 +69,10 @@ Useful columns beyond the defaults (`--columns` or `--all-columns`): `bash_comma
 The flow that turns a working conversation into a permanent document:
 
 ```nushell
-claude-nu sessions | sort-by last_timestamp | last | claude-nu export-session | claude-nu save-markdown
+claude-nu sessions | sort-by last_timestamp | last | claude-nu export-session --to docs/sessions
 ```
 
-`export-session` renders the dialogue as markdown with YAML frontmatter (`date`, `session`, `summary`); `save-markdown` writes it to `docs/sessions/yyyymmdd-topic.md` with collision-safe names. Search first, then export: `claude-nu -f 'auth refactor' | claude-nu export-session`.
+Without `--to`, `export-session` returns `{session, date, topic, markdown}` — read the text before anything touches the disk. With `--to` it writes `<dir>/yyyymmdd-topic.md` with collision-safe names and returns `{session, filepath}`; the directory has no default, naming it is what asks for the write. Search first, then export: `claude-nu messages 'auth refactor' | claude-nu export-session`.
 
 Combine with nu-goodies for review-before-export:
 
