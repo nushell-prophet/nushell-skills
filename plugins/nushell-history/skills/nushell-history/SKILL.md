@@ -77,7 +77,7 @@ history --long | where cwd =~ 'git-learning' | select start_timestamp command ex
 history --long | last 40 | select start_timestamp cwd command exit_status
 ```
 
-`where` is the only filter you need — there's no SQL syntax to learn. If the user references "what I just tried", "my last commands", or asks you to interpret what they were doing — run one of these instead of asking.
+`where` is the only filter you need — there's no SQL syntax to learn. `=~` runs on `fancy-regex`, so lookarounds work directly — `where command =~ '^(?!ls|cd)'` drops the noise commands without a second pass. If the user references "what I just tried", "my last commands", or asks you to interpret what they were doing — run one of these instead of asking.
 
 ## Mutation
 

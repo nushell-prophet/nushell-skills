@@ -323,6 +323,8 @@ let safe = $user_input | str escape-regex
 $data | where name like $"^($safe)$"
 ```
 
+Escapes for the `fancy-regex` flavor Nushell uses everywhere — see [regex.md](regex.md).
+
 ### `str replace` with closure (v0.109)
 
 ```nushell
