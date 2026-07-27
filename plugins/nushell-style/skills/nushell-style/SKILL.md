@@ -134,6 +134,24 @@ $list | url encode                   # $list | each { url encode }
 ### Leading `|`
 Place `|` at start of continuation lines, aligned with `let`.
 
+`|` is the **only** operator that continues a line by itself. `++`, `+`, `and`, `or` and the rest are a parse error when the expression spans lines — leading gives ``Command `++` not found``, trailing gives `Incomplete math expression`. Wrap the whole expression in `( … )`, or rewrite it as a pipeline:
+
+```nushell
+# Fails to parse
+let a = [x y]
+    ++ (if $flag { [z] } else { [] })
+
+# Preferred — a pipeline
+let a = [x y]
+| append (if $flag { [z] } else { [] })
+
+# Also fine — parens make the line break legal
+let a = (
+    [x y]
+    ++ (if $flag { [z] } else { [] })
+)
+```
+
 ### Omit `$in |`
 When body starts with pipeline command (`each`, `where`, `select`), input flows automatically.
 

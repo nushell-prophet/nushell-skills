@@ -21,6 +21,29 @@ let row_type = $file_lines | each {
 } | scan --fold 'text' {|curr prev| ... }
 ```
 
+## Other Operators Need Parentheses
+
+`|` is the only operator that continues a line on its own. A multi-line expression built with `++`, `+`, `and`, `or`, … does not parse: a leading operator is read as a command name (``Command `++` not found``), a trailing one leaves an `Incomplete math expression`.
+
+```nushell
+# Fails to parse
+let parts = [--config $config_path]
+    ++ (if $verbose { [--verbose] } else { [] })
+    ++ [$script]
+
+# Preferred: a pipeline, leading `|`
+let parts = [--config $config_path]
+| append (if $verbose { [--verbose] } else { [] })
+| append $script
+
+# Also correct: parens make the line break legal (leading or trailing operator both work there)
+let parts = (
+    [--config $config_path]
+    ++ (if $verbose { [--verbose] } else { [] })
+    ++ [$script]
+)
+```
+
 ## Omit Redundant `$in |` Prefix
 
 When a command body starts with a pipeline command (`each`, `where`, `select`, etc.), omit the `$in |` prefix—the input flows automatically:
