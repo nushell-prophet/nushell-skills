@@ -83,6 +83,18 @@ def "extract-command-name handles simple def" [] { ... }
 def "dependencies excludes calls inside attribute blocks" [] { ... }
 ```
 
+**Never put an apostrophe (or any quote character) in a test name.** A test name is a command name — see the Command Naming Rule in SKILL.md — and nutest interpolates it into generated code inside a single-quoted span. One apostrophe closes that span early and **every test in the file** fails with `nu::parser::unexpected_eof` / "expected closing `'`". The error dump is the generated suite list, so nothing in it names the test that caused it:
+
+```nushell
+# WRONG — takes the whole suite file down, 19 tests failing on one name
+def "the endorsement reported is the record signer's" [] { ... }
+
+# CORRECT
+def "the endorsement reported belongs to the record signer" [] { ... }
+```
+
+Descriptive names are prose, and prose wants possessives and contractions. Rewrite them: `X's Y` → `the Y of X`, `doesn't` → `does not`, `cannot`/`is not` instead of `can't`/`isn't`.
+
 ### Setup and Teardown
 
 Use `@before-each` and `@after-each` for test fixtures:

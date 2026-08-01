@@ -235,6 +235,22 @@ export def main [name: string] { $"Hello ($name)" }
 
 After `use greet.nu`, call it as `greet "world"` — `main` is replaced by the module name. This applies to `def`, `extern`, and `const`.
 
+### No quote characters in a command name
+
+A quoted `def "…"` name may contain spaces, and that is the whole point of the multi-word form. It must **not** contain an apostrophe, a single quote, a double quote, or a backtick — even though the parser accepts them:
+
+```nushell
+# WRONG — parses fine, breaks the moment anything generates code from the name
+def "the signer's endorsement" [] { ... }
+
+# CORRECT — same meaning, no quote character
+def "the endorsement of the signer" [] { ... }
+```
+
+Why it is not merely a style preference: a command name is *data that other tools put back into source code*. nutest builds its suite descriptor by interpolating every test name into generated Nushell, where the name lands inside a single-quoted span — one apostrophe closes it early and **every test in the file** fails with `nu::parser::unexpected_eof`, pointing at generated code that names nothing you wrote. The same shape bites any generator: `@example` bodies, `help` tables rendered back into a script, a name passed through `nu -c`.
+
+English wants the apostrophe (`the signer's key`, `it's`) so this is a genuine trap, not a rare edge. Rephrase — a possessive always has an `of` form, and a contraction always has a long form.
+
 ---
 
 ## Quick Reference
