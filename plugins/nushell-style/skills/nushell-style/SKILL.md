@@ -235,21 +235,33 @@ export def main [name: string] { $"Hello ($name)" }
 
 After `use greet.nu`, call it as `greet "world"` — `main` is replaced by the module name. This applies to `def`, `extern`, and `const`.
 
-### No quote characters in a command name
+### A command name is prose, not code
 
-A quoted `def "…"` name may contain spaces, and that is the whole point of the multi-word form. It must **not** contain an apostrophe, a single quote, a double quote, or a backtick — even though the parser accepts them:
+A quoted `def "…"` name may contain spaces, and that is the whole point of the multi-word form. Use **letters, digits, spaces and hyphens** — nothing else. Write what the command does, in words. Never embed a code fragment, a type, a literal or an operator in the name:
 
 ```nushell
-# WRONG — parses fine, breaks the moment anything generates code from the name
+# WRONG — a code fragment in the name; says nothing a reader could not get from the body
+def "a record {a: 1} round-trips" [] { ... }
+
+# WRONG — the apostrophe English wants here takes the whole file down (see below)
 def "the signer's endorsement" [] { ... }
 
-# CORRECT — same meaning, no quote character
+# CORRECT — prose, and it survives being re-parsed
+def "a single-field record round-trips" [] { ... }
 def "the endorsement of the signer" [] { ... }
 ```
 
-Why it is not merely a style preference: a command name is *data that other tools put back into source code*. nutest builds its suite descriptor by interpolating every test name into generated Nushell, where the name lands inside a single-quoted span — one apostrophe closes it early and **every test in the file** fails with `nu::parser::unexpected_eof`, pointing at generated code that names nothing you wrote. The same shape bites any generator: `@example` bodies, `help` tables rendered back into a script, a name passed through `nu -c`.
+Why this is not merely a style preference: a command name is *data that other tools put back into source code*. nutest builds its suite descriptor by interpolating every test name into generated Nushell:
 
-English wants the apostrophe (`the signer's key`, `it's`) so this is a genuine trap, not a rare edge. Rephrase — a possessive always has an `of` form, and a contraction always has a long form.
+```nushell
+{ name: "the signer's endorsement", type: "test", execute: { the signer's endorsement } }
+```
+
+The name appears twice, and the second time it is a **bare command call inside a block** — so the parser reads every character of it. The apostrophe opens a string that never closes, and **every test in the file** fails with `nu::parser::unexpected_eof` pointing at generated code that names nothing you wrote. The same shape bites any generator: `@example` bodies, `help` tables rendered back into a script, a name passed through `nu -c`.
+
+Measured, so the rule is not a guess. Breaks the whole file: `'` `` ` `` `"` `(` `)` `[` `]` `|` `#`, and an unbalanced `{`. Survives today: a balanced `{a: 1}` and even `$var`, because the parser matches the longest defined command name first. Do not rely on that second list — it is an accident of how the name happens to lex, it says nothing about the next tool that consumes the name, and a `{a: 1}` name is bad naming regardless of whether it parses.
+
+English wants the apostrophe (`the signer's key`, `it's`), so this is a genuine trap and not a rare edge. Rephrase — a possessive always has an `of` form, and a contraction always has a long form.
 
 ---
 

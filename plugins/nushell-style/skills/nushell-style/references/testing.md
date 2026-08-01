@@ -83,7 +83,13 @@ def "extract-command-name handles simple def" [] { ... }
 def "dependencies excludes calls inside attribute blocks" [] { ... }
 ```
 
-**Never put an apostrophe (or any quote character) in a test name.** A test name is a command name — see the Command Naming Rule in SKILL.md — and nutest interpolates it into generated code inside a single-quoted span. One apostrophe closes that span early and **every test in the file** fails with `nu::parser::unexpected_eof` / "expected closing `'`". The error dump is the generated suite list, so nothing in it names the test that caused it:
+**A test name is prose: letters, digits, spaces and hyphens only.** A test name is a command name — see "A command name is prose, not code" in SKILL.md — and nutest re-parses it. Its suite descriptor interpolates the name twice:
+
+```nushell
+{ name: "the record signer's endorsement", type: "test", execute: { the record signer's endorsement } }
+```
+
+The second one is a bare command call inside a block, so the parser reads every character. An apostrophe there opens a string that never closes, and **every test in the file** fails with `nu::parser::unexpected_eof` / "expected closing `'`". The error dump is the generated suite list, so nothing in it names the test that caused it:
 
 ```nushell
 # WRONG — takes the whole suite file down, 19 tests failing on one name
@@ -93,7 +99,9 @@ def "the endorsement reported is the record signer's" [] { ... }
 def "the endorsement reported belongs to the record signer" [] { ... }
 ```
 
-Descriptive names are prose, and prose wants possessives and contractions. Rewrite them: `X's Y` → `the Y of X`, `doesn't` → `does not`, `cannot`/`is not` instead of `can't`/`isn't`.
+Measured: `'` `` ` `` `"` `(` `)` `[` `]` `|` `#` and an unbalanced `{` each take the file down. A balanced `{a: 1}` and a `$var` happen to survive, because the parser matches the longest defined command name first — but a name carrying a code fragment is bad naming whether or not it parses, and the next generator to read that name need not be so forgiving.
+
+Descriptive names are prose, and prose wants possessives and contractions. Rewrite them: `X's Y` → `the Y of X`, `doesn't` → `does not`, `cannot`/`is not` instead of `can't`/`isn't`. Say what is tested in words rather than pasting the value under test: `a record {a: 1} round-trips` → `a single-field record round-trips`.
 
 ### Setup and Teardown
 
