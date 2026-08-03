@@ -20,7 +20,10 @@ The common space is real, not metaphorical. In a cozy sandbox you and the user s
 The history channel changes everything about the handoff: after the user runs your proposed pipeline, you do not need to ask "what did it print? please paste it." You check:
 
 ```nushell
-history --long | where cwd == $env.PWD | last 5 | select command exit_status duration
+history --long
+| where cwd == $env.PWD
+| last 5
+| select command exit_status duration
 ```
 
 A non-zero `exit_status` tells you it failed before the user types a word. In Claude Code specifically, the user can also run `! <command>` so the output lands directly in the conversation — offer that when the output itself is what you need to see.
@@ -96,8 +99,11 @@ For a user who suspects they delegate too much, the shared state makes it measur
 
 ```nushell
 # what did I actually type this week, vs. delegate?
-history --long | where start_timestamp > ((date now) - 1wk) | get command
-| parse -r '^(?<head>[\w-]+)' | get head | uniq -c | sort-by count -r
+history --long
+| where start_timestamp > ((date now) - 1wk)
+| get command
+| parse --regex '^(?<head>[\w-]+)' | get head
+| uniq --count | sort-by count --reverse
 
 # which past sessions were pure delegation?
 claude-nu sessions --columns user_msg_count,bash_count

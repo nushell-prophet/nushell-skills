@@ -4,22 +4,62 @@ Detailed examples for Nushell pipeline composition.
 
 ## Leading Pipe Operator
 
-Place `|` at the start of continuation lines, left-aligned with `let`:
+Place `|` at the start of continuation lines, indented one level in from the line that opens the pipeline:
 
 ```nushell
 # Preferred
 let row_type = $file_lines
-| each {
-    str trim --right
-    | if $in =~ '^```' { } else { 'text' }
-}
-| scan --fold 'text' {|curr prev| ... }
+    | each {
+        str trim --right
+        | if $in =~ '^```' { } else { 'text' }
+    }
+    | scan --fold 'text' {|curr prev| ... }
 
 # Avoid
 let row_type = $file_lines | each {
     str trim --right | if $in =~ '^```' { } else { 'text' }
 } | scan --fold 'text' {|curr prev| ... }
 ```
+
+A pipeline on the right of `let x = …` is a nested expression, so its `|` sits one level in from the `let`. A top-level pipeline is not nested, so its `|` stays at column 0:
+
+```nushell
+$file_lines | wrap line
+| merge ($row_type | wrap row_type)
+| group-by block_index --to-table
+```
+
+`topiary format --language nu` produces exactly this — the indent follows expression nesting, not the position of `let`.
+
+## One Step Per Line
+
+A new line per `|` is the default. Two cases earn an exception:
+
+**1. The stages read as one action.** `| lines | str trim` is "get clean lines"; `| uniq --count | sort-by count --reverse` is "rank by frequency". The reader takes each group in as a single move, so splitting it adds noise instead of removing it.
+
+```nushell
+# Preferred — one transformation per line, groups left intact
+history --long
+| where start_timestamp > ((date now) - 1wk)
+| get command
+| parse --regex '^(?<head>[\w-]+)' | get head
+| uniq --count | sort-by count --reverse
+
+# Avoid — five distinct steps hidden in one line
+history --long | where start_timestamp > ((date now) - 1wk) | get command | uniq --count | sort-by count --reverse
+```
+
+**2. A short parenthesised subexpression.** These are arguments to a command, not the shape of the pipeline, so they stay inline:
+
+```nushell
+| merge ($row_type | wrap row_type)
+| where {|i| ($i.path | path expand | path exists) }
+let cfg = (open $file | from json)
+```
+
+When a parenthesised subexpression grows past roughly one screen-width, give it its own `let` instead of breaking it across lines.
+
+This is judgement, not a counter. `git branch | lines | str trim` stays on one line because fetching and cleaning are one thought; a three-stage chain that filters, then rewrites, then writes does not. The test is whether a reader must stop and follow each stage separately — not how many `|` the line contains.
 
 ## Other Operators Need Parentheses
 
@@ -33,8 +73,8 @@ let parts = [--config $config_path]
 
 # Preferred: a pipeline, leading `|`
 let parts = [--config $config_path]
-| append (if $verbose { [--verbose] } else { [] })
-| append $script
+    | append (if $verbose { [--verbose] } else { [] })
+    | append $script
 
 # Also correct: parens make the line break legal (leading or trailing operator both work there)
 let parts = (
@@ -161,7 +201,7 @@ Use `$in` for simple single-operation closures. Use short-named parameters (`|b|
 }
 
 # Variable used >2 times - use named parameter
-| each {|r| {start: $r.start, end: $r.end, len: ($r.end - $r.start)} }
+| each {|r| {start: $r.start end: $r.end len: ($r.end - $r.start)} }
 
 # Simple single operation - $in is fine
 | each { $in + 1 }

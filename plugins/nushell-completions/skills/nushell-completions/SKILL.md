@@ -74,7 +74,9 @@ def "nu-complete git branches" [context: string] {
     # split row ' ', not split words — split words breaks on hyphens (my-cmd → [my, cmd])
     let remote = $context | split row ' ' | get 1?
     if $remote != null {
-        git branch --remotes | lines | str trim | where { str starts-with $remote }
+        git branch --remotes
+        | lines | str trim
+        | where { str starts-with $remote }
     } else {
         git branch | lines | str trim
     }
@@ -130,8 +132,8 @@ def "nu-complete commands" [] {
             sort: false  # preserve original order
         }
         completions: [
-            { value: "build", description: "Build the project" }
-            { value: "test", description: "Run tests" }
+            {value: "build" description: "Build the project"}
+            {value: "test" description: "Run tests"}
         ]
     }
 }
@@ -168,7 +170,7 @@ export extern main [...]
 ```nu
 def completer [] { }                              # simple
 def completer [context: string] { }               # with command line
-def completer [context: string, pos: int] { }     # with cursor position
+def completer [context: string pos: int] { }      # with cursor position
 def completer [spans: list<string>] { }           # for @complete (list of args)
 ```
 

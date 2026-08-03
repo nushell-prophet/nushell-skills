@@ -44,14 +44,14 @@ for event in (watch . --glob=**/*.rs) { cargo test }
 ### `generate` with pipeline input — stateful `each` (v0.102)
 
 ```nushell
-[1 2 3 4] | generate {|item, acc| {out: ($item + $acc), next: ($item + $acc)} } 0
+[1 2 3 4] | generate {|item acc| {out: ($item + $acc) next: ($item + $acc)} } 0
 ```
 
 ### `watch` streams events as a table (v0.107)
 
 ```nushell
 # before: required a closure
-watch . {|op, path| if $op == Write { lint $path } }
+watch . {|op path| if $op == Write { lint $path } }
 
 # after: pipe into normal commands
 watch . | where operation == Write and path like "*.md" | each { md-lint $in.path }
@@ -107,7 +107,7 @@ def process [] {
 `finally` receives the value or error:
 
 ```nushell
-try { 111 } finally {|v| print $v}
+try { 111 } finally {|v| print $v }
 ```
 
 ### Simplified `error make` (v0.110)
@@ -131,7 +131,7 @@ try { error make "inner" } catch { error make "outer" }
 error make {
     msg: "parse error"
     src: {path: "/tmp/config.yaml"}
-    labels: [{text: "bad value", span: {start: 10, end: 15}}]
+    labels: [{text: "bad value" span: {start: 10 end: 15}}]
 }
 ```
 
@@ -202,7 +202,7 @@ Lazily streamed.
 ### `chunk-by` — group consecutive elements (v0.101)
 
 ```nushell
-[1 3 -2 -2 0 1 2] | chunk-by {|x| $x >= 0}
+[1 3 -2 -2 0 1 2] | chunk-by {|x| $x >= 0 }
 # => [[1, 3], [-2, -2], [0, 1, 2]]
 ```
 
@@ -213,7 +213,7 @@ Lazily streamed.
 $record | transpose k v | where v != null | transpose --header-row
 
 # after
-{a: 1, b: null, c: 3} | compact   # => {a: 1, c: 3}
+{a: 1 b: null c: 3} | compact   # => {a: 1, c: 3}
 ```
 
 ### `default --empty` (v0.103)
@@ -290,7 +290,7 @@ Eliminates null-guard branches.
 
 ```nushell
 let extra = if $cond { {key: val} } else { null }
-{base: 1, ...$extra}   # null acts as empty record
+{base: 1 ...$extra}   # null acts as empty record
 
 [1 2 ...(null)]   # => [1 2]
 ```
@@ -299,7 +299,7 @@ let extra = if $cond { {key: val} } else { null }
 
 ```nushell
 let col = "name"
-[[$col, age]; [Alice, 30]]
+[[$col age]; [Alice 30]]
 ```
 
 ### Built-in commands accept `null` for optional params (v0.112)
@@ -328,7 +328,7 @@ Escapes for the `fancy-regex` flavor Nushell uses everywhere — see [regex.md](
 ### `str replace` with closure (v0.109)
 
 ```nushell
-"foo123bar" | str replace --regex '\d+' {|m| $m.0 | into int | $in * 2 | into string}
+"foo123bar" | str replace --regex '\d+' {|m| $m.0 | into int | $in * 2 | into string }
 ```
 
 ### `parse` with `_` placeholder (v0.105)
@@ -404,14 +404,14 @@ date from-human "next Friday at 6pm"
 ### `into datetime` from record (v0.104)
 
 ```nushell
-{year: 2025, month: 3, day: 30, hour: 12, minute: 15, second: 59, timezone: "+02:00"}
+{year: 2025 month: 3 day: 30 hour: 12 minute: 15 second: 59 timezone: "+02:00"}
 | into datetime
 ```
 
 ### `into duration` from record, float, or hh:mm:ss (v0.104, v0.112)
 
 ```nushell
-{week: 10, day: 1, hour: 2} | into duration
+{week: 10 day: 1 hour: 2} | into duration
 1.5 | into duration --unit day
 "16:59:58" | into duration    # => 16hr 59min 58sec
 ```
@@ -555,10 +555,10 @@ def go [direction] { ... }
 ```nushell
 # before: separate completer function
 def dirs [] { [left up right down] }
-def go [dir: string@dirs] {}
+def go [dir: string@dirs] { }
 
 # after: inline
-def go [dir: string@[left up right down]] {}
+def go [dir: string@[left up right down]] { }
 ```
 
 ### Substring algorithm (v0.104)
@@ -608,7 +608,7 @@ editable before submission.
 ```nushell
 $env.config.abbreviations = {
     gco: "git checkout"
-    ll:  "ls -la"
+    ll: "ls -la"
 }
 # typing `gco<space>` expands to `git checkout `
 ```
@@ -727,7 +727,7 @@ inclusion in source files.
 `--tabs` / `--pretty`, table columns are now aligned:
 
 ```nushell
-[[name, age]; [Alice, 30], [Bob, 25]] | to nuon --pretty
+[[name age]; [Alice 30] [Bob 25]] | to nuon --pretty
 # [
 #   [name,  age];
 #   [Alice, 30],
@@ -820,7 +820,7 @@ Equivalent to jq `..`. Flattens nested structures.
 
 ```nushell
 use std-rfc/iter *
-{a: {b: 1, c: [2, 3]}} | recurse | where ($it.item | describe) == "int"
+{a: {b: 1 c: [2 3]}} | recurse | where ($it.item | describe) == "int"
 ```
 
 ### `std-rfc/iter only` — assert exactly one element (v0.106)
@@ -983,7 +983,7 @@ Enable nushell-level backtraces for debugging error chains.
 
 ```nushell
 # point errors at pipeline source
-ls | metadata access {|m| error make {msg: "bad", label: {text: "here", span: $m.span}}}
+ls | metadata access {|m| error make {msg: "bad" label: {text: "here" span: $m.span}} }
 
 # enable path rendering in custom tables
 glob * | wrap path | metadata set --path-columns [path]
@@ -995,7 +995,7 @@ Tag columns that must keep their width when the terminal is narrow —
 untagged wide columns get truncated first:
 
 ```nushell
-ps -l | select name command pid | metadata set --table-width-priority-columns [pid]
+ps --long | select name command pid | metadata set --table-width-priority-columns [pid]
 ```
 
 ### `metadata access` closure can mutate caller env (v0.113)

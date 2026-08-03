@@ -26,7 +26,7 @@ NUON is Nushell's native data format—a superset of JSON that supports most Nus
 
 ```nushell
 # Convert to NUON
-{name: 'test', count: 42} | to nuon
+{name: 'test' count: 42} | to nuon
 
 # Convert from NUON
 '{name: test, count: 42}' | from nuon
@@ -71,8 +71,8 @@ $config.timeout  # => 30sec (duration type, not string or number)
 ```nushell
 # Embed structured data directly (this IS valid NUON)
 const endpoints = [
-    {host: 'api.example.com', port: 443, timeout: 10sec}
-    {host: 'backup.example.com', port: 443, timeout: 30sec}
+    {host: 'api.example.com' port: 443 timeout: 10sec}
+    {host: 'backup.example.com' port: 443 timeout: 30sec}
 ]
 ```
 
@@ -130,8 +130,8 @@ open results.nuon | where status == 'passed'
 # Nested structures
 {
     users: [
-        {name: 'alice', role: 'admin'}
-        {name: 'bob', role: 'user'}
+        {name: 'alice' role: 'admin'}
+        {name: 'bob' role: 'user'}
     ]
     settings: {
         theme: 'dark'
@@ -154,8 +154,8 @@ Tables are lists of records with consistent keys:
 
 # Or as list of records
 [
-    {name: 'Alice', age: 30}
-    {name: 'Bob', age: 25}
+    {name: 'Alice' age: 30}
+    {name: 'Bob' age: 25}
 ]
 ```
 
@@ -165,11 +165,11 @@ Tables are lists of records with consistent keys:
 
 ```nushell
 # Preferred: native types preserved
-{timeout: 30sec, size: 10mb} | to nuon
+{timeout: 30sec size: 10mb} | to nuon
 # => {timeout: 30sec, size: 10mb}
 
 # Avoid: loses type information
-{timeout: 30sec, size: 10mb} | to json
+{timeout: 30sec size: 10mb} | to json
 # => {"timeout": 30000000000, "size": 10000000}
 ```
 
@@ -226,7 +226,7 @@ $data | to nuon --tabs      # use tabs instead of spaces
 With any indentation flag, `to nuon` (0.114+) aligns table columns:
 
 ```nushell
-[[name, age]; [Alice, 30], [Bob, 25]] | to nuon --pretty
+[[name age]; [Alice 30] [Bob 25]] | to nuon --pretty
 # [
 #   [name,  age];
 #   [Alice, 30],

@@ -100,6 +100,8 @@ Write code that an experienced nushell user can quickly apprehend. Leverage impl
 | List element ops | `$list \| str trim` | `$list \| each { str trim }` |
 | Flags in code | `save --force` | `save -f` (short flags) |
 
+Always spell Nushell flags out in full: `uniq --count`, `sort-by --reverse`, `parse --regex`, `print --stderr`, `ps --long`. Short flags are for typing at the prompt, not for code someone else reads. External commands keep their own idiom — `git commit -am`, `rg -n` — since their flags are not Nushell's to style. A `-x` after `--` is data, not a flag, and stays as written.
+
 ### Skip `each` When Commands Accept `list<string>`
 
 Many commands accept both `string` and `list<string>` input — they operate on each element automatically. Wrapping them in `each` is redundant.
@@ -132,7 +134,41 @@ $list | url encode                   # $list | each { url encode }
 ## Pipeline Principles
 
 ### Leading `|`
-Place `|` at start of continuation lines, aligned with `let`.
+Place `|` at the start of continuation lines, indented one level in from the line that opens the pipeline. A top-level pipeline keeps its `|` at column 0; a pipeline on the right of `let x = …` is a nested expression, so its `|` sits 4 spaces in from the `let`. This is what `topiary format --language nu` produces.
+
+```nushell
+# Top level — column 0
+$file_lines | wrap line
+| merge ($row_type | wrap row_type)
+| group-by block_index --to-table
+
+# Right-hand side of `let` — indented one level
+let row_type = $file_lines
+    | each { str trim --right }
+    | scan --fold 'text' {|curr prev| $curr }
+```
+
+### One Step Per Line
+A new line per `|` is the default. Several `|` on one line are allowed only in two cases:
+
+1. **The stages read as one action.** `| lines | str trim` is "get clean lines", `| uniq --count | sort-by count --reverse` is "rank by frequency". The reader takes them in as a single move, so splitting them adds noise.
+2. **A short parenthesised subexpression** — `(open $file | from json)`, `($row_type | wrap row_type)`. These are arguments, not the shape of the pipeline.
+
+Everywhere else, when each stage is a separate transformation the reader has to follow one at a time, give it its own line.
+
+```nushell
+# Preferred — one transformation per line, groups kept intact
+history --long
+| where start_timestamp > ((date now) - 1wk)
+| get command
+| parse --regex '^(?<head>[\w-]+)' | get head
+| uniq --count | sort-by count --reverse
+
+# Avoid — five distinct steps hidden in one line
+history --long | where start_timestamp > ((date now) - 1wk) | get command | uniq --count | sort-by count --reverse
+```
+
+Judgement, not a counter: `git branch | lines | str trim` stays on one line because fetching and cleaning are one thought. The test is whether a reader must stop and follow each stage separately, not how many `|` there are.
 
 `|` is the **only** operator that continues a line by itself. `++`, `+`, `and`, `or` and the rest are a parse error when the expression spans lines — leading gives ``Command `++` not found``, trailing gives `Incomplete math expression`. Wrap the whole expression in `( … )`, or rewrite it as a pipeline:
 
@@ -143,7 +179,7 @@ let a = [x y]
 
 # Preferred — a pipeline
 let a = [x y]
-| append (if $flag { [z] } else { [] })
+    | append (if $flag { [z] } else { [] })
 
 # Also fine — parens make the line break legal
 let a = (

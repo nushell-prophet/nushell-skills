@@ -36,7 +36,7 @@ So before trusting the builtin, verify: `history --long | last 2` must show the 
 ```nu
 open ($nu.history-path | str replace 'txt' 'sqlite3') | get history
 | last 20
-| update start_timestamp {$in * 1_000_000 | into datetime}   # stored as unix epoch ms
+| update start_timestamp { $in * 1_000_000 | into datetime } # stored as unix epoch ms
 | select id start_timestamp cwd command_line exit_status
 ```
 
@@ -107,7 +107,11 @@ The same shape works for any field:
 
 ```nu
 # Fix a typo across history
-history --long | where command =~ 'mistpyed' | update command 'mistyped' | select item_id command | update-entries
+history --long
+| where command =~ 'mistpyed'
+| update command 'mistyped'
+| select item_id command
+| update-entries
 ```
 
 ### Remove entries

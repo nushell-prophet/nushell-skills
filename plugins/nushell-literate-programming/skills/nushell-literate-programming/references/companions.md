@@ -11,7 +11,8 @@ Load with `use nu-goodies *`. The commands below all feed the same `# =>` annota
 Takes the last piped command, renders its output, comments every output line with `# =>`, wraps the command in `nu -c '...'`, and copies the whole thing to the clipboard:
 
 ```nushell
-ls nu-goodies | first 2 | reject modified | example
+ls nu-goodies | first 2 | reject modified
+| example
 ```
 
 Clipboard now holds a runnable, self-documenting snippet — paste it into a chat, an issue, or a numd document. Flags: `--bare` (raw nushell, no `nu -c` wrap — the right form for pasting into a numd block), `--no-comment`, `--no-copy`, `--abbreviated N`.
@@ -69,7 +70,9 @@ Useful columns beyond the defaults (`--columns` or `--all-columns`): `bash_comma
 The flow that turns a working conversation into a permanent document:
 
 ```nushell
-claude-nu sessions | sort-by last_timestamp | last | claude-nu export-session --to docs/sessions
+claude-nu sessions
+| sort-by last_timestamp | last
+| claude-nu export-session --to docs/sessions
 ```
 
 Without `--to`, `export-session` returns `{session, date, topic, markdown}` — read the text before anything touches the disk. With `--to` it writes `<dir>/yyyymmdd-topic.md` with collision-safe names and returns `{session, filepath}`; the directory has no default, naming it is what asks for the write. Search first, then export: `claude-nu messages 'auth refactor' | claude-nu export-session`.
@@ -86,7 +89,7 @@ claude-nu sessions | claude-nu messages | in-vd                   # or explore t
 ```nushell
 use claude-nu/ask.nu *
 open error.log | ask 'what is the likely root cause?'
-ask --collect 'one-line summary of git rebase' | save -f note.md
+ask --collect 'one-line summary of git rebase' | save --force note.md
 ```
 
 Merges the prompt with piped stdin, streams the answer live, `--collect` returns it as a string for further piping, `--here` runs in the project directory so Claude sees the repo context. This makes the AI a composable pipeline stage — the terminal-native version of "ask a quick question".

@@ -116,7 +116,7 @@ timeit { ls }   # ok
 ### Closure params must be terminated by `|` (v0.100)
 
 ```nushell
-{ |a| $a }  # ok
+{|a| $a } # ok
 # { |a $a }  # parse error
 ```
 
@@ -241,7 +241,7 @@ them explicitly:
 ```nushell
 export module foo {
     export module sub {
-        export def baz [] {}
+        export def baz [] { }
     }
     export use sub    # required in 0.114 to keep `foo sub baz` working
 }
@@ -288,7 +288,7 @@ to pass a literal `--` as a value, write it twice (`cmd -- --`). For
 `def --wrapped` and `extern` commands, `--` is still passed through unchanged.
 
 ```nushell
-def greet [--upper, name] { if $upper { $name | str uppercase } else { $name } }
+def greet [--upper name] { if $upper { $name | str uppercase } else { $name } }
 greet -- -Alice   # "-Alice" is a positional value, not an unknown flag
 ```
 
@@ -320,7 +320,7 @@ $record | get Content-Type!    # case-insensitive (! suffix)
 ### `match` no longer executes returned closures (v0.103)
 
 ```nushell
-match 1 { _ => {|| print hi} }  # returns closure (was: executed it)
+match 1 { _ => {|| print hi } } # returns closure (was: executed it)
 ```
 
 ### `split column` uses 0-indexed names (v0.109)

@@ -111,7 +111,7 @@ Use `@before-each` and `@after-each` for test fixtures:
 @before-each
 def setup [] {
     let temp = mktemp --directory
-    { temp: $temp }
+    {temp: $temp}
 }
 
 @after-each
@@ -158,19 +158,23 @@ Snapshot tests run commands and save output to files committed to git. `git diff
 # and renders — see toolkit.md "Output Mode: auto-detect, failures-only".
 def collect-integration-results [--update]: nothing -> table {
     let results = [
-        (run-snapshot-test 'dependencies' 'tests/output/deps.yaml' {
-            glob tests/assets/*.nu | dependencies ...$in | to yaml
-        })
-        (run-snapshot-test 'embeds-remove' 'tests/output/clean.nu' {
-            open tests/assets/dirty.nu | embeds-remove
-        })
+        (
+            run-snapshot-test 'dependencies' 'tests/output/deps.yaml' {
+                glob tests/assets/*.nu | dependencies ...$in | to yaml
+            }
+        )
+        (
+            run-snapshot-test 'embeds-remove' 'tests/output/clean.nu' {
+                open tests/assets/dirty.nu | embeds-remove
+            }
+        )
     ]
 
     if $update {
         $results | where status == 'changed' | each {|r|
             ^git add $r.file
             # stderr, so the note never corrupts JSON on stdout in machine mode
-            print -e $"(ansi green)Staged:(ansi reset) ($r.file)"
+            print --stderr $"(ansi green)Staged:(ansi reset) ($r.file)"
         }
     }
 
@@ -188,9 +192,9 @@ def run-snapshot-test [name: string output_file: string command_src: closure] {
 
     # Embed source code as header comment for self-documentation
     let command_text = view source $command_src
-    | lines | skip | drop | str trim
-    | each { $'# ($in)' }
-    | str join (char nl)
+        | lines | skip | drop | str trim
+        | each { $'# ($in)' }
+        | str join (char nl)
 
     try {
         $command_text + (char nl) + (do $command_src)
@@ -235,9 +239,11 @@ glob z_examples/*/*.md --exclude [*/*_with_no_output* */*_customized*]
     }
 }
 # Chain additional test variants
-| append (run-integration-test 'variant_width20' {
-    numd run $file --echo --eval '$env.numd.table-width = 20' | save --force $target
-})
+| append (
+    run-integration-test 'variant_width20' {
+        numd run $file --echo --eval '$env.numd.table-width = 20' | save --force $target
+    }
+)
 ```
 
 ## Test Organization
@@ -356,16 +362,16 @@ glob module/*.nu
 run-snapshot-test 'coverage' 'tests/output/coverage.yaml' {
     # Public API from mod.nu
     let public_api = open module/mod.nu
-    | lines
-    | where $it =~ '^\s+"'
-    | each { str trim | str replace --regex '^"([^"]+)".*' '$1' }
+        | lines
+        | where $it =~ '^\s+"'
+        | each { str trim | str replace --regex '^"([^"]+)".*' '$1' }
 
     # Find untested public commands
     let untested = glob module/*.nu tests/*.nu
-    | dependencies ...$in
-    | filter-commands-with-no-tests
-    | where caller in $public_api
-    | select caller
+        | dependencies ...$in
+        | filter-commands-with-no-tests
+        | where caller in $public_api
+        | select caller
 
     {
         public_api_count: ($public_api | length)
