@@ -317,6 +317,7 @@ English wants the apostrophe (`the signer's key`, `it's`), so this is a genuine 
 - Combine consecutive `each` closures when operations can be piped
 - Define data first, then filter
 - Include type signatures: `]: input -> output {`
+- Document non-obvious flags/parameters with a trailing `# comment` — it becomes their `help` description (see [formatting.md](references/formatting.md))
 - Use `@example` attributes (nutest)
 - Use `const` for static data
 - Keep custom commands focused
