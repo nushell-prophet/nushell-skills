@@ -145,3 +145,4 @@ Renders markdown documentation for a module (all commands) or one command (`numd
 - **Trailing comment on a block's last line is stripped** before execution — don't end a block with a line whose `#` is not really a comment.
 - **The `# =>` capture is width-sensitive**: tables render at `$env.numd.table-width` (default 120). Pin it via `--eval` for stable diffs across terminals.
 - **`run-once` is one-shot** — after the first run the fence says `no-run` and the output is frozen; re-running won't refresh it.
+- **`open <file>.md` is not the file's text.** Since Nushell 0.112 `open` runs `from md` on a `.md` path and returns a table of `element`/`content` rows. Inside a `nu` block that reads a markdown file — including the doc being processed — use `open --raw`, or string commands fail with `Input type not supported.` and `open x.md | save y.md` silently writes the parsed AST as a markdown table.

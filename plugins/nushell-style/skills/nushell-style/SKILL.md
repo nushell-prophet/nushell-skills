@@ -63,6 +63,25 @@ $lines | where $it =~ '^(?!\s*#)'                 # ✓ drop comment lines, no `
 
 The one exception is `idx search --regex`, which uses the ripgrep engine and silently matches nothing for those constructs. See [regex.md](references/regex.md).
 
+## Agent Tip: `open file.md` Returns Structured Data, Not Text
+
+Since v0.112 `open` runs `from md` on a `.md` path, so you get a table of `element`/`content` rows instead of the file's text. Use `--raw` whenever you want the text — it yields a byte stream, which `lines`, `str replace` and `save` all accept.
+
+```nushell
+open README.md                       # table<element: string, content: string, content_span: record<...>>
+open README.md --raw                 # byte stream — the actual text
+open README.md --raw | from md --verbose   # full AST (the pre-0.113 shape)
+```
+
+Two failure modes, and only one of them is loud:
+
+```nushell
+open x.md | str replace 'a' 'b'      # ✗ Error: Input type not supported.
+open x.md | save y.md                # ✗ silent — writes the parsed AST as a markdown table
+```
+
+`hide 'from md'` turns the conversion off for the rest of the session.
+
 ---
 
 ## Conciseness for Advanced Users
