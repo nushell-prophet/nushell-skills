@@ -150,6 +150,20 @@ export extern "git push" [
 ]
 ```
 
+## Never Declare `--help`
+
+Nushell intercepts `--help` and `-h` for anything carrying a signature — an `extern` included — and prints the signature instead of running the binary. Declaring the flag therefore breaks the tool's own help, silently:
+
+```nu
+# ❌ WRONG — `fd --help` now prints `Usage: > fd {flags} (pattern) ...(args)`
+export extern main [ pattern?: string --help(-h) --hidden ]
+
+# ✅ CORRECT — leave it out; nushell passes --help and -h through to the binary
+export extern main [ pattern?: string --hidden ]
+```
+
+Leave it undeclared even though the tool's own `--help` output lists it. That listing is exactly the trap: the natural move is to declare every flag you see, and three separate agents writing three separate completion files each reproduced this bug independently, breaking `hx`, `fd`, `chafa`, `zellij`, `lazygit`, `rg`, `vd` and `delta`.
+
 ## Module Naming Rule
 
 When the file is named after the command (e.g., `chafa.nu`), the extern **must** be named `main`:
