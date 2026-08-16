@@ -1,6 +1,6 @@
 # Regex Flavor: fancy-regex
 
-Nushell's built-in regex engine is [`fancy-regex`](https://docs.rs/fancy-regex) (0.18 as of Nushell 0.114), **not** the Rust `regex` crate. Nushell switched in 0.67 ([#6227](https://github.com/nushell/nushell/pull/6227)) and has stayed on it since.
+Nushell's built-in regex engine is [`fancy-regex`](https://docs.rs/fancy-regex) (0.19 as of Nushell 0.115), **not** the Rust `regex` crate. Nushell switched in 0.67 ([#6227](https://github.com/nushell/nushell/pull/6227)) and has stayed on it since.
 
 This matters because most "Rust regex" advice says lookaround and backreferences are impossible. In Nushell they work. fancy-regex is a superset: it hands plain patterns to the `regex` crate and runs a backtracking engine only for the extra features.
 
@@ -56,6 +56,8 @@ If you need lookaround over indexed files, filter afterwards with `where line =~
 ## Cost note
 
 Plain patterns keep the `regex` crate's linear-time guarantee. A pattern using lookaround, backreferences, or recursion drops to backtracking, so its worst case is exponential in the input length. Fine for lines and filenames; think twice before pointing one at a multi-megabyte string.
+
+Compiling the pattern is not a per-call cost: since 0.115 the built-in commands with a `--regex` flag reuse compiled patterns from an LRU cache ([#18797](https://github.com/nushell/nushell/pull/18797)), so the same pattern in a tight loop is built once, not once per iteration.
 
 ## Errors
 

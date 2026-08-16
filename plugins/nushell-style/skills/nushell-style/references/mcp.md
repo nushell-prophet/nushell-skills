@@ -58,6 +58,8 @@ $history | last   # most recent output
 
 Ring buffer, 100 entries by default. Configure with `$env.NU_MCP_HISTORY_LIMIT`.
 
+**`$ans` does not work here** — 0.115's last-result variable is filled only by the interactive REPL loop, so in an MCP session it parses but stays `null`, even after setting `$env.config.max_last_result_size` (which defaults to `0b` anyway). The session reports `$nu.is-interactive` as `true`, which makes the opposite look plausible. Use `$history` for the previous result.
+
 **Truncation** — on by default: responses larger than 10kb are truncated, with the full output still stored in `$history`. Adjust the limit with `$env.NU_MCP_OUTPUT_LIMIT`:
 
 ```nu

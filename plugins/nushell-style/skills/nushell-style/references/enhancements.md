@@ -1,4 +1,4 @@
-# New Nushell Features for Better Scripts (0.100 → 0.114)
+# New Nushell Features for Better Scripts (0.100 → 0.115)
 
 Modern idioms and new capabilities to improve existing Nushell code.
 Version noted as `(v0.NNN)`.
@@ -312,6 +312,58 @@ wraps-first      # => 1
 wraps-first 2    # => [1, 2]
 ```
 
+### `any` / `all` accept row conditions (v0.115)
+
+Same syntax as `where` — reference columns directly, or use `$it`. Closures
+still work for anything longer.
+
+```nushell
+[9 8 7 6] | enumerate | any item == index * 2   # => true
+[1sec 1min 1hr] | all ($it | describe) == 'duration'   # => true
+```
+
+### `take while` / `take until --include` (v0.115)
+
+`--include (-i) $n` keeps `n` more items after the point where the stream
+would have stopped — the usual "and the row that ended it" case.
+
+```nushell
+[1 2 3 4 5] | take while {|x| $x < 3 } --include 1     # => [1, 2, 3]
+[1 2 3 4 5 6] | take until {|x| $x > 3 } --include 2   # => [1, 2, 3, 4, 5]
+```
+
+### `filesize` arguments on `chunks` / `first` / `last` / `take` / `skip` / `drop` (v0.115)
+
+`drop` also works on `binary` input now. Splitting a file by size no longer
+needs a byte count in a variable.
+
+```nushell
+let bytes = 0x[00 01 02 03 04 05 06 07]
+$bytes | chunks 3b | length   # => 3
+$bytes | first 2b             # => 2 bytes
+$bytes | drop 3b              # => 5 bytes
+
+# split a big file into 10MiB parts
+open --raw file.7z | chunks 10MiB | enumerate | each {|c|
+    $c.item | save $"file.7z.($c.index + 1)"
+}
+```
+
+### Math commands on records with list columns (v0.115)
+
+Reducing commands (`math avg/sum/product/max/min/median/mode/stddev/variance`)
+and element-wise ones (`math abs/cbrt/ceil/floor/sqrt/round/log`) now handle a
+record whose columns are lists, including uneven lengths. An optional cell path
+restricts the operation to named columns; the rest pass through untouched.
+
+```nushell
+{alice: [0.1 0.6 0.2] bob: [0.8 0.3 0.2 0.9]} | math avg
+# => {alice: 0.3, bob: 0.55}
+
+{alice: [1 2 3] bob: [4 5 6]} | math avg alice
+# => {alice: 2.0, bob: [4, 5, 6]}
+```
+
 ---
 
 ## Strings & Parsing
@@ -377,7 +429,7 @@ rightmost — the classic "separate the version suffix" case:
 'some-package-1.0' | split row '-' --number 2 --right   # [some-package, 1.0]
 ```
 
-### SemVer as a first-class value (v0.114)
+### SemVer as a first-class value (v0.114, extended v0.115)
 
 `into semver` parses; the value sorts correctly, decomposes with
 `into record`, rebuilds from a record, bumps without string surgery, and
@@ -390,6 +442,29 @@ matches ranges. Replaces `split row '.' | into int` sorting hacks.
 '1.2.3' | into semver | $in in ('>=1.0.0' | into semver-range)  # => true
 '1.2.3-alpha.1+b.2' | into semver | into record  # major/minor/patch/pre/build
 ```
+
+Since 0.115 the values also compare with `==`, `!=`, `<`, `<=`, `>`, `>=`, so
+version gates read like ordinary conditions. A plain string on the right-hand
+side is accepted when it parses as a semver.
+
+```nushell
+('2.0.1' | into semver) > ('1.9.9' | into semver)   # => true
+('2.0.1' | into semver) > '1.9.9'                   # => true
+('1.0.0-alpha' | into semver) < ('1.0.0' | into semver)   # => true
+```
+
+Also new in 0.115:
+
+- `into semver` / `into semver-range` take `--loose` for `v`-style prefixes —
+  `v1.2.3`, `v.1.2.3`, `v:1.2.3`, `v-1.2.3`, `v_1.2.3`. `into record` then
+  carries the prefix in a `prefix` field.
+- `into semver` accepts a list, and a cell path to convert in place:
+  `$nu.os-info | into semver kernel_version`, `["1.2.0" "0.3.12"] | into semver`.
+- A single semver no longer renders as a one-row table, and semver values print
+  in `cyan_bold`.
+
+Note: semver is a custom value, so `to nuon` on it fails. Convert with
+`into string` or `into record` before serializing.
 
 ---
 
@@ -468,6 +543,51 @@ Returns Rust type, Nushell type, and value.
 
 ```nushell
 const val = [a b c] | get 2  # works at parse time
+```
+
+### `external_arg` parameter type (v0.115)
+
+Takes an argument the way an external command would: no int/bool coercion, the
+raw text arrives typed as `glob`. Useful for wrappers that forward arguments to
+another tool.
+
+```nushell
+# script.nu
+def main [a: external_arg, ...rest: external_arg] {
+    $"($a) ($a | describe) | ($rest | describe)"
+}
+```
+
+```nushell
+nu script.nu 0001 true 007
+# => 0001 glob | list<glob>     ("0001" stays a string, not 1)
+
+nu script.nu 0001 -- --verbose 'x y'
+# => rest gets ["--verbose", "x y"]
+```
+
+### `scope` reports local scopes, `scope commands` reports deprecations (v0.115)
+
+`scope variables` / `commands` / `aliases` / `modules` / `externs` now list
+what is defined in the current block as well as the global scope, so
+introspection inside `do`, `if`, `for`, or a custom command finally sees the
+local names.
+
+```nushell
+let a = 1
+do { let b = 2; scope variables | where name in ["$a" "$b"] | get name }
+# => [$a, $b]
+
+do { def local-cmd [] { 1 }; scope commands | where name == 'local-cmd' | length }
+# => 1  (0 again after the block ends)
+```
+
+`scope commands` also carries `deprecation_info` — deprecated commands and
+flags are now machine-readable:
+
+```nushell
+scope commands | where name == "str downcase" | first | get deprecation_info.0.help
+# => Use `str lowercase` instead.
 ```
 
 ---
@@ -695,6 +815,56 @@ Now defaults to `--stdout` and reports `false` when output is piped,
 captured, or redirected — `if (is-terminal) { fancy } else { plain }` finally
 works in all four cases (`| $in`, `o> file`, subexpression capture, terminal).
 
+### `$ans` — the last REPL result (v0.115)
+
+A record describing the previous REPL entry. **REPL only** — it is not
+populated in scripts or `nu -c`. `ans` is now a reserved name, so `let ans =
+...` in existing scripts has to be renamed.
+
+```nushell
+$ans.last        # the previous pipeline's value
+$ans.exit_code   # int, like $env.LAST_EXIT_CODE
+$ans.duration    # duration
+$ans.command     # the line you typed, as a string
+```
+
+Storing the output is opt-in: `$env.config.max_last_result_size` is a filesize
+and defaults to `0b`, which omits the `last` key entirely — probe it with
+`$ans.last?`. The rest of the record is always there. Set the size to rescue an
+expensive pipeline you forgot to bind:
+
+```nushell
+$env.config.max_last_result_size = 10mb
+slow-thing | complete    # ran for 15 minutes
+let saved = $ans.last    # no re-run
+```
+
+Output over the limit is truncated, with a warning when you read it.
+
+### Constant expressions in `match` arms (v0.115)
+
+An arm pattern may now be a parenthesized const expression, so a path or prefix
+kept in a `const` can be matched without a chain of `if`s.
+
+```nushell
+match "test" { ('t' + 'es' + 't') => { 'OK' } }   # => OK
+
+const ROOT = '/srv/app'
+match $dir {
+    ($ROOT + '/logs') => { rotate }
+    ($ROOT + '/cache') => { purge }
+}
+```
+
+### `nu --commands` takes script arguments after `--` (v0.115)
+
+When the command string defines `main`, everything after `--` is passed to it.
+
+```nushell
+nu --commands 'def main [name: string, ...rest] { $"hi ($name) ($rest)" }' -- world a b
+# => hi world [a, b]
+```
+
 ---
 
 ## Serialization & Formats
@@ -735,10 +905,34 @@ inclusion in source files.
 # ]
 ```
 
-### KDL format support (v0.114)
+### KDL format support (v0.114, reworked v0.115)
 
-`from kdl` / `to kdl` (KDL v2.0.0). Nodes become
-`{name, args, props, children}` rows.
+`from kdl` / `to kdl`. Two data models, each the default on one side:
+
+- `from kdl` defaults to `--format nodes` — a list of `{name, args, props,
+  children}` rows, which is what a real config document looks like.
+- `to kdl` defaults to `--format jik` ([JSON-in-KDL][jik]) — one top-level `-`
+  node, so records and lists serialize predictably. This replaced the 0.114
+  heuristic that flattened values under synthetic node names like `root`.
+
+`--spec 1` / `--spec 2` picks the KDL language version (default 2). Parsing is
+strict: v1 keywords (`true`/`false`/`null`) and v2 keywords
+(`#true`/`#false`/`#null`) are not mixed.
+
+```nushell
+{a: 1 b: true} | to kdl              # => - a=1 b=#true
+{a: 1 b: true} | to kdl --spec 1     # => - a=1 b=true
+'node one; node two' | from kdl | to kdl   # round-trips as two nodes
+```
+
+Nu type annotations survive the round trip, the same way YAML tags do:
+
+```nushell
+'node (filesize)1024' | from kdl | get 0.args.0   # => 1.0 kB (a filesize)
+{size: 1kb} | to kdl                              # => - size=(filesize)1000
+```
+
+[jik]: https://github.com/kdl-org/kdl/blob/main/JSON-IN-KDL.md
 
 ### `url encode` / `url decode` handle non-UTF-8 (v0.114)
 
@@ -781,6 +975,16 @@ open --raw README.md       # raw string
 
 ```nushell
 [a b] | to text --no-newline  # no trailing newline
+```
+
+### `to txt` alias, `into binary` from duration (v0.115)
+
+`to txt` is a second name for `to text`, following the `to yaml` / `to yml`
+pattern. `into binary` now accepts durations.
+
+```nushell
+[a b c] | to txt   # same as: to text
+1sec | into binary # => 8 bytes, little-endian nanoseconds
 ```
 
 ### `format number --no-prefix` (v0.106)
@@ -905,6 +1109,17 @@ try {
 } catch { pb error } finally { pb clear }
 ```
 
+### `std-rfc/date floor` / `date ceil` (v0.115)
+
+Round a datetime down or up to a duration boundary — bucketing timestamps
+without arithmetic on the parts.
+
+```nushell
+use std-rfc/date *
+2026-07-15T12:11:10-04:00 | date floor 1hr   # => 2026-07-15 12:00:00
+2026-07-15T12:11:10-04:00 | date ceil 1hr    # => 2026-07-15 13:00:00
+```
+
 ### More std commands stream (v0.114)
 
 `std/iter intersperse` / `flat-map`, `std-rfc/conversions into list`, and
@@ -964,16 +1179,24 @@ idx find "skill"                       # fuzzy match files and dirs
 idx search --regex 'TODO\(\w+\)'       # content search across indexed files
 idx dirs                               # which directories are indexed
 idx status                             # memory / counts
-idx export ~/.cache/idx.bin            # persist
-idx import ~/.cache/idx.bin            # restore
 idx drop                               # free memory
 ```
 
 0.114 refinements: `idx init` content-indexes by default; hits print relative
-to cwd; imported snapshots are fully queryable; `idx search` takes `[` / `?`
-literally (globs still filter *which files* to search:
-`idx search pattern */tests/*`); and `--context 2` / `--context -3..5` adds
-surrounding lines to matches.
+to cwd; `idx search` takes `[` / `?` literally (globs still filter *which
+files* to search: `idx search pattern */tests/*`); and `--context 2` /
+`--context -3..5` adds surrounding lines to matches.
+
+0.115: `idx export` / `idx import` were removed — the index is in-memory only,
+so `idx init` is the single way to build it. Watching stays on by default
+(`--no-watch` disables it), and the new `idx watch` streams change events as
+rows of `{kind, path}`:
+
+```nushell
+idx init . --wait
+idx watch "**/*.rs" --ignore [target] | where kind == "modified" | each {|e| lint $e.path }
+idx watch --max-events 1 --timeout 5sec   # terminate cleanly
+```
 
 ### `$env.NU_BACKTRACE = 1` (v0.103)
 
@@ -1020,4 +1243,57 @@ Named gradients replace having to spell out start/end hex codes.
 ```nushell
 "banner" | ansi gradient --fgnamed rainbow
 ansi gradient --list   # show all named palettes
+```
+
+---
+
+## Other 0.115 Notes
+
+### Performance worth knowing about
+
+- `lines` on a string *value* returns a list stream instead of building the
+  whole list first — it is lazy now, like it already was for byte streams.
+- `str replace --regex` / `--multiline` is roughly 10x faster over lists,
+  tables, and records with many string values.
+- Built-in commands with `--regex` parameters share an LRU regex cache, so
+  tight loops no longer recompile the pattern.
+- Reading a small part of a big list or table (`$list.0`) no longer copies the
+  whole value; large binary values are cheaper to slice and convert too.
+
+### Fixes that change script behavior
+
+- A nested `try/finally` no longer swallows the outer handler — an error after
+  the inner block is caught by the outer `try`/`catch` as it should be.
+- `group-by` treats `null` consistently: it is no longer folded into `""`, and
+  record output omits it. Use `--to-table` to keep null groups.
+- `math max` on an *empty stream* now errors like it already did on an empty
+  list, instead of returning nothing.
+- `"" | path type` returns `null`, not `"dir"`.
+- Quotes inside a `(...)` subexpression of an interpolated string parse:
+  `$"('" "')"` prints `" "`.
+- `error make` rejects an invalid `label` (missing `span: {start, end}`)
+  instead of silently using the record's own span.
+
+### Interactive / REPL (little effect on scripts)
+
+- Helix edit mode: `$env.config.edit_mode = helix`, with `helix_normal` /
+  `helix_insert` / `helix_select` keybinding tables and `cursor_shape.helix_*`.
+- `commandline set-prompt` updates a rendered prompt from a background job, so
+  a slow segment (git branch, k8s context) can fill in asynchronously.
+- `color_config.selection` / `selection_cursor` style the visual selection.
+- Completion results are cached across prompts; cap with
+  `$env.config.completions.cache_size` (default `100`).
+
+### `matrix` custom value
+
+0.115 adds a `matrix` custom value backed by ndarray, with a family of
+subcommands: constructors (`matrix zeros`, `matrix identity`, `into matrix`),
+access, arithmetic, linear algebra (`matrix multiply`, `matrix transpose`),
+reshaping, `matrix map`, reductions, and `matrix into-nu` to get a table back.
+`each` / `par-each` / `reduce` on a matrix error and point at the matrix
+equivalent. See the 0.115 release notes for the full list.
+
+```nushell
+[[1 2 3] [4 5 6]] | into matrix | matrix transpose | matrix into-nu | to nuon
+# => [[1.0, 4.0], [2.0, 5.0], [3.0, 6.0]]
 ```

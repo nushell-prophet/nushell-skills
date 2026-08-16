@@ -1,6 +1,6 @@
 ---
 name: nushell-style
-description: This skill should be used when writing, editing, reviewing, or debugging Nushell (.nu) files. Covers opinionated pipeline composition, command choices (where vs filter, match vs if/else, get --optional), formatting conventions (Topiary), type signatures, module structure, testing with nutest (unit tests, snapshot tests, @example attributes, coverage), NUON data format, the fancy-regex flavor behind =~ and --regex flags, toolkit.nu patterns, nu --ide-check debugging, the Nushell MCP server, and migration guide for updating scripts across Nushell versions (0.100–0.114: breaking changes, renamed commands, new idioms). Relevant when the user says "write nushell code," "review my .nu file," "nushell style," "nushell best practices," "format nushell," "nushell pipeline," "nutest," "NUON," "nushell regex," "lookahead," "lookbehind," "backreference," "nu --ide-check," "nushell MCP," "update nushell script," "nushell breaking changes," or "nushell migration."
+description: This skill should be used when writing, editing, reviewing, or debugging Nushell (.nu) files. Covers opinionated pipeline composition, command choices (where vs filter, match vs if/else, get --optional), formatting conventions (Topiary), type signatures, module structure, testing with nutest (unit tests, snapshot tests, @example attributes, coverage), NUON data format, the fancy-regex flavor behind =~ and --regex flags, toolkit.nu patterns, nu --ide-check debugging, the Nushell MCP server, and migration guide for updating scripts across Nushell versions (0.100–0.115: breaking changes, renamed commands, new idioms). Relevant when the user says "write nushell code," "review my .nu file," "nushell style," "nushell best practices," "format nushell," "nushell pipeline," "nutest," "NUON," "nushell regex," "lookahead," "lookbehind," "backreference," "nu --ide-check," "nushell MCP," "update nushell script," "nushell breaking changes," or "nushell migration."
 ---
 
 # Nushell Code Style Guide
@@ -18,8 +18,8 @@ description: This skill should be used when writing, editing, reviewing, or debu
 | [testing.md](references/testing.md) | nutest framework, snapshots, coverage |
 | [toolkit.md](references/toolkit.md) | toolkit.nu, repo utilities, commit conventions |
 | [mcp.md](references/mcp.md) | Nushell as MCP server (`nu --mcp`), tools, persistent state |
-| [migration.md](references/migration.md) | Breaking changes, renamed commands, new idioms (0.100 → 0.114) |
-| [enhancements.md](references/enhancements.md) | New features to improve existing scripts (0.100 → 0.114) |
+| [migration.md](references/migration.md) | Breaking changes, renamed commands, new idioms (0.100 → 0.115) |
+| [enhancements.md](references/enhancements.md) | New features to improve existing scripts (0.100 → 0.115) |
 
 ---
 
@@ -317,6 +317,8 @@ The name appears twice, and the second time it is a **bare command call inside a
 Measured, so the rule is not a guess. Breaks the whole file: `'` `` ` `` `"` `(` `)` `[` `]` `|` `#`, and an unbalanced `{`. Survives today: a balanced `{a: 1}` and even `$var`, because the parser matches the longest defined command name first. Do not rely on that second list — it is an accident of how the name happens to lex, it says nothing about the next tool that consumes the name, and a `{a: 1}` name is bad naming regardless of whether it parses.
 
 English wants the apostrophe (`the signer's key`, `it's`), so this is a genuine trap and not a rare edge. Rephrase — a possessive always has an `of` form, and a contraction always has a long form.
+
+Separate rule, same place it bites: since 0.115 a command name can never *be* a parser keyword. `def def`, `def if`, `def let` fail with `nu::parser::name_is_keyword`, and that covers module exports and `use *` too. Ordinary builtins stay shadowable — `def ls` still works, and `%ls` reaches the real one.
 
 ---
 

@@ -1,4 +1,4 @@
-# Nushell Migration Guide (0.100 → 0.114)
+# Nushell Migration Guide (0.100 → 0.115)
 
 When updating Nushell scripts, consult this reference for breaking changes,
 renamed commands, and new idioms. Versions noted as `(v0.NNN)`.
@@ -28,6 +28,8 @@ renamed commands, and new idioms. Versions noted as `(v0.NNN)`.
 | `str upcase` | `str uppercase` | deprecated 0.114 |
 | `str downcase` | `str lowercase` | deprecated 0.114 |
 | `std/clip` `copy` / `paste` | `clip copy52` / `paste52` (OSC 52), or `clip copy` / `paste` under the `native-clip` experimental option | removed 0.114 |
+| `idx import` / `idx export` | `idx init` (in-memory only; `--no-watch` turns watching off) | removed 0.115 |
+| `nu --testbin <name>` | plain Nushell, or `nu -n -c "..."` | removed 0.115 |
 
 ### Renamed Flags
 
@@ -153,6 +155,34 @@ ls     # => duck
 # before: $nu.temp-path / $nu.home-path
 # after:  $nu.temp-dir  / $nu.home-dir
 ```
+
+### `$ans` is a reserved variable name (v0.115)
+
+`$ans` now holds the last REPL result (`last`, `exit_code`, `duration`,
+`command`), joining `$in`, `$nu` and `$env` as a builtin variable. Any script
+binding that name breaks at parse time — rename the variable.
+
+```nushell
+# before: let ans = 5
+# after:  let answer = 5
+# error:  nu::parser::name_is_builtin_var — `ans` already a builtin variable
+```
+
+### Parser keywords cannot be shadowed (v0.115)
+
+Defining a command whose name is a *parser keyword* (`def`, `let`, `if`,
+`where`, `use`, `export def`, …) is now `nu::parser::name_is_keyword`. This
+covers module exports and `use *` too. Ordinary built-in commands are still
+shadowable — that is what the `%` sigil is for.
+
+```nushell
+# def def [] {}   # error: 'def' is a parser keyword
+```
+
+Related: a module named after a keyword may no longer export `main`, because
+the parser intercepts the call before the module can be reached
+(`nu::parser::keyword_shadow_module_main`). Rename the module, or drop
+`export def main` and import the rest with `use if.nu *`.
 
 ---
 
@@ -457,12 +487,89 @@ Scripts that compared the round-tripped text need updating.
 Follow-up to the 0.113 change: only values that would re-parse as non-strings
 (`off`, `yes`, numbers) stay quoted; plain scalars like paths and
 `host:port` strings are emitted bare per YAML 1.2 rules. Multiline strings now
-use `|-` block scalars. Text-comparing scripts churn again; a full YAML rework
-is announced for 0.115.
+use `|-` block scalars. Text-comparing scripts churn again; the full YAML
+rework landed in 0.115 (next entry).
 
 ```yaml
 # 0.113:  path: '/dev/stdout'      0.114:  path: /dev/stdout
 # both:   value: 'off'
+```
+
+### YAML reworked — `from yaml` defaults to YAML 1.2 (v0.115)
+
+The old `serde_yaml` backend is gone. Nushell no longer parses YAML as a mix
+of the 1.1 and 1.2 specs; `from yaml` is YAML 1.2 now. Pass `--spec 1.1` to
+get the old scalar magic back.
+
+```nushell
+"yes"       | from yaml             # => "yes" (string; was true)
+"yes"       | from yaml --spec 1.1  # => true
+"0247"      | from yaml             # => 247 (leading zero is just a zero)
+"0247"      | from yaml --spec 1.1  # => 167 (octal 0o247)
+"190:20:30" | from yaml             # => "190:20:30" (string)
+"190:20:30" | from yaml --spec 1.1  # => 685230 (sexagesimal)
+```
+
+Mapping keys are stricter: a plain key that resolves to a bool, number or null
+is rejected, because Nushell record keys are strings. Pass
+`--key-resolution verbatim` to keep the original key text instead.
+
+```nushell
+# 'true: enabled' | from yaml                          # error: Found unsupported key
+'true: enabled' | from yaml --key-resolution verbatim  # => {true: enabled}
+```
+
+Tags are real now: an unknown tag errors instead of being silently dropped.
+`--ignore-tags` restores the old "treat it as a plain scalar" behavior.
+
+```nushell
+# 'Key: !Sub ${AWS::StackName}' | from yaml               # error: Unknown tag
+'Key: !Sub ${AWS::StackName}' | from yaml --ignore-tags   # => {Key: "${AWS::StackName}"}
+```
+
+`to yaml` errors on values that cannot round-trip (closures, etc.) instead of
+mangling them. Choose the fallback explicitly with `--non-roundtrip "null"` or
+`--non-roundtrip "lossy"` — the flag takes a *string*, so bare `null` is a
+parse error. `--serialize` still works but may be deprecated.
+
+```nushell
+# {|| $in } | to yaml                    # error: Found non-roundtrippable closure
+{|| $in } | to yaml --non-roundtrip "null"  # => null
+```
+
+Emitted YAML also looks different — quoting follows 1.2 rules and Nushell
+types get local tags (`!filesize`, `!cell-path`). Scripts that compare YAML
+text need rechecking.
+
+```nushell
+{b: "off"} | to yaml             # => b: off      (bare; 0.113/0.114 quoted it)
+{b: "off"} | to yaml --spec 1.1  # => b: "off"
+```
+
+Also new (not breaking): multi-document streams (`--multiple auto|list|single`
+on read, `--multiple` on write), working anchors/aliases/merge keys, and
+`--indent` / `--quote` / `--add-directives` for output shape.
+
+### `from kdl` / `to kdl` default formats changed (v0.115)
+
+`from kdl` now defaults to `--format nodes` — a table of `name`, `args`,
+`props`, `children` rows. `to kdl` defaults to `--format jik` (JSON-in-KDL),
+emitting one top-level `-` node. This replaces the old heuristic that
+flattened values under synthetic node names like `root`, so any script that
+read or wrote those names needs updating.
+
+```nushell
+{a: 1, b: true} | to kdl                # => - a=1 b=#true
+'node one; node two' | from kdl | to nuon
+# => [[name, args, props, children]; [node, [one], {}, []], [node, [two], {}, []]]
+```
+
+Both commands also take `--spec 1` or `--spec 2` (default `2`). Parsing is
+strict per spec: v1 keywords (`true`/`false`/`null`) and v2 keywords
+(`#true`/`#false`/`#null`) cannot be mixed.
+
+```nushell
+{a: 1, b: true} | to kdl --spec 1   # => - a=1 b=true
 ```
 
 ### `from xlsx` / `from ods` reworked (v0.114)

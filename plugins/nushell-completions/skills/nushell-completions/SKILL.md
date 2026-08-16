@@ -30,6 +30,8 @@ const directions = [left up right down]
 def go [direction: string@$directions] { $direction }
 ```
 
+Builtins use the same pattern — since 0.115 the unit argument of `format duration` and `format filesize` completes from such a list.
+
 ## Command-Wide Completers (Nu 0.108+)
 
 Use `@complete` attribute for all arguments of a command:
@@ -89,6 +91,15 @@ def my-cmd [
 ] { }
 ```
 
+## Completion Caching (Nu 0.115+)
+
+Completion results now survive across prompts; before 0.115 they were discarded at every new prompt. `$env.config.completions.cache_size` caps how many entries are kept (default `100`, least-recently-used eviction), and `0` turns the cache off.
+
+Custom completers are cached too, so a slow completer stops re-running on every prompt for the same typed text. Two things follow for a completer that shells out for live data:
+
+- An entry is dropped when the completion-relevant environment changes — nushell fingerprints the cwd, the cwd's modification time, `$env.PATH`, and the number of known declarations. Data that changes without touching any of those (a new git branch, say) can be served stale until something else invalidates the entry.
+- While iterating on a completer, set `$env.config.completions.cache_size = 0` so you always see what the current code returns.
+
 ## Reusing Built-in Completions (Nu 0.114+)
 
 `commandline complete` returns the suggestions nushell itself would offer for a given string (cursor assumed at the end). Use it inside completers to wrap built-in path/flag completion instead of reimplementing it:
@@ -108,7 +119,19 @@ def "nu-complete nu-scripts" [context: string] {
 }
 ```
 
-Without `--detailed` the output is `list<string>`; with it, records in the shape custom completers return (`value`, `description`, `style`). Without piped input it completes the current commandline buffer.
+Without `--detailed` the output is `list<string>`; with it, records carrying `value` plus whatever nushell knows about the suggestion — `span`, `description`, `kind`, `type`, and `style` when one is set. Without piped input it completes the current commandline buffer.
+
+Two 0.115 fixes worth knowing:
+
+- `--type` is now validated: a wrong value fails with `expected type "directory", "path", or "glob"`. An out-of-range cursor no longer panics either.
+- `use`, `overlay use`, `export use`, `source-env`, `hide-env`, `attr complete` and `which` go through the same dispatch as every other builtin, so they complete consistently — and `commandline complete` returns their suggestions too. Module items now complete with nothing typed to match against:
+
+```nu
+'use std/formats ' | commandline complete
+# => ['"from ndjson"' '"from jsonl"' '"to ndjson"' ...] — a name with a space comes back quoted, ready to insert
+```
+
+Don't hand-write a completer to paper over a missing builtin completion here — on 0.115 they work.
 
 ## Completer Patterns
 
