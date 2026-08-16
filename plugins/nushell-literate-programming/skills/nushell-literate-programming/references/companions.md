@@ -72,10 +72,11 @@ The flow that turns a working conversation into a permanent document:
 ```nushell
 claude-nu sessions
 | sort-by last_timestamp | last
-| claude-nu export-session --to docs/sessions
+| claude-nu export-session
+| save docs/sessions/auth-refactor.md
 ```
 
-Without `--to`, `export-session` returns `{session, date, topic, markdown}` — read the text before anything touches the disk. With `--to` it writes `<dir>/yyyymmdd-topic.md` with collision-safe names and returns `{session, filepath}`; the directory has no default, naming it is what asks for the write. Search first, then export: `claude-nu messages 'auth refactor' | claude-nu export-session`.
+`export-session` returns the markdown itself — saving is the shell's job, which is why nothing reaches the disk until you pipe it to `save`. Read the text first if you want to. There is no record wrapper: it only repeated what the markdown already carries — session and date in the frontmatter, the title in the H1. Search first, then export: `claude-nu messages 'auth refactor' | claude-nu export-session`.
 
 Combine with nu-goodies for review-before-export:
 

@@ -2,13 +2,12 @@
 
 Concrete flows, assembled from real usage in this environment. Each starts at the terminal and ends with a git-diffable artifact.
 
-## 1. Explore, then keep it — five capture routes
+## 1. Explore, then keep it — four capture routes
 
-The session is the raw material. Pick the route by how the exploration happened:
+The session is the raw material. Pick the route by how the exploration happened. Nothing here records a whole session up front — every route is decided in the moment or after the fact:
 
 | Route | When | Result |
 |---|---|---|
-| `numd capture start notes.md` … `numd capture stop` | You know *in advance* the session is worth keeping | Markdown with every command + output, already a numd doc |
 | `pipeline \| dotnu embed-add` | One pipeline at a time turns out to be worth keeping | Appends command + output to a growing `.nu` capture file |
 | `copy-out 3` | The interesting thing *already happened*, nothing was set up | Clipboard snippet with `# =>` output, from Zellij scrollback |
 | `pipeline \| example` | You want to *share* the last command as a runnable snippet | Clipboard: `nu -c '...'` wrap + `# =>` output |
@@ -25,7 +24,7 @@ dotnu embeds-update exploration.nu
 # 3. lift it to markdown and write the prose between the blocks:
 open exploration.nu | dotnu generate-numd | save exploration.md
 # 4. from now on the doc is maintained by:
-numd run exploration.md
+numd render exploration.md
 ```
 
 Each step is optional — plenty of knowledge lives happily as an annotated `.nu` file and never becomes markdown.
@@ -34,7 +33,7 @@ Each step is optional — plenty of knowledge lives happily as an annotated `.nu
 
 The pattern used by numd's and dotnu's own READMEs:
 
-- Usage examples are ```` ```nu ```` blocks — `numd run README.md` re-executes them and rewrites the `# =>` lines.
+- Usage examples are ```` ```nu ```` blocks — `numd render README.md` re-executes them and rewrites the `# =>` lines.
 - Command-reference sections are generate-regions around `numd doc`:
 
   ```markdown
@@ -48,7 +47,7 @@ The maintenance loop is three commands:
 
 ```nushell
 git commit -am 'readme edits'   # numd refuses to run over uncommitted changes anyway
-numd run README.md
+numd render README.md
 git diff                        # only genuine behavior changes show up
 ```
 
@@ -70,7 +69,7 @@ glob dotnu-captures/*.nu | each { dotnu embeds-update $in }
 git diff   # exactly what changed in the outside world
 ```
 
-Same shape for `@example` results (`dotnu examples-update module.nu`) and for whole tutorial documents (`numd run docs/*.md`). The rhythm is always: **commit → refresh → read the diff**.
+Same shape for `@example` results (`dotnu examples-update module.nu`) and for whole tutorial documents (`numd render docs/*.md`). The rhythm is always: **commit → refresh → read the diff**.
 
 The same shape also points inward: a capture file can pin facts about a system *under construction*, not just the outside world. Then `embeds-update` doubles as a cross-repo regression test — refresh the doc, and any behavior change in the modules it `use`s lands in the diff. Flow 8 grows this into a full pattern.
 
@@ -79,10 +78,10 @@ The same shape also points inward: a capture file can pin facts about a system *
 The full interaction protocol lives in `common-space.md`; this is how the literate tooling carries it:
 
 - **The agent proposes, the user runs.** Answers to "how do I X" arrive as snippets with expected `# =>` output; the user executes them in the REPL and the agent follows along through the shared sqlite history (`history --long | last 5` — command, `exit_status`, `duration`). No pasting required.
-- **Drafts are the agent's, refreshes are the user's.** The agent verifies a drafted doc with `numd run draft.md --echo` before showing it — wrong output means wrong explanation, caught early. But the in-place `numd run` on the user's documents, and reading the resulting `git diff`, is the user's ritual. The git gate exists so they can run it fearlessly.
+- **Drafts are the agent's, refreshes are the user's.** The agent verifies a drafted doc with `numd render draft.md --echo` before showing it — wrong output means wrong explanation, caught early. But the in-place `numd render` on the user's documents, and reading the resulting `git diff`, is the user's ritual. The git gate exists so they can run it fearlessly.
 - **The user shows, the agent reads.** `copy-out` and `example` lift what just happened in the terminal into `# =>`-annotated snippets that paste straight into the conversation — the reverse channel that replaces screenshots and retyping.
 - **Both respect the clean environment.** Blocks run under `nu -n`: `use` the modules a block needs inside the doc itself, so it works for any reader on any machine.
-- **The user archives decisions.** After a substantial session: `claude-nu export-session 'topic' --to docs/sessions` puts the conversation in `docs/sessions/` under git. Before re-solving a problem: `claude-nu messages 'topic'` — and when the same ask keeps recurring, that's the cue to turn it into a snippet the user practices instead of a task the agent repeats.
+- **The user archives decisions.** After a substantial session: `claude-nu export-session 'topic' | save docs/sessions/topic.md` puts the conversation in `docs/sessions/` under git. Before re-solving a problem: `claude-nu messages 'topic'` — and when the same ask keeps recurring, that's the cue to turn it into a snippet the user practices instead of a task the agent repeats.
 
 ## 6. Debugging and profiling, literate-style
 

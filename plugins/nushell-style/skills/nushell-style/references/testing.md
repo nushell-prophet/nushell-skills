@@ -235,13 +235,13 @@ Use `par-each --keep-order` for concurrent test execution with deterministic out
 glob z_examples/*/*.md --exclude [*/*_with_no_output* */*_customized*]
 | par-each --keep-order {|file|
     run-integration-test $file {
-        numd run $file --eval (open --raw config.nu)
+        numd render $file --eval (open --raw config.nu)
     }
 }
 # Chain additional test variants
 | append (
     run-integration-test 'variant_width20' {
-        numd run $file --echo --eval '$env.numd.table-width = 20' | save --force $target
+        numd render $file --echo --eval '$env.numd.table-width = 20' | save --force $target
     }
 )
 ```

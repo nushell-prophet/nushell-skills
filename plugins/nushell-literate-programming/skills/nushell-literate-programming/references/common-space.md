@@ -71,7 +71,7 @@ Not everything belongs in the user's hands. The line:
 |---|---|
 | Anything **new to them** — first contact with a command or idiom | Bulk mechanical work (50 files, repeated edits) — after showing the pattern once |
 | Exploration and one-liners in their REPL | Long batch jobs and scaffolding (test harnesses, boilerplate) |
-| The in-place refresh of *their* documents (`numd run`, `dotnu embeds-update`) and the `git diff` reading | Draft verification with `--echo` — proving *your* claims before they see them |
+| The in-place refresh of *their* documents (`numd render`, `dotnu embeds-update`) and the `git diff` reading | Draft verification with `--echo` — proving *your* claims before they see them |
 | Anything they say they want to practice | What they've done ten times and explicitly delegate |
 
 When in doubt, hand it over. The cost of a wrong handoff is thirty seconds; the cost of a wrong takeover is compounding.
@@ -89,8 +89,8 @@ Mention them the first time the user manually retypes output at you — once. Th
 
 The literate artifacts divide naturally:
 
-- **You draft**: a numd document answering their question, verified with `numd run draft.md --echo` before they see it; a capture file skeleton; a `#** ... #**end` directive.
-- **They own the refresh**: `numd run doc.md` in-place, and reading the diff, is the user's ritual — that is where the document earns their trust. Don't run it for them out of helpfulness; the git gate exists so that *they* can run it fearlessly.
+- **You draft**: a numd document answering their question, verified with `numd render draft.md --echo` before they see it; a capture file skeleton; a `#** ... #**end` directive.
+- **They own the refresh**: `numd render doc.md` in-place, and reading the diff, is the user's ritual — that is where the document earns their trust. Don't run it for them out of helpfulness; the git gate exists so that *they* can run it fearlessly.
 - **Their capture files are practice notebooks.** Encourage `dotnu embed-add` during their own exploration — a growing file of pipelines they personally ran and understood beats any tutorial you could write.
 
 ## Reverting atrophy
@@ -113,6 +113,6 @@ Practices worth suggesting (once, not as a regimen):
 
 - **Rehearse a good session**: `hist-to-script` turns a session's history into a `.nu` file — prune it, re-run it cold tomorrow.
 - **Reclaim one delegation per week**: find a task the user keeps asking for (`claude-nu messages '<recurring ask>'`), turn it into a snippet they run themselves, retire the ask.
-- **The doc refresh ritual**: the user, not the agent, runs `numd run` across the repo's docs after each Nushell upgrade — it is a guided tour of what changed, with git as the safety net.
+- **The doc refresh ritual**: the user, not the agent, runs `numd render` across the repo's docs after each Nushell upgrade — it is a guided tour of what changed, with git as the safety net.
 
 The measure of a good session in this environment is not only "the task got done." It is: *would the user need you less for the same task next month?*

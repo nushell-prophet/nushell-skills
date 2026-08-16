@@ -37,7 +37,7 @@ When their run fails: read the failure from history, explain why in a sentence o
 |---|---|
 | Anything new to them — first contact with a command or idiom | Bulk mechanical work, after showing the pattern once |
 | Exploration, one-liners, things they want to practice | Long batch jobs, scaffolding, boilerplate |
-| In-place refresh of their docs (`numd run`, `dotnu embeds-update`) and the `git diff` reading | Draft verification with `--echo` / `--dry-run` — proving your claims before they see them |
+| In-place refresh of their docs (`numd render`, `dotnu embeds-update`) and the `git diff` reading | Draft verification with `--echo` / `--dry-run` — proving your claims before they see them |
 
 When in doubt, hand it over: a wrong handoff costs thirty seconds, a wrong takeover compounds.
 
@@ -47,7 +47,7 @@ Four modules, all preloaded in cozy sandboxes (elsewhere: `use numd`, `use dotnu
 
 | Module | Owns | Core command |
 |---|---|---|
-| **numd** | Markdown with executable ```` ```nu ```` blocks | `numd run file.md` |
+| **numd** | Markdown with executable ```` ```nu ```` blocks | `numd render file.md` |
 | **dotnu** | `.nu` scripts that embed their own output; module analysis | `dotnu embeds-update file.nu` |
 | **nu-goodies** | Capturing and presenting what happened in the terminal | `example`, `copy-out` |
 | **claude-nu** | Claude Code sessions as data and as markdown | `claude-nu export-session` |
@@ -56,9 +56,9 @@ Four modules, all preloaded in cozy sandboxes (elsewhere: `use numd`, `use dotnu
 
 | Situation | Reach for |
 |---|---|
-| Writing a tutorial, README, or blog post with live examples | numd: ```` ```nu ```` blocks, `numd run` |
+| Writing a tutorial, README, or blog post with live examples | numd: ```` ```nu ```` blocks, `numd render` |
 | A `.nu` script whose results should be visible in the source | dotnu: end lines with `\| print $in`, run `embeds-update` |
-| Exploring in the REPL, want a record | `numd capture start` (decided beforehand) / `copy-out`, `example` (after the fact) |
+| Exploring in the REPL, want a record | `copy-out`, `example` — both after the fact; nothing records a whole session up front |
 | One good pipeline worth keeping | `dotnu embed-add` — appends it + output to a capture file |
 | The user wants to show you what just happened | `copy-out` / `example` — paste arrives already `# =>`-annotated |
 | Command docs that must match real signatures | generate-region around `numd doc '<cmd>'` |
@@ -66,14 +66,14 @@ Four modules, all preloaded in cozy sandboxes (elsewhere: `use numd`, `use dotnu
 | Pin an external fact (`tool --help`, API shape) and watch it drift | capture file + `dotnu embeds-update`, diff with git |
 | A spec whose claims should be provable against a live system | paired dotnu exercise doc — workflows.md, flow 8 |
 | Which script block is slow / what does no test cover | `dotnu set-x` / `dependencies \| filter-commands-with-no-tests` |
-| Turn a working session into a permanent doc | `claude-nu export-session --to docs/sessions` |
+| Turn a working session into a permanent doc | `claude-nu export-session \| save docs/sessions/topic.md` |
 | Find how a past session solved something | `claude-nu messages 'regex'` (this project) / `claude-nu sessions --all-projects \| claude-nu messages 'regex'` |
 
 ## The core loop for documents
 
 ```nushell
 git commit -am 'wip'        # the safety net; numd enforces it, dotnu deserves it
-numd run doc.md             # or: dotnu embeds-update script.nu — the USER's ritual
+numd render doc.md          # or: dotnu embeds-update script.nu — the USER's ritual
 git diff                    # empty = docs proven current; non-empty = drift caught
 ```
 
@@ -83,13 +83,13 @@ All executors run in a clean `nu -n` process — no user config, no `$env` leaka
 
 - Answer "how do I X" with a snippet the user runs — expected output as `# =>` lines included
 - Follow the user's runs through `history --long` instead of asking them to paste output
-- Verify your own drafts with `numd run --echo` / `--dry-run` / `dotnu embeds-update --echo` before the user sees them
+- Verify your own drafts with `numd render --echo` / `--dry-run` / `dotnu embeds-update --echo` before the user sees them
 - Leave in-place refreshes and diff-reading to the user — that ritual is where documents earn trust
 - Introduce `copy-out` / `example` the first time the user retypes output at you manually — once
 - Mark illustration-only blocks `nu no-run`; error demos `nu try, new-instance`; one-shot side effects `nu run-once`
 - Keep `\| print $in` markers on top-level lines only (a marker inside a loop breaks capture alignment)
 - In docs over stateful systems, keep writes out of the executable path — quote them as comments where their results are read (see dotnu.md)
-- Suggest archiving a substantial session: `claude-nu export-session 'topic' --to docs/sessions`
+- Suggest archiving a substantial session: `claude-nu export-session 'topic' | save docs/sessions/topic.md`
 
 ## Don't
 
