@@ -5,10 +5,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## What This Is
 
 A Claude Code plugin marketplace providing opinionated Nushell development skills.
-It contains three plugins distributed via the Claude Code plugin system:
+It contains four plugins distributed via the Claude Code plugin system:
 
 - **nushell-completions** — teaches Claude to generate Nushell tab-completion definitions (inline lists, custom completers, `extern` definitions, module naming)
 - **nushell-style** — opinionated Nushell style guide (pipeline patterns, command choices, formatting, testing, debugging)
+- **nushell-literate-programming** — the shared user/agent space in the terminal: numd (executable markdown), dotnu (`.nu` scripts that embed their own output as `# =>` comments), REPL capture, claude-nu session archiving; also bundles the Common Space output style
 - **nushell-history** — inspecting and rewriting the user's sqlite command history (`history --long | where ...` recipes, `nu-history-tools` mutation flows)
 
 ## Architecture
@@ -28,10 +29,24 @@ plugins/
         patterns.md                # Pipeline composition, code structure examples
         formatting.md              # Topiary conventions, spacing, declarations
         debugging.md               # nu --ide-check diagnostics, agent workflow
+        regex.md                   # fancy-regex flavor: lookaround, backrefs
         nuon.md                    # NUON format, data serialization
         testing.md                 # nutest framework, snapshots, coverage
         toolkit.md                 # toolkit.nu patterns, commit conventions
         mcp.md                     # nu --mcp server, tools, persistent state
+        migration.md               # Breaking changes, renamed commands (0.100 -> 0.115)
+        enhancements.md            # New features for existing scripts (0.100 -> 0.115)
+  nushell-literate-programming/
+    .claude-plugin/plugin.json     # Plugin manifest
+    output-styles/common-space.md  # Bundled "Common Space" output style
+    skills/nushell-literate-programming/
+      SKILL.md                     # Common space, the `# =>` dialect, prime directive
+      references/
+        common-space.md            # How to work with the user, not for them
+        numd.md                    # Executable markdown
+        dotnu.md                   # Scripts that embed their own output
+        companions.md              # nu-goodies and claude-nu on-ramps
+        workflows.md               # Everyday end-to-end literate flows
   nushell-history/
     .claude-plugin/plugin.json     # Plugin manifest
     skills/nushell-history/
@@ -75,9 +90,10 @@ The managed skills list is defined as `const managed_skills` in `toolkit.nu`.
 Sibling directories of this repo hold canonical Nushell material.
 When updating skills for a new Nushell release or verifying a claim, read these instead of fetching the web:
 
-- `../nushell-docs/` — sparse shallow clone of nushell.github.io (`blog/`, `book/`, `cookbook/`, `commands/`).
+- `../nushell-docs/` — sparse shallow clone of nushell.github.io (`blog/`, `book/`, `cookbook/`).
   Release notes: `blog/<date>-nushell_v0_<minor>_<patch>.md`.
-  Refresh with `git pull` (or `claude-nu fetch-nushell-docs`).
+  Refresh with `git pull`.
+  Command signatures are not in this checkout — read `../nushell/` for those.
   Default lookup target — small and fast to grep.
 - `../nushell.github.io/` — full clone incl. `lang-guide/`, `contributor-book/`, translations.
   The user works in it (branches, stashes) — no destructive git commands.
