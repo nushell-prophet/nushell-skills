@@ -9,13 +9,11 @@ Generate completions for Nushell commands following these patterns.
 
 ## Quick Reference
 
-| Syntax | Use Case | Nu Version |
-|--------|----------|------------|
-| `string@[a b c]` | Inline static list | 0.108+ |
-| `string@$const_list` | Const variable | 0.108+ |
-| `string@completer` | Custom completer function | all |
-| `@complete fn` | Command-wide completer | 0.108+ |
-| `commandline complete` | Reuse nushell's own suggestions | 0.114+ |
+- `string@[a b c]` — inline static list (0.108+)
+- `string@$const_list` — const variable (0.108+)
+- `string@completer` — custom completer function (all versions)
+- `@complete fn` — command-wide completer (0.108+)
+- `commandline complete` — reuse nushell's own suggestions (0.114+)
 
 ## Inline Completions (Nu 0.108+)
 
@@ -93,16 +91,20 @@ def my-cmd [
 
 ## Completion Caching (Nu 0.115+)
 
-Completion results now survive across prompts; before 0.115 they were discarded at every new prompt. `$env.config.completions.cache_size` caps how many entries are kept (default `100`, least-recently-used eviction), and `0` turns the cache off.
+Completion results now survive across prompts; before 0.115 they were discarded at every new prompt.
+`$env.config.completions.cache_size` caps how many entries are kept (default `100`, least-recently-used eviction), and `0` turns the cache off.
 
-Custom completers are cached too, so a slow completer stops re-running on every prompt for the same typed text. Two things follow for a completer that shells out for live data:
+Custom completers are cached too, so a slow completer stops re-running on every prompt for the same typed text.
+Two things follow for a completer that shells out for live data:
 
-- An entry is dropped when the completion-relevant environment changes — nushell fingerprints the cwd, the cwd's modification time, `$env.PATH`, and the number of known declarations. Data that changes without touching any of those (a new git branch, say) can be served stale until something else invalidates the entry.
+- An entry is dropped when the completion-relevant environment changes — nushell fingerprints the cwd, the cwd's modification time, `$env.PATH`, and the number of known declarations.
+  Data that changes without touching any of those (a new git branch, say) can be served stale until something else invalidates the entry.
 - While iterating on a completer, set `$env.config.completions.cache_size = 0` so you always see what the current code returns.
 
 ## Reusing Built-in Completions (Nu 0.114+)
 
-`commandline complete` returns the suggestions nushell itself would offer for a given string (cursor assumed at the end). Use it inside completers to wrap built-in path/flag completion instead of reimplementing it:
+`commandline complete` returns the suggestions nushell itself would offer for a given string (cursor assumed at the end).
+Use it inside completers to wrap built-in path/flag completion instead of reimplementing it:
 
 ```nu
 # Directory suggestions for a partial path
@@ -119,12 +121,15 @@ def "nu-complete nu-scripts" [context: string] {
 }
 ```
 
-Without `--detailed` the output is `list<string>`; with it, records carrying `value` plus whatever nushell knows about the suggestion — `span`, `description`, `kind`, `type`, and `style` when one is set. Without piped input it completes the current commandline buffer.
+Without `--detailed` the output is `list<string>`; with it, records carrying `value` plus whatever nushell knows about the suggestion — `span`, `description`, `kind`, `type`, and `style` when one is set.
+Without piped input it completes the current commandline buffer.
 
 Two 0.115 fixes worth knowing:
 
-- `--type` is now validated: a wrong value fails with `expected type "directory", "path", or "glob"`. An out-of-range cursor no longer panics either.
-- `use`, `overlay use`, `export use`, `source-env`, `hide-env`, `attr complete` and `which` go through the same dispatch as every other builtin, so they complete consistently — and `commandline complete` returns their suggestions too. Module items now complete with nothing typed to match against:
+- `--type` is now validated: a wrong value fails with `expected type "directory", "path", or "glob"`.
+  An out-of-range cursor no longer panics either.
+- `use`, `overlay use`, `export use`, `source-env`, `hide-env`, `attr complete` and `which` go through the same dispatch as every other builtin, so they complete consistently — and `commandline complete` returns their suggestions too.
+  Module items now complete with nothing typed to match against:
 
 ```nu
 'use std/formats ' | commandline complete
@@ -135,14 +140,12 @@ Don't hand-write a completer to paper over a missing builtin completion here —
 
 ## Completer Patterns
 
-| Pattern | Return Type | Use Case |
-|---------|-------------|----------|
-| Inline list | `@[a b c]` | Static options (simplest) |
-| Simple list | `list<string>` | Dynamic options |
-| With descriptions | `list<record<value, description>>` | Options needing explanation |
-| With options | `record<completions, options>` | Custom sorting/matching |
-| Context-aware | Accept `context: string` param | Depends on previous args |
-| Null return | `null` | Fall back to file completions |
+- **Inline list** — returns `@[a b c]`, for static options (simplest)
+- **Simple list** — returns `list<string>`, for dynamic options
+- **With descriptions** — returns `list<record<value, description>>`, for options needing explanation
+- **With options** — returns `record<completions, options>`, for custom sorting/matching
+- **Context-aware** — accepts a `context: string` param, for completions that depend on previous args
+- **Null return** — returns `null`, to fall back to file completions
 
 ## With Matching Options
 
@@ -175,7 +178,8 @@ export extern "git push" [
 
 ## Never Declare `--help`
 
-Nushell intercepts `--help` and `-h` for anything carrying a signature — an `extern` included — and prints the signature instead of running the binary. Declaring the flag therefore breaks the tool's own help, silently:
+Nushell intercepts `--help` and `-h` for anything carrying a signature — an `extern` included — and prints the signature instead of running the binary.
+Declaring the flag therefore breaks the tool's own help, silently:
 
 ```nu
 # ❌ WRONG — `fd --help` now prints `Usage: > fd {flags} (pattern) ...(args)`
@@ -185,7 +189,8 @@ export extern main [ pattern?: string --help(-h) --hidden ]
 export extern main [ pattern?: string --hidden ]
 ```
 
-Leave it undeclared even though the tool's own `--help` output lists it. That listing is exactly the trap: the natural move is to declare every flag you see, and three separate agents writing three separate completion files each reproduced this bug independently, breaking `hx`, `fd`, `chafa`, `zellij`, `lazygit`, `rg`, `vd` and `delta`.
+Leave it undeclared even though the tool's own `--help` output lists it.
+That listing is exactly the trap: the natural move is to declare every flag you see, and three separate agents writing three separate completion files each reproduced this bug independently, breaking `hx`, `fd`, `chafa`, `zellij`, `lazygit`, `rg`, `vd` and `delta`.
 
 ## Module Naming Rule
 
@@ -223,16 +228,12 @@ def completer [spans: list<string>] { }           # for @complete (list of args)
 
 ## Record Fields
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `value` | string | The completion text |
-| `description` | string? | Shown in menu |
-| `style` | string/record? | Color: `"red"`, `{fg: green, bg: black, attr: b}` |
+- `value` — `string`, the completion text
+- `description` — `string?`, shown in menu
+- `style` — `string`/`record?`, the color: `"red"`, `{fg: green, bg: black, attr: b}`
 
 ## Options Record
 
-| Option | Values | Default |
-|--------|--------|---------|
-| `sort` | `true`/`false` | `true` |
-| `case_sensitive` | `true`/`false` | from config |
-| `completion_algorithm` | `prefix`/`substring`/`fuzzy` | from config |
+- `sort` — `true`/`false`, default `true`
+- `case_sensitive` — `true`/`false`, default from config
+- `completion_algorithm` — `prefix`/`substring`/`fuzzy`, default from config

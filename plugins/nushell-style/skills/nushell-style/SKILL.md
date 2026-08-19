@@ -7,19 +7,17 @@ description: This skill should be used when writing, editing, reviewing, or debu
 
 ## Contents
 
-| File | Topic |
-|------|-------|
-| **This file** | Quick reference tables, do/don't checklists |
-| [patterns.md](references/patterns.md) | Pipeline composition, command examples, code structure |
-| [formatting.md](references/formatting.md) | Topiary conventions, spacing, declarations |
-| [debugging.md](references/debugging.md) | `--ide-check` for agents, diagnostic parsing |
-| [regex.md](references/regex.md) | fancy-regex flavor — lookaround, backrefs, where it applies |
-| [nuon.md](references/nuon.md) | NUON format, data serialization, config files |
-| [testing.md](references/testing.md) | nutest framework, snapshots, coverage |
-| [toolkit.md](references/toolkit.md) | toolkit.nu, repo utilities, commit conventions |
-| [mcp.md](references/mcp.md) | Nushell as MCP server (`nu --mcp`), tools, persistent state |
-| [migration.md](references/migration.md) | Breaking changes, renamed commands, new idioms (0.100 → 0.115) |
-| [enhancements.md](references/enhancements.md) | New features to improve existing scripts (0.100 → 0.115) |
+- **This file** — quick reference lists, do/don't checklists
+- `references/patterns.md` — pipeline composition, command examples, code structure
+- `references/formatting.md` — Topiary conventions, spacing, declarations
+- `references/debugging.md` — `--ide-check` for agents, diagnostic parsing
+- `references/regex.md` — fancy-regex flavor: lookaround, backrefs, where it applies
+- `references/nuon.md` — NUON format, data serialization, config files
+- `references/testing.md` — nutest framework, snapshots, coverage
+- `references/toolkit.md` — toolkit.nu, repo utilities, commit conventions
+- `references/mcp.md` — Nushell as MCP server (`nu --mcp`), tools, persistent state
+- `references/migration.md` — breaking changes, renamed commands, new idioms (0.100 → 0.115)
+- `references/enhancements.md` — new features to improve existing scripts (0.100 → 0.115)
 
 ---
 
@@ -31,7 +29,8 @@ When you finish writing or editing a `.nu` file, check it:
 dotnu diagnose file.nu
 ```
 
-It filters `nu --ide-check` output to real diagnostics and resolves byte spans to line numbers with source context — see [debugging.md](references/debugging.md). Without dotnu, the raw fallback is:
+It filters `nu --ide-check` output to real diagnostics and resolves byte spans to line numbers with source context — see `references/debugging.md`.
+Without dotnu, the raw fallback is:
 
 ```bash
 nu --ide-check 10 file.nu | nu --stdin -c 'lines | each { from json } | where type == "diagnostic"'
@@ -39,11 +38,14 @@ nu --ide-check 10 file.nu | nu --stdin -c 'lines | each { from json } | where ty
 
 ## Agent Tip: `!=` and `!~` in Bash
 
-The Bash tool escapes `!` → `\!`, breaking `!=` and `!~` in `nu -c`. Use a heredoc or temp file instead. See [testing.md](references/testing.md) for workarounds.
+The Bash tool escapes `!` → `\!`, breaking `!=` and `!~` in `nu -c`.
+Use a heredoc or temp file instead.
+See `references/testing.md` for workarounds.
 
 ## Agent Tip: Literal `(` in Interpolated Strings
 
-`\(` is an escape **only** in double-quoted interpolation `$"..."`. In `$'...'` the backslash is literal and `(` still starts a subexpression — parens cannot be escaped there at all.
+`\(` is an escape **only** in double-quoted interpolation `$"..."`.
+In `$'...'` the backslash is literal and `(` still starts a subexpression — parens cannot be escaped there at all.
 
 ```nushell
 $"($header), changed \(trailing whitespace only\)"   # ✓ → H, changed (trailing whitespace only)
@@ -54,18 +56,21 @@ If the string needs both interpolation and literal parens, use `$"..."`.
 
 ## Agent Tip: Regex Is fancy-regex, Not Rust `regex`
 
-`=~`, `!~`, `find --regex`, `parse --regex`, `split * --regex` and `str replace --regex` all run on [`fancy-regex`](https://docs.rs/fancy-regex). Lookahead, lookbehind (including variable-length), backreferences, atomic groups and recursion **all work** — don't fall back to a multi-step pipeline because "Rust regex has no lookaround".
+`=~`, `!~`, `find --regex`, `parse --regex`, `split * --regex` and `str replace --regex` all run on [`fancy-regex`](https://docs.rs/fancy-regex).
+Lookahead, lookbehind (including variable-length), backreferences, atomic groups and recursion **all work** — don't fall back to a multi-step pipeline because "Rust regex has no lookaround".
 
 ```nushell
 $lines | where $it =~ '^(?!\s*#)'                 # ✓ drop comment lines, no `not (...)`
 'a:b:c' | str replace --regex '(?<=a:)b' 'B'      # ✓ => a:B:c
 ```
 
-The one exception is `idx search --regex`, which uses the ripgrep engine and silently matches nothing for those constructs. See [regex.md](references/regex.md).
+The one exception is `idx search --regex`, which uses the ripgrep engine and silently matches nothing for those constructs.
+See `references/regex.md`.
 
 ## Agent Tip: `open file.md` Returns Structured Data, Not Text
 
-Since v0.112 `open` runs `from md` on a `.md` path, so you get a table of `element`/`content` rows instead of the file's text. Use `--raw` whenever you want the text — it yields a byte stream, which `lines`, `str replace` and `save` all accept.
+Since v0.112 `open` runs `from md` on a `.md` path, so you get a table of `element`/`content` rows instead of the file's text.
+Use `--raw` whenever you want the text — it yields a byte stream, which `lines`, `str replace` and `save` all accept.
 
 ```nushell
 open README.md                       # table<element: string, content: string, content_span: record<...>>
@@ -86,15 +91,14 @@ open x.md | save y.md                # ✗ silent — writes the parsed AST as a
 
 ## Conciseness for Advanced Users
 
-Write code that an experienced nushell user can quickly apprehend. Leverage implicit features:
+Write code that an experienced nushell user can quickly apprehend.
+Leverage implicit features:
 
-| Verbose | Concise | Why |
-|---------|---------|-----|
-| `update field {\|row\| $row.field \| str uppercase}` | `update field { str uppercase }` | Closure receives field value directly |
-| `each {\|x\| $x \| str trim}` | `each { str trim }` | `$in` implicit, pipeline flows |
-| `$list \| each { str trim }` | `$list \| str trim` | Many commands accept `list<string>` directly (see below) |
-| `where {\|row\| $row.status == "active"}` | `where status == "active"` | `where` has field shorthand |
-| `$data \| each { $in \| process }` | `$data \| each { process }` | `$in` passed automatically to first command |
+- `update field {|row| $row.field | str uppercase}` → `update field { str uppercase }` — closure receives field value directly
+- `each {|x| $x | str trim}` → `each { str trim }` — `$in` implicit, pipeline flows
+- `$list | each { str trim }` → `$list | str trim` — many commands accept `list<string>` directly (see below)
+- `where {|row| $row.status == "active"}` → `where status == "active"` — `where` has field shorthand
+- `$data | each { $in | process }` → `$data | each { process }` — `$in` passed automatically to first command
 
 **Principle:** If an advanced user knows how `update`, `each`, `where` work, they shouldn't need to parse redundant variable declarations.
 
@@ -102,30 +106,33 @@ Write code that an experienced nushell user can quickly apprehend. Leverage impl
 
 ## Command Choices
 
-| Task | Preferred | Avoid |
-|------|-----------|-------|
-| Filtering | `where` | `filter`, `each {if} \| compact` |
-| List filtering | `where $it =~ ...` | `where { $in =~ ... }` |
-| Parallel with order | `par-each --keep-order` | `par-each` (when order matters) |
-| Pattern dispatch | `match` expression | Long `if/else if` chains |
-| Record iteration | `items {\|k v\| ...}` | Manual key extraction |
-| Table grouping | `group-by ... --to-table` | Manual grouping |
-| Line joining | `str join (char nl)` | `to text` (context dependent) |
-| Syntax check (human) | `nu -c 'open file.nu \| nu-check'` | `source file.nu` |
-| Syntax check (agent) | `nu --ide-check 10 file.nu` | `nu-check` (unstructured) |
-| Membership | `in` operator | Multiple `or` conditions |
-| Field extraction | `get --optional` | `each {$in.field?} \| compact` |
-| Negation | `$x !~ ...` | `not ($x =~ ...)` |
-| List element ops | `$list \| str trim` | `$list \| each { str trim }` |
-| Flags in code | `save --force` | `save -f` (short flags) |
+- Filtering — prefer `where`, avoid `filter`, `each {if} | compact`
+- List filtering — prefer `where $it =~ ...`, avoid `where { $in =~ ... }`
+- Parallel with order — prefer `par-each --keep-order`, avoid `par-each` (when order matters)
+- Pattern dispatch — prefer `match` expression, avoid long `if/else if` chains
+- Record iteration — prefer `items {|k v| ...}`, avoid manual key extraction
+- Table grouping — prefer `group-by ... --to-table`, avoid manual grouping
+- Line joining — prefer `str join (char nl)`, avoid `to text` (context dependent)
+- Syntax check (human) — prefer `nu -c 'open file.nu | nu-check'`, avoid `source file.nu`
+- Syntax check (agent) — prefer `nu --ide-check 10 file.nu`, avoid `nu-check` (unstructured)
+- Membership — prefer `in` operator, avoid multiple `or` conditions
+- Field extraction — prefer `get --optional`, avoid `each {$in.field?} | compact`
+- Negation — prefer `$x !~ ...`, avoid `not ($x =~ ...)`
+- List element ops — prefer `$list | str trim`, avoid `$list | each { str trim }`
+- Flags in code — prefer `save --force`, avoid `save -f` (short flags)
 
-Always spell Nushell flags out in full: `uniq --count`, `sort-by --reverse`, `parse --regex`, `print --stderr`, `ps --long`. Short flags are for typing at the prompt, not for code someone else reads. External commands keep their own idiom — `git commit -am`, `rg -n` — since their flags are not Nushell's to style. A `-x` after `--` is data, not a flag, and stays as written.
+Always spell Nushell flags out in full: `uniq --count`, `sort-by --reverse`, `parse --regex`, `print --stderr`, `ps --long`.
+Short flags are for typing at the prompt, not for code someone else reads.
+External commands keep their own idiom — `git commit -am`, `rg -n` — since their flags are not Nushell's to style.
+A `-x` after `--` is data, not a flag, and stays as written.
 
 ### Skip `each` When Commands Accept `list<string>`
 
-Many commands accept both `string` and `list<string>` input — they operate on each element automatically. Wrapping them in `each` is redundant.
+Many commands accept both `string` and `list<string>` input — they operate on each element automatically.
+Wrapping them in `each` is redundant.
 
-**Heuristic:** Check `input_output` types. If a command lists both `string` and `list<string>` as input, pipe the list directly.
+**Heuristic:** Check `input_output` types.
+If a command lists both `string` and `list<string>` as input, pipe the list directly.
 
 ```nushell
 # Check a command's accepted input types (help <cmd> returns rendered text, not data)
@@ -146,14 +153,17 @@ $list | url encode                   # $list | each { url encode }
 
 `each` IS needed when the command does not accept `list` input, or when the closure does more than a single command call.
 
-**Shape caveat:** `split row` on a list flattens all results into a single list (`['a,b' 'c,d'] | split row ','` → `[a b c d]`), unlike `each { split row ',' }` which keeps one sublist per element. Other `split` commands (`chars`, `words`) keep sublists.
+**Shape caveat:** `split row` on a list flattens all results into a single list (`['a,b' 'c,d'] | split row ','` → `[a b c d]`), unlike `each { split row ',' }` which keeps one sublist per element.
+Other `split` commands (`chars`, `words`) keep sublists.
 
 ---
 
 ## Pipeline Principles
 
 ### Leading `|`
-Place `|` at the start of continuation lines, indented one level in from the line that opens the pipeline. A top-level pipeline keeps its `|` at column 0; a pipeline on the right of `let x = …` is a nested expression, so its `|` sits 4 spaces in from the `let`. This is what `topiary format --language nu` produces.
+Place `|` at the start of continuation lines, indented one level in from the line that opens the pipeline.
+A top-level pipeline keeps its `|` at column 0; a pipeline on the right of `let x = …` is a nested expression, so its `|` sits 4 spaces in from the `let`.
+This is what `topiary format --language nu` produces.
 
 ```nushell
 # Top level — column 0
@@ -168,10 +178,13 @@ let row_type = $file_lines
 ```
 
 ### One Step Per Line
-A new line per `|` is the default. Several `|` on one line are allowed only in two cases:
+A new line per `|` is the default.
+Several `|` on one line are allowed only in two cases:
 
-1. **The stages read as one action.** `| lines | str trim` is "get clean lines", `| uniq --count | sort-by count --reverse` is "rank by frequency". The reader takes them in as a single move, so splitting them adds noise.
-2. **A short parenthesised subexpression** — `(open $file | from json)`, `($row_type | wrap row_type)`. These are arguments, not the shape of the pipeline.
+1. **The stages read as one action.** `| lines | str trim` is "get clean lines", `| uniq --count | sort-by count --reverse` is "rank by frequency".
+   The reader takes them in as a single move, so splitting them adds noise.
+2. **A short parenthesised subexpression** — `(open $file | from json)`, `($row_type | wrap row_type)`.
+   These are arguments, not the shape of the pipeline.
 
 Everywhere else, when each stage is a separate transformation the reader has to follow one at a time, give it its own line.
 
@@ -187,9 +200,12 @@ history --long
 history --long | where start_timestamp > ((date now) - 1wk) | get command | uniq --count | sort-by count --reverse
 ```
 
-Judgement, not a counter: `git branch | lines | str trim` stays on one line because fetching and cleaning are one thought. The test is whether a reader must stop and follow each stage separately, not how many `|` there are.
+Judgement, not a counter: `git branch | lines | str trim` stays on one line because fetching and cleaning are one thought.
+The test is whether a reader must stop and follow each stage separately, not how many `|` there are.
 
-`|` is the **only** operator that continues a line by itself. `++`, `+`, `and`, `or` and the rest are a parse error when the expression spans lines — leading gives ``Command `++` not found``, trailing gives `Incomplete math expression`. Wrap the whole expression in `( … )`, or rewrite it as a pipeline:
+`|` is the **only** operator that continues a line by itself.
+`++`, `+`, `and`, `or` and the rest are a parse error when the expression spans lines — leading gives ``Command `++` not found``, trailing gives `Incomplete math expression`.
+Wrap the whole expression in `( … )`, or rewrite it as a pipeline:
 
 ```nushell
 # Fails to parse
@@ -218,7 +234,7 @@ Use empty `{ }` for the branch that should pass through unchanged:
 ### Stateful Transforms
 Use `scan` for sequences with state: `use std/iter scan`
 
-→ See [patterns.md](references/patterns.md) for detailed examples.
+→ See `references/patterns.md` for detailed examples.
 
 ---
 
@@ -247,13 +263,14 @@ export def 'main build' [] {
 
 ### Script mode vs module mode
 
-`main` is stripped in script mode but **stays** in module mode. `export` is irrelevant in script mode but **required** in module mode.
+`main` is stripped in script mode but **stays** in module mode.
+`export` is irrelevant in script mode but **required** in module mode.
 
-| How you run | Calls `def "main test"` | `export` needed? |
-|---|---|---|
-| `nu toolkit.nu test` | ✓ `main` stripped | No |
-| `use toolkit.nu; toolkit main test` | ✓ `main` stays | Yes |
-| `use toolkit.nu *; main test` | ✓ bare names | Yes |
+Each of these calls `def "main test"`:
+
+- `nu toolkit.nu test` — `main` stripped; `export` needed: no
+- `use toolkit.nu; toolkit main test` — `main` stays; `export` needed: yes
+- `use toolkit.nu *; main test` — bare names; `export` needed: yes
 
 **⚠ Common agent mistake** — using `use` (module mode) but calling with script-mode syntax:
 
@@ -288,11 +305,15 @@ export def greet [name: string] { $"Hello ($name)" }
 export def main [name: string] { $"Hello ($name)" }
 ```
 
-After `use greet.nu`, call it as `greet "world"` — `main` is replaced by the module name. This applies to `def`, `extern`, and `const`.
+After `use greet.nu`, call it as `greet "world"` — `main` is replaced by the module name.
+This applies to `def`, `extern`, and `const`.
 
 ### A command name is prose, not code
 
-A quoted `def "…"` name may contain spaces, and that is the whole point of the multi-word form. Use **letters, digits, spaces and hyphens** — nothing else. Write what the command does, in words. Never embed a code fragment, a type, a literal or an operator in the name:
+A quoted `def "…"` name may contain spaces, and that is the whole point of the multi-word form.
+Use **letters, digits, spaces and hyphens** — nothing else.
+Write what the command does, in words.
+Never embed a code fragment, a type, a literal or an operator in the name:
 
 ```nushell
 # WRONG — a code fragment in the name; says nothing a reader could not get from the body
@@ -312,13 +333,21 @@ Why this is not merely a style preference: a command name is *data that other to
 { name: "the signer's endorsement", type: "test", execute: { the signer's endorsement } }
 ```
 
-The name appears twice, and the second time it is a **bare command call inside a block** — so the parser reads every character of it. The apostrophe opens a string that never closes, and **every test in the file** fails with `nu::parser::unexpected_eof` pointing at generated code that names nothing you wrote. The same shape bites any generator: `@example` bodies, `help` tables rendered back into a script, a name passed through `nu -c`.
+The name appears twice, and the second time it is a **bare command call inside a block** — so the parser reads every character of it.
+The apostrophe opens a string that never closes, and **every test in the file** fails with `nu::parser::unexpected_eof` pointing at generated code that names nothing you wrote.
+The same shape bites any generator: `@example` bodies, `help` tables rendered back into a script, a name passed through `nu -c`.
 
-Measured, so the rule is not a guess. Breaks the whole file: `'` `` ` `` `"` `(` `)` `[` `]` `|` `#`, and an unbalanced `{`. Survives today: a balanced `{a: 1}` and even `$var`, because the parser matches the longest defined command name first. Do not rely on that second list — it is an accident of how the name happens to lex, it says nothing about the next tool that consumes the name, and a `{a: 1}` name is bad naming regardless of whether it parses.
+Measured, so the rule is not a guess.
+Breaks the whole file: `'` `` ` `` `"` `(` `)` `[` `]` `|` `#`, and an unbalanced `{`.
+Survives today: a balanced `{a: 1}` and even `$var`, because the parser matches the longest defined command name first.
+Do not rely on that second list — it is an accident of how the name happens to lex, it says nothing about the next tool that consumes the name, and a `{a: 1}` name is bad naming regardless of whether it parses.
 
-English wants the apostrophe (`the signer's key`, `it's`), so this is a genuine trap and not a rare edge. Rephrase — a possessive always has an `of` form, and a contraction always has a long form.
+English wants the apostrophe (`the signer's key`, `it's`), so this is a genuine trap and not a rare edge.
+Rephrase — a possessive always has an `of` form, and a contraction always has a long form.
 
-Separate rule, same place it bites: since 0.115 a command name can never *be* a parser keyword. `def def`, `def if`, `def let` fail with `nu::parser::name_is_keyword`, and that covers module exports and `use *` too. Ordinary builtins stay shadowable — `def ls` still works, and `%ls` reaches the real one.
+Separate rule, same place it bites: since 0.115 a command name can never *be* a parser keyword.
+`def def`, `def if`, `def let` fail with `nu::parser::name_is_keyword`, and that covers module exports and `use *` too.
+Ordinary builtins stay shadowable — `def ls` still works, and `%ls` reaches the real one.
 
 ---
 
@@ -338,7 +367,7 @@ Separate rule, same place it bites: since 0.115 a command name can never *be* a 
 - Combine consecutive `each` closures when operations can be piped
 - Define data first, then filter
 - Include type signatures: `]: input -> output {`
-- Document non-obvious flags/parameters with a trailing `# comment` — it becomes their `help` description (see [formatting.md](references/formatting.md))
+- Document non-obvious flags/parameters with a trailing `# comment` — it becomes their `help` description (see `references/formatting.md`)
 - Use `@example` attributes (nutest)
 - Use `const` for static data
 - Keep custom commands focused
@@ -373,4 +402,4 @@ Separate rule, same place it bites: since 0.115 a command name can never *be* a 
 - Records: multi-line, no trailing comma
 - Variables: `let x =` (no `$` on left)
 
-→ See [formatting.md](references/formatting.md) for full conventions.
+→ See `references/formatting.md` for full conventions.

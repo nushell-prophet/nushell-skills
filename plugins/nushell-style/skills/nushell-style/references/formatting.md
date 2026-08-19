@@ -28,7 +28,8 @@ Single-expression closures have spaces inside braces:
 
 ## Flag Spacing
 
-Declare a short alias only when the user explicitly asks for one. When present, separate it from the long name with a space:
+Declare a short alias only when the user explicitly asks for one.
+When present, separate it from the long name with a space:
 
 ```nushell
 # Preferred
@@ -41,7 +42,8 @@ Declare a short alias only when the user explicitly asks for one. When present, 
 
 ## Document Flags and Parameters
 
-A `#` comment right after a flag or parameter becomes its description in `help <command>`, `<command> --help`, and tab-completion — Nushell reads it straight out of the signature, so it's the only place to write the description; a doc comment above `def` does not cover individual flags. Add one whenever the name alone doesn't say what the flag does or when it takes an argument:
+A `#` comment right after a flag or parameter becomes its description in `help <command>`, `<command> --help`, and tab-completion — Nushell reads it straight out of the signature, so it's the only place to write the description; a doc comment above `def` does not cover individual flags.
+Add one whenever the name alone doesn't say what the flag does or when it takes an argument:
 
 ```nushell
 # Preferred
@@ -55,7 +57,8 @@ export def 'main test-unit' [
 export def 'main test-unit' [--json --pretty --all] { ... }
 ```
 
-Skip the comment when the name is already the whole explanation (`--force`, `--verbose`). A single-line comment only — Nushell's parser does not read a second line as more of the description.
+Skip the comment when the name is already the whole explanation (`--force`, `--verbose`).
+A single-line comment only — Nushell's parser does not read a second line as more of the description.
 
 ## Multi-line Records
 

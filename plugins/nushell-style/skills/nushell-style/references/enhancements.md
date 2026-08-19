@@ -35,7 +35,8 @@ http get $url | let data | get items | length
 
 ### `for` loops accept streams (v0.108)
 
-No longer collects the source. Works with unbounded streams.
+No longer collects the source.
+Works with unbounded streams.
 
 ```nushell
 for event in (watch . --glob=**/*.rs) { cargo test }
@@ -63,9 +64,8 @@ Unordered `par-each` no longer blocks until all items finish.
 
 ### `peek` — inspect a stream without collecting (v0.113)
 
-Captures the first `n` elements into the pipeline metadata while letting the
-stream continue flowing. Useful for logging or debugging without forcing
-`collect`.
+Captures the first `n` elements into the pipeline metadata while letting the stream continue flowing.
+Useful for logging or debugging without forcing `collect`.
 
 ```nushell
 ls **/*.rs
@@ -76,8 +76,8 @@ ls **/*.rs
 
 ### `run` — scripts as pipeline stages (v0.114)
 
-A `.nu` script can now sit in the middle of a pipeline. The script body is the
-transform (implicit `$in` as usual), or a `def main` entry point if defined.
+A `.nu` script can now sit in the middle of a pipeline.
+The script body is the transform (implicit `$in` as usual), or a `def main` entry point if defined.
 Execution is isolated — the script's definitions don't leak into the session.
 Resolution: cwd / `NU_LIB_DIRS` / explicit path (not `PATH`).
 
@@ -151,10 +151,7 @@ try { fail } catch {|e| $e.rendered }  # pre-formatted string
 # pre-0.114: $e.json | from json  ($e.json removed in 0.114)
 ```
 
-Since 0.114 each label also carries a `location` record — file name plus
-file-relative `start`/`end` offsets — which makes external error-reporting
-tools feasible (the raw `span` offsets are into nushell's whole internal
-source buffer, not the file).
+Since 0.114 each label also carries a `location` record — file name plus file-relative `start`/`end` offsets — which makes external error-reporting tools feasible (the raw `span` offsets are into nushell's whole internal source buffer, not the file).
 
 ---
 
@@ -181,8 +178,7 @@ Deduplicated, order-preserving, work on scalars and records alike.
 [{a: 1} {a: 2}] | union [{a: 2} {a: 3}]   # records compare structurally
 ```
 
-Replaces hand-rolled `append | uniq` (union), `where $it in $other`
-(intersect), `where $it not-in $other` (difference) — with dedup included.
+Replaces hand-rolled `append | uniq` (union), `where $it in $other` (intersect), `where $it not-in $other` (difference) — with dedup included.
 
 ### `combinations` / `permutations` (v0.114)
 
@@ -314,8 +310,8 @@ wraps-first 2    # => [1, 2]
 
 ### `any` / `all` accept row conditions (v0.115)
 
-Same syntax as `where` — reference columns directly, or use `$it`. Closures
-still work for anything longer.
+Same syntax as `where` — reference columns directly, or use `$it`.
+Closures still work for anything longer.
 
 ```nushell
 [9 8 7 6] | enumerate | any item == index * 2   # => true
@@ -324,8 +320,7 @@ still work for anything longer.
 
 ### `take while` / `take until --include` (v0.115)
 
-`--include (-i) $n` keeps `n` more items after the point where the stream
-would have stopped — the usual "and the row that ended it" case.
+`--include (-i) $n` keeps `n` more items after the point where the stream would have stopped — the usual "and the row that ended it" case.
 
 ```nushell
 [1 2 3 4 5] | take while {|x| $x < 3 } --include 1     # => [1, 2, 3]
@@ -334,8 +329,8 @@ would have stopped — the usual "and the row that ended it" case.
 
 ### `filesize` arguments on `chunks` / `first` / `last` / `take` / `skip` / `drop` (v0.115)
 
-`drop` also works on `binary` input now. Splitting a file by size no longer
-needs a byte count in a variable.
+`drop` also works on `binary` input now.
+Splitting a file by size no longer needs a byte count in a variable.
 
 ```nushell
 let bytes = 0x[00 01 02 03 04 05 06 07]
@@ -351,10 +346,8 @@ open --raw file.7z | chunks 10MiB | enumerate | each {|c|
 
 ### Math commands on records with list columns (v0.115)
 
-Reducing commands (`math avg/sum/product/max/min/median/mode/stddev/variance`)
-and element-wise ones (`math abs/cbrt/ceil/floor/sqrt/round/log`) now handle a
-record whose columns are lists, including uneven lengths. An optional cell path
-restricts the operation to named columns; the rest pass through untouched.
+Reducing commands (`math avg/sum/product/max/min/median/mode/stddev/variance`) and element-wise ones (`math abs/cbrt/ceil/floor/sqrt/round/log`) now handle a record whose columns are lists, including uneven lengths.
+An optional cell path restricts the operation to named columns; the rest pass through untouched.
 
 ```nushell
 {alice: [0.1 0.6 0.2] bob: [0.8 0.3 0.2 0.9]} | math avg
@@ -375,7 +368,7 @@ let safe = $user_input | str escape-regex
 $data | where name like $"^($safe)$"
 ```
 
-Escapes for the `fancy-regex` flavor Nushell uses everywhere — see [regex.md](regex.md).
+Escapes for the `fancy-regex` flavor Nushell uses everywhere — see `regex.md`.
 
 ### `str replace` with closure (v0.109)
 
@@ -421,8 +414,7 @@ char eol  # "\r\n" on Windows, "\n" elsewhere
 
 ### `split row --right` / `split column --right` (v0.114)
 
-`--number $n` splits from the left; add `--right` to keep the split points
-rightmost — the classic "separate the version suffix" case:
+`--number $n` splits from the left; add `--right` to keep the split points rightmost — the classic "separate the version suffix" case:
 
 ```nushell
 'some-package-1.0' | split row '-' --number 2           # [some, package-1.0]
@@ -431,9 +423,8 @@ rightmost — the classic "separate the version suffix" case:
 
 ### SemVer as a first-class value (v0.114, extended v0.115)
 
-`into semver` parses; the value sorts correctly, decomposes with
-`into record`, rebuilds from a record, bumps without string surgery, and
-matches ranges. Replaces `split row '.' | into int` sorting hacks.
+`into semver` parses; the value sorts correctly, decomposes with `into record`, rebuilds from a record, bumps without string surgery, and matches ranges.
+Replaces `split row '.' | into int` sorting hacks.
 
 ```nushell
 '1.2.3-alpha.1' | into semver | semver bump release      # => 1.2.3
@@ -443,9 +434,8 @@ matches ranges. Replaces `split row '.' | into int` sorting hacks.
 '1.2.3-alpha.1+b.2' | into semver | into record  # major/minor/patch/pre/build
 ```
 
-Since 0.115 the values also compare with `==`, `!=`, `<`, `<=`, `>`, `>=`, so
-version gates read like ordinary conditions. A plain string on the right-hand
-side is accepted when it parses as a semver.
+Since 0.115 the values also compare with `==`, `!=`, `<`, `<=`, `>`, `>=`, so version gates read like ordinary conditions.
+A plain string on the right-hand side is accepted when it parses as a semver.
 
 ```nushell
 ('2.0.1' | into semver) > ('1.9.9' | into semver)   # => true
@@ -455,16 +445,13 @@ side is accepted when it parses as a semver.
 
 Also new in 0.115:
 
-- `into semver` / `into semver-range` take `--loose` for `v`-style prefixes —
-  `v1.2.3`, `v.1.2.3`, `v:1.2.3`, `v-1.2.3`, `v_1.2.3`. `into record` then
-  carries the prefix in a `prefix` field.
-- `into semver` accepts a list, and a cell path to convert in place:
-  `$nu.os-info | into semver kernel_version`, `["1.2.0" "0.3.12"] | into semver`.
-- A single semver no longer renders as a one-row table, and semver values print
-  in `cyan_bold`.
+- `into semver` / `into semver-range` take `--loose` for `v`-style prefixes — `v1.2.3`, `v.1.2.3`, `v:1.2.3`, `v-1.2.3`, `v_1.2.3`.
+  `into record` then carries the prefix in a `prefix` field.
+- `into semver` accepts a list, and a cell path to convert in place: `$nu.os-info | into semver kernel_version`, `["1.2.0" "0.3.12"] | into semver`.
+- A single semver no longer renders as a one-row table, and semver values print in `cyan_bold`.
 
-Note: semver is a custom value, so `to nuon` on it fails. Convert with
-`into string` or `into record` before serializing.
+Note: semver is a custom value, so `to nuon` on it fails.
+Convert with `into string` or `into record` before serializing.
 
 ---
 
@@ -547,9 +534,8 @@ const val = [a b c] | get 2  # works at parse time
 
 ### `external_arg` parameter type (v0.115)
 
-Takes an argument the way an external command would: no int/bool coercion, the
-raw text arrives typed as `glob`. Useful for wrappers that forward arguments to
-another tool.
+Takes an argument the way an external command would: no int/bool coercion, the raw text arrives typed as `glob`.
+Useful for wrappers that forward arguments to another tool.
 
 ```nushell
 # script.nu
@@ -568,10 +554,7 @@ nu script.nu 0001 -- --verbose 'x y'
 
 ### `scope` reports local scopes, `scope commands` reports deprecations (v0.115)
 
-`scope variables` / `commands` / `aliases` / `modules` / `externs` now list
-what is defined in the current block as well as the global scope, so
-introspection inside `do`, `if`, `for`, or a custom command finally sees the
-local names.
+`scope variables` / `commands` / `aliases` / `modules` / `externs` now list what is defined in the current block as well as the global scope, so introspection inside `do`, `if`, `for`, or a custom command finally sees the local names.
 
 ```nushell
 let a = 1
@@ -582,8 +565,7 @@ do { def local-cmd [] { 1 }; scope commands | where name == 'local-cmd' | length
 # => 1  (0 again after the block ends)
 ```
 
-`scope commands` also carries `deprecation_info` — deprecated commands and
-flags are now machine-readable:
+`scope commands` also carries `deprecation_info` — deprecated commands and flags are now machine-readable:
 
 ```nushell
 scope commands | where name == "str downcase" | first | get deprecation_info.0.help
@@ -651,8 +633,7 @@ http get --unix-socket /var/run/docker.sock http://localhost/containers/json
 
 ### Error responses use the body as message (v0.114)
 
-`http` error messages now carry the response body — usually the API's actual
-explanation — instead of just the status line.
+`http` error messages now carry the response body — usually the API's actual explanation — instead of just the status line.
 
 ---
 
@@ -702,11 +683,9 @@ def ls [] { echo "custom" }
 
 ### Dynamic `%` sigil dispatch (v0.113)
 
-`%$cmd` and `%($cmd)` resolve the builtin to invoke at runtime. **Only
-builtins are eligible** — custom commands, aliases, and externals fail with
-`command_not_found`. Use this when you stored a builtin name in a variable
-and need to call it without `eval`-style string interpretation; arguments
-are forwarded as parsed values.
+`%$cmd` and `%($cmd)` resolve the builtin to invoke at runtime.
+**Only builtins are eligible** — custom commands, aliases, and externals fail with `command_not_found`.
+Use this when you stored a builtin name in a variable and need to call it without `eval`-style string interpretation; arguments are forwarded as parsed values.
 
 ```nushell
 let cmd = 'echo'
@@ -721,9 +700,8 @@ let c = 'custom_cmd'
 
 ### Fish-style abbreviations (v0.113)
 
-Syntax-aware expansions triggered on space/enter, configured via
-`$env.config.abbreviations`. Unlike aliases, the expanded text is visible and
-editable before submission.
+Syntax-aware expansions triggered on space/enter, configured via `$env.config.abbreviations`.
+Unlike aliases, the expanded text is visible and editable before submission.
 
 ```nushell
 $env.config.abbreviations = {
@@ -811,15 +789,13 @@ random pass --chars 20 --require-each-type
 
 ### `is-terminal` detects redirection (v0.114)
 
-Now defaults to `--stdout` and reports `false` when output is piped,
-captured, or redirected — `if (is-terminal) { fancy } else { plain }` finally
-works in all four cases (`| $in`, `o> file`, subexpression capture, terminal).
+Now defaults to `--stdout` and reports `false` when output is piped, captured, or redirected — `if (is-terminal) { fancy } else { plain }` finally works in all four cases (`| $in`, `o> file`, subexpression capture, terminal).
 
 ### `$ans` — the last REPL result (v0.115)
 
-A record describing the previous REPL entry. **REPL only** — it is not
-populated in scripts or `nu -c`. `ans` is now a reserved name, so `let ans =
-...` in existing scripts has to be renamed.
+A record describing the previous REPL entry.
+**REPL only** — it is not populated in scripts or `nu -c`.
+`ans` is now a reserved name, so `let ans = ...` in existing scripts has to be renamed.
 
 ```nushell
 $ans.last        # the previous pipeline's value
@@ -828,10 +804,9 @@ $ans.duration    # duration
 $ans.command     # the line you typed, as a string
 ```
 
-Storing the output is opt-in: `$env.config.max_last_result_size` is a filesize
-and defaults to `0b`, which omits the `last` key entirely — probe it with
-`$ans.last?`. The rest of the record is always there. Set the size to rescue an
-expensive pipeline you forgot to bind:
+Storing the output is opt-in: `$env.config.max_last_result_size` is a filesize and defaults to `0b`, which omits the `last` key entirely — probe it with `$ans.last?`.
+The rest of the record is always there.
+Set the size to rescue an expensive pipeline you forgot to bind:
 
 ```nushell
 $env.config.max_last_result_size = 10mb
@@ -843,8 +818,7 @@ Output over the limit is truncated, with a warning when you read it.
 
 ### Constant expressions in `match` arms (v0.115)
 
-An arm pattern may now be a parenthesized const expression, so a path or prefix
-kept in a `const` can be matched without a chain of `if`s.
+An arm pattern may now be a parenthesized const expression, so a path or prefix kept in a `const` can be matched without a chain of `if`s.
 
 ```nushell
 match "test" { ('t' + 'es' + 't') => { 'OK' } }   # => OK
@@ -884,8 +858,7 @@ ls | to nuon --list-of-records --indent 2
 
 ### `to nuon --no-commas` (v0.113)
 
-Omit the optional commas — handy when generating NUON for diff-friendly
-inclusion in source files.
+Omit the optional commas — handy when generating NUON for diff-friendly inclusion in source files.
 
 ```nushell
 {a: 1 b: 2} | to nuon --no-commas
@@ -893,8 +866,8 @@ inclusion in source files.
 
 ### `to nuon --pretty` and aligned table columns (v0.114)
 
-`--pretty` (`-p`) is shorthand for `--indent 2`. With any of `--indent` /
-`--tabs` / `--pretty`, table columns are now aligned:
+`--pretty` (`-p`) is shorthand for `--indent 2`.
+With any of `--indent` / `--tabs` / `--pretty`, table columns are now aligned:
 
 ```nushell
 [[name age]; [Alice 30] [Bob 25]] | to nuon --pretty
@@ -907,17 +880,15 @@ inclusion in source files.
 
 ### KDL format support (v0.114, reworked v0.115)
 
-`from kdl` / `to kdl`. Two data models, each the default on one side:
+`from kdl` / `to kdl`.
+Two data models, each the default on one side:
 
-- `from kdl` defaults to `--format nodes` — a list of `{name, args, props,
-  children}` rows, which is what a real config document looks like.
-- `to kdl` defaults to `--format jik` ([JSON-in-KDL][jik]) — one top-level `-`
-  node, so records and lists serialize predictably. This replaced the 0.114
-  heuristic that flattened values under synthetic node names like `root`.
+- `from kdl` defaults to `--format nodes` — a list of `{name, args, props, children}` rows, which is what a real config document looks like.
+- `to kdl` defaults to `--format jik` ([JSON-in-KDL][jik]) — one top-level `-` node, so records and lists serialize predictably.
+  This replaced the 0.114 heuristic that flattened values under synthetic node names like `root`.
 
-`--spec 1` / `--spec 2` picks the KDL language version (default 2). Parsing is
-strict: v1 keywords (`true`/`false`/`null`) and v2 keywords
-(`#true`/`#false`/`#null`) are not mixed.
+`--spec 1` / `--spec 2` picks the KDL language version (default 2).
+Parsing is strict: v1 keywords (`true`/`false`/`null`) and v2 keywords (`#true`/`#false`/`#null`) are not mixed.
 
 ```nushell
 {a: 1 b: true} | to kdl              # => - a=1 b=#true
@@ -943,9 +914,8 @@ Nu type annotations survive the round trip, the same way YAML tags do:
 
 ### `save` preserves TOML comments and formatting (v0.113)
 
-Round-tripping a TOML file no longer strips comments, blank lines, or
-inline-table layout. `Cargo.toml` style files can now be programmatically
-edited without losing context.
+Round-tripping a TOML file no longer strips comments, blank lines, or inline-table layout.
+`Cargo.toml` style files can now be programmatically edited without losing context.
 
 ```nushell
 open Cargo.toml | update package.version "1.1.0" | save Cargo.toml
@@ -979,8 +949,8 @@ open --raw README.md       # raw string
 
 ### `to txt` alias, `into binary` from duration (v0.115)
 
-`to txt` is a second name for `to text`, following the `to yaml` / `to yml`
-pattern. `into binary` now accepts durations.
+`to txt` is a second name for `to text`, following the `to yaml` / `to yml` pattern.
+`into binary` now accepts durations.
 
 ```nushell
 [a b c] | to txt   # same as: to text
@@ -1020,7 +990,8 @@ clip paste
 
 ### `std-rfc/iter recurse` — recursive descent (v0.105)
 
-Equivalent to jq `..`. Flattens nested structures.
+Equivalent to jq `..`.
+Flattens nested structures.
 
 ```nushell
 use std-rfc/iter *
@@ -1089,8 +1060,7 @@ Pass several cell paths to descend into multiple shapes in one call.
 
 ### `std-rfc/url` (v0.113)
 
-Concise URL manipulation: edit query params, path segments, scheme, etc.,
-without round-tripping through `url parse` / `url join`.
+Concise URL manipulation: edit query params, path segments, scheme, etc., without round-tripping through `url parse` / `url join`.
 
 ```nushell
 use std-rfc/url *
@@ -1099,8 +1069,7 @@ use std-rfc/url *
 
 ### `std-rfc/pb` — terminal progress bars via OSC 9;4 (v0.113)
 
-Sets the host terminal's taskbar/dock progress (where supported — iTerm,
-WezTerm, ConEmu, etc.).
+Sets the host terminal's taskbar/dock progress (where supported — iTerm, WezTerm, ConEmu, etc.).
 
 ```nushell
 use std-rfc/pb
@@ -1111,8 +1080,7 @@ try {
 
 ### `std-rfc/date floor` / `date ceil` (v0.115)
 
-Round a datetime down or up to a duration boundary — bucketing timestamps
-without arithmetic on the parts.
+Round a datetime down or up to a duration boundary — bucketing timestamps without arithmetic on the parts.
 
 ```nushell
 use std-rfc/date *
@@ -1122,10 +1090,8 @@ use std-rfc/date *
 
 ### More std commands stream (v0.114)
 
-`std/iter intersperse` / `flat-map`, `std-rfc/conversions into list`, and
-`std-rfc/tables select/reject column-slices` no longer collect their input;
-`std-rfc/iter only` consumes at most 2 items. Safe in long/unbounded
-pipelines now.
+`std/iter intersperse` / `flat-map`, `std-rfc/conversions into list`, and `std-rfc/tables select/reject column-slices` no longer collect their input; `std-rfc/iter only` consumes at most 2 items.
+Safe in long/unbounded pipelines now.
 
 ---
 
@@ -1159,8 +1125,7 @@ random uuid --version 7  # time-ordered UUID v7
 
 ### Structured verbose for `mkdir` / `mv` / `rm` (v0.113)
 
-`--verbose` now returns queryable tables instead of human text — scripts can
-filter on the result.
+`--verbose` now returns queryable tables instead of human text — scripts can filter on the result.
 
 ```nushell
 mkdir --verbose a/b/c | where created     # only paths actually created
@@ -1182,15 +1147,10 @@ idx status                             # memory / counts
 idx drop                               # free memory
 ```
 
-0.114 refinements: `idx init` content-indexes by default; hits print relative
-to cwd; `idx search` takes `[` / `?` literally (globs still filter *which
-files* to search: `idx search pattern */tests/*`); and `--context 2` /
-`--context -3..5` adds surrounding lines to matches.
+0.114 refinements: `idx init` content-indexes by default; hits print relative to cwd; `idx search` takes `[` / `?` literally (globs still filter *which files* to search: `idx search pattern */tests/*`); and `--context 2` / `--context -3..5` adds surrounding lines to matches.
 
-0.115: `idx export` / `idx import` were removed — the index is in-memory only,
-so `idx init` is the single way to build it. Watching stays on by default
-(`--no-watch` disables it), and the new `idx watch` streams change events as
-rows of `{kind, path}`:
+0.115: `idx export` / `idx import` were removed — the index is in-memory only, so `idx init` is the single way to build it.
+Watching stays on by default (`--no-watch` disables it), and the new `idx watch` streams change events as rows of `{kind, path}`:
 
 ```nushell
 idx init . --wait
@@ -1214,8 +1174,7 @@ glob * | wrap path | metadata set --path-columns [path]
 
 ### Width-priority columns in `table` (v0.114)
 
-Tag columns that must keep their width when the terminal is narrow —
-untagged wide columns get truncated first:
+Tag columns that must keep their width when the terminal is narrow — untagged wide columns get truncated first:
 
 ```nushell
 ps --long | select name command pid | metadata set --table-width-priority-columns [pid]
@@ -1223,8 +1182,8 @@ ps --long | select name command pid | metadata set --table-width-priority-column
 
 ### `metadata access` closure can mutate caller env (v0.113)
 
-Previously the closure ran in an isolated scope. Now it behaves like
-`do --env`, so `$env` assignments and `cd` inside the closure leak out.
+Previously the closure ran in an isolated scope.
+Now it behaves like `do --env`, so `$env` assignments and `cd` inside the closure leak out.
 
 ```nushell
 ls | metadata access {|m| $env.LAST_LISTED = $m.span.start }
@@ -1233,8 +1192,8 @@ ls | metadata access {|m| $env.LAST_LISTED = $m.span.start }
 
 ### `pre_prompt` / `env_change` hooks can edit the commandline (v0.113)
 
-Hooks can rewrite the buffer the user is about to submit (e.g. inject a
-prefix, rewrite a deprecated command). Previously they were read-only.
+Hooks can rewrite the buffer the user is about to submit (e.g. inject a prefix, rewrite a deprecated command).
+Previously they were read-only.
 
 ### `ansi gradient --fgnamed` / `--list` (v0.113)
 
@@ -1251,47 +1210,33 @@ ansi gradient --list   # show all named palettes
 
 ### Performance worth knowing about
 
-- `lines` on a string *value* returns a list stream instead of building the
-  whole list first — it is lazy now, like it already was for byte streams.
-- `str replace --regex` / `--multiline` is roughly 10x faster over lists,
-  tables, and records with many string values.
-- Built-in commands with `--regex` parameters share an LRU regex cache, so
-  tight loops no longer recompile the pattern.
-- Reading a small part of a big list or table (`$list.0`) no longer copies the
-  whole value; large binary values are cheaper to slice and convert too.
+- `lines` on a string *value* returns a list stream instead of building the whole list first — it is lazy now, like it already was for byte streams.
+- `str replace --regex` / `--multiline` is roughly 10x faster over lists, tables, and records with many string values.
+- Built-in commands with `--regex` parameters share an LRU regex cache, so tight loops no longer recompile the pattern.
+- Reading a small part of a big list or table (`$list.0`) no longer copies the whole value; large binary values are cheaper to slice and convert too.
 
 ### Fixes that change script behavior
 
-- A nested `try/finally` no longer swallows the outer handler — an error after
-  the inner block is caught by the outer `try`/`catch` as it should be.
-- `group-by` treats `null` consistently: it is no longer folded into `""`, and
-  record output omits it. Use `--to-table` to keep null groups.
-- `math max` on an *empty stream* now errors like it already did on an empty
-  list, instead of returning nothing.
+- A nested `try/finally` no longer swallows the outer handler — an error after the inner block is caught by the outer `try`/`catch` as it should be.
+- `group-by` treats `null` consistently: it is no longer folded into `""`, and record output omits it.
+  Use `--to-table` to keep null groups.
+- `math max` on an *empty stream* now errors like it already did on an empty list, instead of returning nothing.
 - `"" | path type` returns `null`, not `"dir"`.
-- Quotes inside a `(...)` subexpression of an interpolated string parse:
-  `$"('" "')"` prints `" "`.
-- `error make` rejects an invalid `label` (missing `span: {start, end}`)
-  instead of silently using the record's own span.
+- Quotes inside a `(...)` subexpression of an interpolated string parse: `$"('" "')"` prints `" "`.
+- `error make` rejects an invalid `label` (missing `span: {start, end}`) instead of silently using the record's own span.
 
 ### Interactive / REPL (little effect on scripts)
 
-- Helix edit mode: `$env.config.edit_mode = helix`, with `helix_normal` /
-  `helix_insert` / `helix_select` keybinding tables and `cursor_shape.helix_*`.
-- `commandline set-prompt` updates a rendered prompt from a background job, so
-  a slow segment (git branch, k8s context) can fill in asynchronously.
+- Helix edit mode: `$env.config.edit_mode = helix`, with `helix_normal` / `helix_insert` / `helix_select` keybinding tables and `cursor_shape.helix_*`.
+- `commandline set-prompt` updates a rendered prompt from a background job, so a slow segment (git branch, k8s context) can fill in asynchronously.
 - `color_config.selection` / `selection_cursor` style the visual selection.
-- Completion results are cached across prompts; cap with
-  `$env.config.completions.cache_size` (default `100`).
+- Completion results are cached across prompts; cap with `$env.config.completions.cache_size` (default `100`).
 
 ### `matrix` custom value
 
-0.115 adds a `matrix` custom value backed by ndarray, with a family of
-subcommands: constructors (`matrix zeros`, `matrix identity`, `into matrix`),
-access, arithmetic, linear algebra (`matrix multiply`, `matrix transpose`),
-reshaping, `matrix map`, reductions, and `matrix into-nu` to get a table back.
-`each` / `par-each` / `reduce` on a matrix error and point at the matrix
-equivalent. See the 0.115 release notes for the full list.
+0.115 adds a `matrix` custom value backed by ndarray, with a family of subcommands: constructors (`matrix zeros`, `matrix identity`, `into matrix`), access, arithmetic, linear algebra (`matrix multiply`, `matrix transpose`), reshaping, `matrix map`, reductions, and `matrix into-nu` to get a table back.
+`each` / `par-each` / `reduce` on a matrix error and point at the matrix equivalent.
+See the 0.115 release notes for the full list.
 
 ```nushell
 [[1 2 3] [4 5 6]] | into matrix | matrix transpose | matrix into-nu | to nuon

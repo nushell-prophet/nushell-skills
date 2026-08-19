@@ -4,7 +4,8 @@ numd and dotnu are the engines; nu-goodies and claude-nu supply the everyday on-
 
 ## nu-goodies — capture and presentation helpers
 
-Load with `use nu-goodies *`. The commands below all feed the same `# =>` annotation convention that numd and dotnu read and write — nu-goodies is a *producer* of literate snippets.
+Load with `use nu-goodies *`.
+The commands below all feed the same `# =>` annotation convention that numd and dotnu read and write — nu-goodies is a *producer* of literate snippets.
 
 ### `example` — share the command you just ran
 
@@ -15,7 +16,8 @@ ls nu-goodies | first 2 | reject modified
 | example
 ```
 
-Clipboard now holds a runnable, self-documenting snippet — paste it into a chat, an issue, or a numd document. Flags: `--bare` (raw nushell, no `nu -c` wrap — the right form for pasting into a numd block), `--no-comment`, `--no-copy`, `--abbreviated N`.
+Clipboard now holds a runnable, self-documenting snippet — paste it into a chat, an issue, or a numd document.
+Flags: `--bare` (raw nushell, no `nu -c` wrap — the right form for pasting into a numd block), `--no-comment`, `--no-copy`, `--abbreviated N`.
 
 ### `copy-out` — lift command + output from Zellij scrollback
 
@@ -27,7 +29,9 @@ copy-out 3     # from 3rd-to-last through the last command
 copy-out 3 1   # 3rd-to-last and last, separately
 ```
 
-`--cwd` prepends a comment line with the working directory; `--echo` returns instead of copying. This is REPL archaeology: the terminal itself becomes the source of a literate snippet. `delete-prompts` is the cleanup twin — removes the last N prompts from scrollback before a screenshot.
+`--cwd` prepends a comment line with the working directory; `--echo` returns instead of copying.
+This is REPL archaeology: the terminal itself becomes the source of a literate snippet.
+`delete-prompts` is the cleanup twin — removes the last N prompts from scrollback before a screenshot.
 
 ### `hist-to-script` — a session's history as a script
 
@@ -35,23 +39,22 @@ Dumps the commands of the current session (or directory) into a `.nu` file — t
 
 ### Presentation and exploration
 
-| Command | Literate use |
-|---|---|
-| `cprint` | Colorful, wrapped, `*highlighted*` prose inside scripts and demos |
-| `nu-format` | Topiary-format a snippet (breaks before pipes) before it goes into a doc |
-| `number-format` / `number-col-format` | Human-readable numbers in tables destined for documents |
-| `format profile` | `debug profile` output as an indented tree with duration bars |
-| `L` | Page a wide table through `less`/`bat` with `table -e` rendering |
-| `bar` | Inline Unicode bars — `bar 0.71` → `███▌` — for tables in reports |
-| `tile-right` / `tile-left` / `tile-up` / `tile-down` | Compose two text blocks into one figure, ANSI-aware |
-| `rgv` | ripgrep as a table of `path:line:col` links |
-| `fzf-preview` | Pick from any piped table with a bat preview; `--content` previews cell values |
-| `in-vd` / `in-hx` / `in-fx` | Hand a table to VisiData / Helix / fx and round-trip the edits |
-| `ansi-to-png`, `zellij-to-png`, `wez-to-png` / `wez-to-gif` | Render colored terminal output to images for docs |
+- `cprint` — colorful, wrapped, `*highlighted*` prose inside scripts and demos
+- `nu-format` — topiary-format a snippet (breaks before pipes) before it goes into a doc
+- `number-format` / `number-col-format` — human-readable numbers in tables destined for documents
+- `format profile` — `debug profile` output as an indented tree with duration bars
+- `L` — page a wide table through `less`/`bat` with `table -e` rendering
+- `bar` — inline Unicode bars: `bar 0.71` → `███▌`, for tables in reports
+- `tile-right` / `tile-left` / `tile-up` / `tile-down` — compose two text blocks into one figure, ANSI-aware
+- `rgv` — ripgrep as a table of `path:line:col` links
+- `fzf-preview` — pick from any piped table with a bat preview; `--content` previews cell values
+- `in-vd` / `in-hx` / `in-fx` — hand a table to VisiData / Helix / fx and round-trip the edits
+- `ansi-to-png`, `zellij-to-png`, `wez-to-png` / `wez-to-gif` — render colored terminal output to images for docs
 
 ## claude-nu — sessions as documents, Claude as a pipeline stage
 
-Load with `use claude-nu`. Claude Code stores every session as JSONL under `~/.claude/projects/`; claude-nu parses that into tables you can `where`/`sort-by` like anything else.
+Load with `use claude-nu`.
+Claude Code stores every session as JSONL under `~/.claude/projects/`; claude-nu parses that into tables you can `where`/`sort-by` like anything else.
 
 ### Reading sessions
 
@@ -76,7 +79,10 @@ claude-nu sessions
 | save docs/sessions/auth-refactor.md
 ```
 
-`export-session` returns the markdown itself — saving is the shell's job, which is why nothing reaches the disk until you pipe it to `save`. Read the text first if you want to. There is no record wrapper: it only repeated what the markdown already carries — session and date in the frontmatter, the title in the H1. Search first, then export: `claude-nu messages 'auth refactor' | claude-nu export-session`.
+`export-session` returns the markdown itself — saving is the shell's job, which is why nothing reaches the disk until you pipe it to `save`.
+Read the text first if you want to.
+There is no record wrapper: it only repeated what the markdown already carries — session and date in the frontmatter, the title in the H1.
+Search first, then export: `claude-nu messages 'auth refactor' | claude-nu export-session`.
 
 Combine with nu-goodies for review-before-export:
 
@@ -93,11 +99,13 @@ open error.log | ask 'what is the likely root cause?'
 ask --collect 'one-line summary of git rebase' | save --force note.md
 ```
 
-Merges the prompt with piped stdin, streams the answer live, `--collect` returns it as a string for further piping, `--here` runs in the project directory so Claude sees the repo context. This makes the AI a composable pipeline stage — the terminal-native version of "ask a quick question".
+Merges the prompt with piped stdin, streams the answer live, `--collect` returns it as a string for further piping, `--here` runs in the project directory so Claude sees the repo context.
+This makes the AI a composable pipeline stage — the terminal-native version of "ask a quick question".
 
 ### The dotnu-captures pattern — tracking external drift with git
 
-claude-nu's repo demonstrates a pattern worth copying. `dotnu-captures/nu--help.nu` contains:
+claude-nu's repo demonstrates a pattern worth copying.
+`dotnu-captures/nu--help.nu` contains:
 
 ```nushell
 # Capture `nu --help` output for tracking flag changes via git diff.
@@ -107,7 +115,8 @@ nu --help | print $in
 # => ...entire help text as # => lines...
 ```
 
-After a Nushell upgrade, `dotnu embeds-update dotnu-captures/nu--help.nu` re-captures, and `git diff` shows exactly which flags changed. Any external tool's `--help`, any API response shape, any environment fact can be pinned this way: a capture file per fact, refreshed by one command, diffed by git.
+After a Nushell upgrade, `dotnu embeds-update dotnu-captures/nu--help.nu` re-captures, and `git diff` shows exactly which flags changed.
+Any external tool's `--help`, any API response shape, any environment fact can be pinned this way: a capture file per fact, refreshed by one command, diffed by git.
 
 ### Completions that help the loop
 

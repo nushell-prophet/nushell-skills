@@ -1,50 +1,46 @@
 # Nushell Migration Guide (0.100 → 0.115)
 
-When updating Nushell scripts, consult this reference for breaking changes,
-renamed commands, and new idioms. Versions noted as `(v0.NNN)`.
+When updating Nushell scripts, consult this reference for breaking changes, renamed commands, and new idioms.
+Versions noted as `(v0.NNN)`.
 
 ---
 
 ## Renamed & Removed Commands
 
-| Old | New | Version |
-|-----|-----|---------|
-| `range` | `slice` | removed 0.103 |
-| `into bits` | `format bits` | removed 0.103 |
-| `fmt` | `format number` | removed 0.103 |
-| `split-by` | `group-by` (multiple groupers) | removed 0.102 |
-| `date to-record` | `into record` | removed 0.102 |
-| `date to-table` | `into record \| transpose \| transpose --header-row` | removed 0.102 |
-| `utouch` | `touch` | removed 0.102 |
-| `into value` (type inference) | `detect type` | 0.108 |
-| `into value --columns` | `detect type --columns` | removed 0.112 |
-| `random dice` (built-in) | `use std/random; random dice` | removed 0.112 |
-| `filter` | `where` (accepts stored closures) | deprecated 0.105 |
-| `do -s` / `do -p` | `do --suppress-errors` / long form | removed 0.104 |
-| `do --ignore-shell-errors` | `do --ignore-errors (-i)` | deprecated 0.101 |
-| `do --ignore-program-errors` | `do --ignore-errors (-i)` | deprecated 0.101 |
-| `job tag` | `job describe` | 0.112 |
-| `polars fetch` | (removed, no replacement) | 0.108 |
-| `str upcase` | `str uppercase` | deprecated 0.114 |
-| `str downcase` | `str lowercase` | deprecated 0.114 |
-| `std/clip` `copy` / `paste` | `clip copy52` / `paste52` (OSC 52), or `clip copy` / `paste` under the `native-clip` experimental option | removed 0.114 |
-| `idx import` / `idx export` | `idx init` (in-memory only; `--no-watch` turns watching off) | removed 0.115 |
-| `nu --testbin <name>` | plain Nushell, or `nu -n -c "..."` | removed 0.115 |
+- `range` → `slice` — removed 0.103
+- `into bits` → `format bits` — removed 0.103
+- `fmt` → `format number` — removed 0.103
+- `split-by` → `group-by` (multiple groupers) — removed 0.102
+- `date to-record` → `into record` — removed 0.102
+- `date to-table` → `into record | transpose | transpose --header-row` — removed 0.102
+- `utouch` → `touch` — removed 0.102
+- `into value` (type inference) → `detect type` — 0.108
+- `into value --columns` → `detect type --columns` — removed 0.112
+- `random dice` (built-in) → `use std/random; random dice` — removed 0.112
+- `filter` → `where` (accepts stored closures) — deprecated 0.105
+- `do -s` / `do -p` → `do --suppress-errors` / long form — removed 0.104
+- `do --ignore-shell-errors` → `do --ignore-errors (-i)` — deprecated 0.101
+- `do --ignore-program-errors` → `do --ignore-errors (-i)` — deprecated 0.101
+- `job tag` → `job describe` — 0.112
+- `polars fetch` → (removed, no replacement) — 0.108
+- `str upcase` → `str uppercase` — deprecated 0.114
+- `str downcase` → `str lowercase` — deprecated 0.114
+- `std/clip` `copy` / `paste` → `clip copy52` / `paste52` (OSC 52), or `clip copy` / `paste` under the `native-clip` experimental option — removed 0.114
+- `idx import` / `idx export` → `idx init` (in-memory only; `--no-watch` turns watching off) — removed 0.115
+- `nu --testbin <name>` → plain Nushell, or `nu -n -c "..."` — removed 0.115
 
 ### Renamed Flags
 
-| Command | Old Flag | New Flag | Version |
-|---------|----------|----------|---------|
-| `get`/`select`/`reject` | `--ignore-errors (-i)` | `--optional (-o)` | 0.106 |
-| `du` | `--all (-a)` | `--long (-l)` | 0.101 |
-| `watch` | `--debounce-ms` | `--debounce` (duration) | removed 0.112 |
-| `metadata set` | `--merge` | closure form | removed 0.112 |
-| `metadata set` | `--datasource-ls` | `--path-columns [name]` | removed 0.113 (deprecated 0.111) |
-| `kill` | `-0` / `-9` shorthand | `--signal 0` / `--signal 9` | removed 0.113 |
-| `watch` | closure argument | bare `watch path` stream + `for`/`each` | deprecated 0.113 |
-| `grid` | implicit record handling | explicit `(column)` argument | removed 0.114 (deprecated 0.113) |
-| `from xlsx` / `from ods` | `--header-row` | `--noheaders` / `--first-row` | removed 0.114 (added 0.113) |
-| `std/iter scan` | positional init + `--noinit` | `--fold` (omit for no initial value) | 0.114 |
+- `get`/`select`/`reject`: `--ignore-errors (-i)` → `--optional (-o)` — 0.106
+- `du`: `--all (-a)` → `--long (-l)` — 0.101
+- `watch`: `--debounce-ms` → `--debounce` (duration) — removed 0.112
+- `metadata set`: `--merge` → closure form — removed 0.112
+- `metadata set`: `--datasource-ls` → `--path-columns [name]` — removed 0.113 (deprecated 0.111)
+- `kill`: `-0` / `-9` shorthand → `--signal 0` / `--signal 9` — removed 0.113
+- `watch`: closure argument → bare `watch path` stream + `for`/`each` — deprecated 0.113
+- `grid`: implicit record handling → explicit `(column)` argument — removed 0.114 (deprecated 0.113)
+- `from xlsx` / `from ods`: `--header-row` → `--noheaders` / `--first-row` — removed 0.114 (added 0.113)
+- `std/iter scan`: positional init + `--noinit` → `--fold` (omit for no initial value) — 0.114
 
 ---
 
@@ -85,12 +81,10 @@ mut x = 1
 
 ### New operators
 
-| Operator | Meaning | Version |
-|----------|---------|---------|
-| `like` / `not-like` | aliases for `=~` / `!~` | 0.100 |
-| `has` / `not-has` | reverse-operand `in` / `not-in` | 0.102 |
-| `not-starts-with` | negated starts-with | 0.108 |
-| `not-ends-with` | negated ends-with | 0.108 |
+- `like` / `not-like` — aliases for `=~` / `!~` (0.100)
+- `has` / `not-has` — reverse-operand `in` / `not-in` (0.102)
+- `not-starts-with` — negated starts-with (0.108)
+- `not-ends-with` — negated ends-with (0.108)
 
 ```nushell
 # has — useful in where clauses
@@ -158,9 +152,8 @@ ls     # => duck
 
 ### `$ans` is a reserved variable name (v0.115)
 
-`$ans` now holds the last REPL result (`last`, `exit_code`, `duration`,
-`command`), joining `$in`, `$nu` and `$env` as a builtin variable. Any script
-binding that name breaks at parse time — rename the variable.
+`$ans` now holds the last REPL result (`last`, `exit_code`, `duration`, `command`), joining `$in`, `$nu` and `$env` as a builtin variable.
+Any script binding that name breaks at parse time — rename the variable.
 
 ```nushell
 # before: let ans = 5
@@ -170,19 +163,16 @@ binding that name breaks at parse time — rename the variable.
 
 ### Parser keywords cannot be shadowed (v0.115)
 
-Defining a command whose name is a *parser keyword* (`def`, `let`, `if`,
-`where`, `use`, `export def`, …) is now `nu::parser::name_is_keyword`. This
-covers module exports and `use *` too. Ordinary built-in commands are still
-shadowable — that is what the `%` sigil is for.
+Defining a command whose name is a *parser keyword* (`def`, `let`, `if`, `where`, `use`, `export def`, …) is now `nu::parser::name_is_keyword`.
+This covers module exports and `use *` too.
+Ordinary built-in commands are still shadowable — that is what the `%` sigil is for.
 
 ```nushell
 # def def [] {}   # error: 'def' is a parser keyword
 ```
 
-Related: a module named after a keyword may no longer export `main`, because
-the parser intercepts the call before the module can be reached
-(`nu::parser::keyword_shadow_module_main`). Rename the module, or drop
-`export def main` and import the rest with `use if.nu *`.
+Related: a module named after a keyword may no longer export `main`, because the parser intercepts the call before the module can be reached (`nu::parser::keyword_shadow_module_main`).
+Rename the module, or drop `export def main` and import the rest with `use if.nu *`.
 
 ---
 
@@ -190,7 +180,8 @@ the parser intercepts the call before the module can be reached
 
 ### Run-time pipeline input type checking (v0.102)
 
-Previously parse-time only. Now also enforced at run-time through `any`-typed intermediaries.
+Previously parse-time only.
+Now also enforced at run-time through `any`-typed intermediaries.
 
 ### `string` ↔ `glob` implicit casting (v0.108)
 
@@ -236,9 +227,9 @@ Catches type annotation violations at runtime when enabled.
 
 ### `enforce-runtime-annotations` on by default (v0.114)
 
-Runtime type checking of `let` annotations is now opt-out. Scripts whose
-annotations only "passed" because the value was never checked will start
-erroring. Disable if needed:
+Runtime type checking of `let` annotations is now opt-out.
+Scripts whose annotations only "passed" because the value was never checked will start erroring.
+Disable if needed:
 
 ```nushell
 NU_EXPERIMENTAL_OPTIONS="enforce-runtime-annotations=false" nu
@@ -248,25 +239,19 @@ NU_EXPERIMENTAL_OPTIONS="enforce-runtime-annotations=false" nu
 ### Much stricter parse-time type checking (v0.114)
 
 Several inference improvements move errors from runtime to parse time.
-Annotations that previously "seemed fine" may now be rejected — usually they
-were wrong all along.
+Annotations that previously "seemed fine" may now be rejected — usually they were wrong all along.
 
-- Command output types are inferred from pipeline input type
-  (`"foo" | str uppercase | let x` → `$x` is `string`, not `any`)
-- `$in` is typed from the surrounding pipeline (`2 | $in + "foo"` is now a
-  parse error)
+- Command output types are inferred from pipeline input type (`"foo" | str uppercase | let x` → `$x` is `string`, not `any`)
+- `$in` is typed from the surrounding pipeline (`2 | $in + "foo"` is now a parse error)
 - `let` bindings mid-/end-pipeline get the pipeline input type
-- Optional params and flags *without a default* are now `oneof<T, nothing>`,
-  not `T` — code that assumed `T` may need a `default` value or a null check
-- Inside a `def`, the body is checked against the declared input/output
-  signature (`def foo []: string -> any { accepts-int }` is a parse error)
-- `if`/`match` expression output types are unions of branch types; without a
-  fallback branch, `nothing` is included
+- Optional params and flags *without a default* are now `oneof<T, nothing>`, not `T` — code that assumed `T` may need a `default` value or a null check
+- Inside a `def`, the body is checked against the declared input/output signature (`def foo []: string -> any { accepts-int }` is a parse error)
+- `if`/`match` expression output types are unions of branch types; without a fallback branch, `nothing` is included
 
 ### Submodules are no longer implicitly imported (v0.114)
 
-`use foo` no longer brings `foo`'s exported sub-modules into scope. Re-export
-them explicitly:
+`use foo` no longer brings `foo`'s exported sub-modules into scope.
+Re-export them explicitly:
 
 ```nushell
 export module foo {
@@ -277,15 +262,13 @@ export module foo {
 }
 ```
 
-Note: the explicit `export use` does *not* run the submodule's `export-env`
-block — same as the old implicit behavior.
+Note: the explicit `export use` does *not* run the submodule's `export-env` block — same as the old implicit behavior.
 
 ### Catch error record: `json` field replaced by `details` (v0.114)
 
-The error record in `catch` blocks no longer has a `json` field. The new
-`details` field holds the same data as a structured record — no `from json`
-step. Labels additionally carry a `location` record (file name + file-relative
-`start`/`end` offsets).
+The error record in `catch` blocks no longer has a `json` field.
+The new `details` field holds the same data as a structured record — no `from json` step.
+Labels additionally carry a `location` record (file name + file-relative `start`/`end` offsets).
 
 ```nushell
 # before: try { fail } catch {|e| $e.json | from json }
@@ -294,8 +277,7 @@ step. Labels additionally carry a `location` record (file name + file-relative
 
 ### `std/iter scan` signature now matches `reduce` (v0.114)
 
-Initial value moves from positional to `--fold`; `--noinit` is gone —
-omitting `--fold` seeds with the first element (which stays in the output).
+Initial value moves from positional to `--fold`; `--noinit` is gone — omitting `--fold` seeds with the first element (which stays in the output).
 
 ```nushell
 # before: [1 2 3] | iter scan 0 {|x, acc| $x + $acc}            # [0 1 3 6]
@@ -308,14 +290,14 @@ omitting `--fold` seeds with the first element (which stays in the output).
 
 ### `std/iter find-index` returns `null` on no match (v0.114)
 
-Was `-1`. Update sentinel checks: `if $idx == -1` → `if $idx == null`.
+Was `-1`.
+Update sentinel checks: `if $idx == -1` → `if $idx == null`.
 
 ### `--` ends flag parsing (v0.114)
 
-POSIX-style end-of-options for built-in and custom commands: everything after
-`--` is positional, even if it starts with `-`. The `--` itself is consumed —
-to pass a literal `--` as a value, write it twice (`cmd -- --`). For
-`def --wrapped` and `extern` commands, `--` is still passed through unchanged.
+POSIX-style end-of-options for built-in and custom commands: everything after `--` is positional, even if it starts with `-`.
+The `--` itself is consumed — to pass a literal `--` as a value, write it twice (`cmd -- --`).
+For `def --wrapped` and `extern` commands, `--` is still passed through unchanged.
 
 ```nushell
 def greet [--upper name] { if $upper { $name | str uppercase } else { $name } }
@@ -425,8 +407,8 @@ open file.md --raw | from md --verbose   # full AST as before
 
 ### `parse` no longer auto-splits external streams (v0.113)
 
-Byte/string streams from external processes are no longer implicitly split by
-lines before `parse`. Pipe through `lines` first.
+Byte/string streams from external processes are no longer implicitly split by lines before `parse`.
+Pipe through `lines` first.
 
 ```nushell
 # before
@@ -437,8 +419,8 @@ lines before `parse`. Pipe through `lines` first.
 
 ### `kill -0` no longer accepted as shorthand (v0.113)
 
-`kill -0` used to send signal 0 but now errors (was also a footgun — could
-terminate nushell itself). Use the long form.
+`kill -0` used to send signal 0 but now errors (was also a footgun — could terminate nushell itself).
+Use the long form.
 
 ```nushell
 # before: kill -0 1234
@@ -461,8 +443,8 @@ rm --verbose old.txt   # columns: path, …
 
 ### `from xlsx --header-row` default change (v0.113)
 
-Default is now the first non-empty row (was row 0). Pass `--header-row null`
-for no header, or an explicit 0-indexed integer to restore old behavior.
+Default is now the first non-empty row (was row 0).
+Pass `--header-row null` for no header, or an explicit 0-indexed integer to restore old behavior.
 
 ```nushell
 open data.xlsx                          # first non-empty row as header
@@ -472,8 +454,8 @@ open data.xlsx | from xlsx --header-row 0      # old default
 
 ### `to yaml` now quotes ambiguous string values (v0.113)
 
-Previously emitted bare `off` / `on` / `yes` / `no` / `0.0.0.0:8444` etc.,
-which re-parse as booleans or invalid YAML. Now wrapped in single quotes.
+Previously emitted bare `off` / `on` / `yes` / `no` / `0.0.0.0:8444` etc., which re-parse as booleans or invalid YAML.
+Now wrapped in single quotes.
 Scripts that compared the round-tripped text need updating.
 
 ```nushell
@@ -484,11 +466,9 @@ Scripts that compared the round-tripped text need updating.
 
 ### `to yaml` quotes fewer strings again (v0.114)
 
-Follow-up to the 0.113 change: only values that would re-parse as non-strings
-(`off`, `yes`, numbers) stay quoted; plain scalars like paths and
-`host:port` strings are emitted bare per YAML 1.2 rules. Multiline strings now
-use `|-` block scalars. Text-comparing scripts churn again; the full YAML
-rework landed in 0.115 (next entry).
+Follow-up to the 0.113 change: only values that would re-parse as non-strings (`off`, `yes`, numbers) stay quoted; plain scalars like paths and `host:port` strings are emitted bare per YAML 1.2 rules.
+Multiline strings now use `|-` block scalars.
+Text-comparing scripts churn again; the full YAML rework landed in 0.115 (next entry).
 
 ```yaml
 # 0.113:  path: '/dev/stdout'      0.114:  path: /dev/stdout
@@ -497,9 +477,9 @@ rework landed in 0.115 (next entry).
 
 ### YAML reworked — `from yaml` defaults to YAML 1.2 (v0.115)
 
-The old `serde_yaml` backend is gone. Nushell no longer parses YAML as a mix
-of the 1.1 and 1.2 specs; `from yaml` is YAML 1.2 now. Pass `--spec 1.1` to
-get the old scalar magic back.
+The old `serde_yaml` backend is gone.
+Nushell no longer parses YAML as a mix of the 1.1 and 1.2 specs; `from yaml` is YAML 1.2 now.
+Pass `--spec 1.1` to get the old scalar magic back.
 
 ```nushell
 "yes"       | from yaml             # => "yes" (string; was true)
@@ -510,9 +490,8 @@ get the old scalar magic back.
 "190:20:30" | from yaml --spec 1.1  # => 685230 (sexagesimal)
 ```
 
-Mapping keys are stricter: a plain key that resolves to a bool, number or null
-is rejected, because Nushell record keys are strings. Pass
-`--key-resolution verbatim` to keep the original key text instead.
+Mapping keys are stricter: a plain key that resolves to a bool, number or null is rejected, because Nushell record keys are strings.
+Pass `--key-resolution verbatim` to keep the original key text instead.
 
 ```nushell
 # 'true: enabled' | from yaml                          # error: Found unsupported key
@@ -527,36 +506,30 @@ Tags are real now: an unknown tag errors instead of being silently dropped.
 'Key: !Sub ${AWS::StackName}' | from yaml --ignore-tags   # => {Key: "${AWS::StackName}"}
 ```
 
-`to yaml` errors on values that cannot round-trip (closures, etc.) instead of
-mangling them. Choose the fallback explicitly with `--non-roundtrip "null"` or
-`--non-roundtrip "lossy"` — the flag takes a *string*, so bare `null` is a
-parse error. `--serialize` still works but may be deprecated.
+`to yaml` errors on values that cannot round-trip (closures, etc.) instead of mangling them.
+Choose the fallback explicitly with `--non-roundtrip "null"` or `--non-roundtrip "lossy"` — the flag takes a *string*, so bare `null` is a parse error.
+`--serialize` still works but may be deprecated.
 
 ```nushell
 # {|| $in } | to yaml                    # error: Found non-roundtrippable closure
 {|| $in } | to yaml --non-roundtrip "null"  # => null
 ```
 
-Emitted YAML also looks different — quoting follows 1.2 rules and Nushell
-types get local tags (`!filesize`, `!cell-path`). Scripts that compare YAML
-text need rechecking.
+Emitted YAML also looks different — quoting follows 1.2 rules and Nushell types get local tags (`!filesize`, `!cell-path`).
+Scripts that compare YAML text need rechecking.
 
 ```nushell
 {b: "off"} | to yaml             # => b: off      (bare; 0.113/0.114 quoted it)
 {b: "off"} | to yaml --spec 1.1  # => b: "off"
 ```
 
-Also new (not breaking): multi-document streams (`--multiple auto|list|single`
-on read, `--multiple` on write), working anchors/aliases/merge keys, and
-`--indent` / `--quote` / `--add-directives` for output shape.
+Also new (not breaking): multi-document streams (`--multiple auto|list|single` on read, `--multiple` on write), working anchors/aliases/merge keys, and `--indent` / `--quote` / `--add-directives` for output shape.
 
 ### `from kdl` / `to kdl` default formats changed (v0.115)
 
-`from kdl` now defaults to `--format nodes` — a table of `name`, `args`,
-`props`, `children` rows. `to kdl` defaults to `--format jik` (JSON-in-KDL),
-emitting one top-level `-` node. This replaces the old heuristic that
-flattened values under synthetic node names like `root`, so any script that
-read or wrote those names needs updating.
+`from kdl` now defaults to `--format nodes` — a table of `name`, `args`, `props`, `children` rows.
+`to kdl` defaults to `--format jik` (JSON-in-KDL), emitting one top-level `-` node.
+This replaces the old heuristic that flattened values under synthetic node names like `root`, so any script that read or wrote those names needs updating.
 
 ```nushell
 {a: 1, b: true} | to kdl                # => - a=1 b=#true
@@ -564,9 +537,8 @@ read or wrote those names needs updating.
 # => [[name, args, props, children]; [node, [one], {}, []], [node, [two], {}, []]]
 ```
 
-Both commands also take `--spec 1` or `--spec 2` (default `2`). Parsing is
-strict per spec: v1 keywords (`true`/`false`/`null`) and v2 keywords
-(`#true`/`#false`/`#null`) cannot be mixed.
+Both commands also take `--spec 1` or `--spec 2` (default `2`).
+Parsing is strict per spec: v1 keywords (`true`/`false`/`null`) and v2 keywords (`#true`/`#false`/`#null`) cannot be mixed.
 
 ```nushell
 {a: 1, b: true} | to kdl --spec 1   # => - a=1 b=true
@@ -574,35 +546,30 @@ strict per spec: v1 keywords (`true`/`false`/`null`) and v2 keywords
 
 ### `from xlsx` / `from ods` reworked (v0.114)
 
-- Signatures corrected: they return a *record* with one table per sheet (the
-  old signature claimed `table`); `from ods` input is `binary`, not `string`
-- 0.113's `--header-row` flag is removed. New flags: `--noheaders` (same as
-  the csv/tsv flag) and `--first-row $n` (start reading at row *n*;
-  `--first-row 0` keeps leading empty rows that are otherwise skipped)
+- Signatures corrected: they return a *record* with one table per sheet (the old signature claimed `table`); `from ods` input is `binary`, not `string`
+- 0.113's `--header-row` flag is removed.
+  New flags: `--noheaders` (same as the csv/tsv flag) and `--first-row $n` (start reading at row *n*; `--first-row 0` keeps leading empty rows that are otherwise skipped)
 - `datetime` import now works for ods too, and more datetime formats parse
 - Values that can't be coerced now import as `string`/`float` instead of `null`
 - New `--prefer-integers` imports whole-number floats as `int`
 
 ### Float ranges use fractional steps (v0.114)
 
-`0.1..0.3` now yields `[0.1 0.2 0.3]` (was just `[0.1]` — step defaulted
-to 1). Values are rounded to the step's precision, removing artifacts like
-`0.30000000000000004`.
+`0.1..0.3` now yields `[0.1 0.2 0.3]` (was just `[0.1]` — step defaulted to 1).
+Values are rounded to the step's precision, removing artifacts like `0.30000000000000004`.
 
 ### Empty `{}` row condition parses as closure (v0.114)
 
-`1..3 | where {}` was "expected bool, found record" — now `{}` in row-condition
-position is an empty closure (returns nothing → empty result).
+`1..3 | where {}` was "expected bool, found record" — now `{}` in row-condition position is an empty closure (returns nothing → empty result).
 
 ### `is-terminal` defaults to `--stdout` and detects redirection (v0.114)
 
-`is-terminal | $in`, `let x = (is-terminal)`, and `is-terminal o> file` now
-correctly report `false` where they previously reported the terminal state.
+`is-terminal | $in`, `let x = (is-terminal)`, and `is-terminal o> file` now correctly report `false` where they previously reported the terminal state.
 
 ### `to csv` / `to tsv` now stream and fail on schema drift (v0.113)
 
-Rows are written as they arrive instead of buffered. If a later row
-introduces a new column, the export errors mid-stream.
+Rows are written as they arrive instead of buffered.
+If a later row introduces a new column, the export errors mid-stream.
 
 ```nushell
 # fix 1: declare columns up front
@@ -613,8 +580,8 @@ $rows | collect | to csv
 
 ### `ls` no longer sets `source` metadata (v0.113)
 
-Paired with the `metadata set --datasource-ls` removal. Code that inspected
-`$result | metadata | get source` and matched `"ls"` needs another signal.
+Paired with the `metadata set --datasource-ls` removal.
+Code that inspected `$result | metadata | get source` and matched `"ls"` needs another signal.
 
 ### `into datetime` no longer parses human strings (v0.104)
 
@@ -632,11 +599,13 @@ Paired with the `metadata set --datasource-ls` removal. Code that inspected
 
 ### `str join` datetime formatting (v0.104)
 
-Datetime values now format as RFC2822/RFC3339. Use `format date` first for custom format.
+Datetime values now format as RFC2822/RFC3339.
+Use `format date` first for custom format.
 
 ### `http post` sends pretty JSON (v0.107)
 
-Body size increased. Use `to json --raw` before piping if compact JSON needed.
+Body size increased.
+Use `to json --raw` before piping if compact JSON needed.
 
 ### `mktemp` without template (v0.111)
 
@@ -648,18 +617,16 @@ Creates in tmpdir instead of current directory.
 
 ### Replace old patterns
 
-| Old pattern | New idiom | Version |
-|-------------|-----------|---------|
-| `"next Friday" \| into datetime` | `"next Friday" \| date from-human` | 0.104 |
-| `"123" \| into value` | `"123" \| detect type` | 0.108 |
-| `$table \| into value` | `$table \| update cells { detect type }` | 0.108 |
-| `$data \| filter $f` | `$data \| where $f` | 0.105 |
-| `{ \|\| } \| to json` | `{ \|\| } \| to json --serialize` | 0.103 |
-| `get --ignore-errors key` | `get --optional key` | 0.106 |
-| manual external completer match | `@complete fish-completer; extern git []` | 0.108 |
-| `def foo [x: string@completer_fn]` | `def foo [x: string@[a b c]]` (inline) | 0.108 |
-| `find ... \| result` | `find --no-highlight ...` (strip ANSI) | 0.102 |
-| manual `http get --full \| get headers` | `http get url \| metadata \| get http_response` | 0.108 |
+- `"next Friday" | into datetime` → `"next Friday" | date from-human` — 0.104
+- `"123" | into value` → `"123" | detect type` — 0.108
+- `$table | into value` → `$table | update cells { detect type }` — 0.108
+- `$data | filter $f` → `$data | where $f` — 0.105
+- `{ || } | to json` → `{ || } | to json --serialize` — 0.103
+- `get --ignore-errors key` → `get --optional key` — 0.106
+- manual external completer match → `@complete fish-completer; extern git []` — 0.108
+- `def foo [x: string@completer_fn]` → `def foo [x: string@[a b c]]` (inline) — 0.108
+- `find ... | result` → `find --no-highlight ...` (strip ANSI) — 0.102
+- manual `http get --full | get headers` → `http get url | metadata | get http_response` — 0.108
 
 ### Background jobs (v0.103, experimental)
 
@@ -774,19 +741,18 @@ $env.config.filesize.precision = 1     # decimal places, or null
 
 ### Completion config changes
 
-| Change | Version |
-|--------|---------|
-| Custom completer `sort: true` uses `$env.config.completions.sort` (was alphabetical) | 0.101 |
-| Missing `sort` field defaults to `true` (was `false`) | 0.101 |
-| Custom completer `case_sensitive` inherits from config (was `true`) | 0.102 |
-| External completers no longer used for internal commands | 0.103 |
-| `positional: false` → `completion_algorithm: "substring"` | deprecated 0.104 |
-| `$env.config.completions.algorithm = "substring"` option | 0.104 |
-| External completer fallback requires `null` return (not any invalid value) | 0.102 |
+- Custom completer `sort: true` uses `$env.config.completions.sort` (was alphabetical) — 0.101
+- Missing `sort` field defaults to `true` (was `false`) — 0.101
+- Custom completer `case_sensitive` inherits from config (was `true`) — 0.102
+- External completers no longer used for internal commands — 0.103
+- `positional: false` → `completion_algorithm: "substring"` — deprecated 0.104
+- `$env.config.completions.algorithm = "substring"` option — 0.104
+- External completer fallback requires `null` return (not any invalid value) — 0.102
 
 ### `display_output` hook (v0.101)
 
-If set, solely responsible for formatting — `table` no longer runs on top. Set to `null` for default `table` behavior.
+If set, solely responsible for formatting — `table` no longer runs on top.
+Set to `null` for default `table` behavior.
 
 ### Hook execution order changed (v0.107)
 
@@ -802,9 +768,8 @@ All `$env` lookups are case-insensitive on all OSes.
 
 ### History config fields locked after REPL start (v0.113)
 
-These fields are read once at startup by reedline; setting them from the
-REPL is now a hard error instead of silently ignored. Set them in
-`config.nu` (or via `--config` / env vars) and restart.
+These fields are read once at startup by reedline; setting them from the REPL is now a hard error instead of silently ignored.
+Set them in `config.nu` (or via `--config` / env vars) and restart.
 
 ```nushell
 # locked: error if assigned from REPL

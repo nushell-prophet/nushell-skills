@@ -5,11 +5,14 @@ description: This skill should be used when inspecting, querying, or rewriting t
 
 # Nushell history — inspect and rewrite
 
-The user's command history is in a sqlite database (file_format = sqlite). Use the builtin `history` command for reading and `nu-history-tools` for mutation. Never hand-roll SQL against `history.sqlite3` — the builtin, the module, and `open ... | get history` already cover every case.
+The user's command history is in a sqlite database (file_format = sqlite).
+Use the builtin `history` command for reading and `nu-history-tools` for mutation.
+Never hand-roll SQL against `history.sqlite3` — the builtin, the module, and `open ... | get history` already cover every case.
 
 ## Locate the history
 
-The user's history is always the sqlite file in the nushell config dir — `~/.config/nushell/history.sqlite3`. Resolve it robustly the same way `nu-history-tools` does:
+The user's history is always the sqlite file in the nushell config dir — `~/.config/nushell/history.sqlite3`.
+Resolve it robustly the same way `nu-history-tools` does:
 
 ```nu
 let db = $nu.history-path | str replace 'txt' 'sqlite3'
@@ -20,7 +23,9 @@ Two traps when running inside an agent's nushell instance (MCP server, embedded 
 - `$nu.history-path` can point at a `history.txt` even when `$env.config.history.file_format` is `sqlite` — don't treat it as the source of truth; the sqlite file next to it is.
 - The `history` builtin reads whatever the *current instance's* history config points to, which may be the agent's own (often empty) store, not the user's.
 
-In the cozy container the file is `/home/agent/.config/nushell/history.sqlite3` — that is the user's real history, the one their interactive panes write to. The `cwd` values inside it look like macOS paths (`/Users/user/git/...`) because the workspace is mounted there; that is the *same* machine you are on, not the host. A `$nu.history-path` of `/home/agent/...` while the user's prompt shows `/Users/user/...` is normal — never conclude from it that you are looking at a different machine's history.
+In the cozy container the file is `/home/agent/.config/nushell/history.sqlite3` — that is the user's real history, the one their interactive panes write to.
+The `cwd` values inside it look like macOS paths (`/Users/user/git/...`) because the workspace is mounted there; that is the *same* machine you are on, not the host.
+A `$nu.history-path` of `/home/agent/...` while the user's prompt shows `/Users/user/...` is normal — never conclude from it that you are looking at a different machine's history.
 
 With no nushell session of your own (bash tool only), read it directly; open it read-only so a stray write can never touch the user's history:
 
@@ -29,9 +34,12 @@ sqlite3 'file:/home/agent/.config/nushell/history.sqlite3?mode=ro' \
   "SELECT id, session_id, exit_status, command_line FROM history ORDER BY id DESC LIMIT 20;"
 ```
 
-The sqlite WAL sits next to the db, so the newest commands are visible only if you let sqlite read it — which the URI above does. `session_id` groups commands by nu process, i.e. by pane: consecutive commands with different ids came from different panes, and a new id means the user restarted nu there.
+The sqlite WAL sits next to the db, so the newest commands are visible only if you let sqlite read it — which the URI above does.
+`session_id` groups commands by nu process, i.e. by pane: consecutive commands with different ids came from different panes, and a new id means the user restarted nu there.
 
-So before trusting the builtin, verify: `history --long | last 2` must show the user's recent commands (compare with the tail of the sqlite db). If it does, prefer the builtin — friendlier columns, decoded timestamps. If not, read the db directly (no SQL needed):
+So before trusting the builtin, verify: `history --long | last 2` must show the user's recent commands (compare with the tail of the sqlite db).
+If it does, prefer the builtin — friendlier columns, decoded timestamps.
+If not, read the db directly (no SQL needed):
 
 ```nu
 open ($nu.history-path | str replace 'txt' 'sqlite3') | get history
@@ -46,17 +54,15 @@ Direct reads use the sqlite column names (see *Schema gotcha* below).
 
 `history --long` returns a table with these columns:
 
-| Column           | Type     | Notes                            |
-|------------------|----------|----------------------------------|
-| `item_id`        | int      | Stable primary key               |
-| `start_timestamp`| datetime | Already a datetime — no decoding |
-| `command`        | string   | The command line                 |
-| `session_id`     | int      |                                  |
-| `hostname`       | string   |                                  |
-| `cwd`            | string   | Absolute working directory       |
-| `duration`       | duration |                                  |
-| `exit_status`    | int      | 0 on success                     |
-| `idx`            | int      | Row number in the returned table |
+- `item_id` — int, stable primary key
+- `start_timestamp` — datetime, already a datetime (no decoding)
+- `command` — string, the command line
+- `session_id` — int
+- `hostname` — string
+- `cwd` — string, absolute working directory
+- `duration` — duration
+- `exit_status` — int, 0 on success
+- `idx` — int, row number in the returned table
 
 ### Recipes
 
@@ -77,7 +83,9 @@ history --long | where cwd =~ 'git-learning' | select start_timestamp command ex
 history --long | last 40 | select start_timestamp cwd command exit_status
 ```
 
-`where` is the only filter you need — there's no SQL syntax to learn. `=~` runs on `fancy-regex`, so lookarounds work directly — `where command =~ '^(?!ls|cd)'` drops the noise commands without a second pass. If the user references "what I just tried", "my last commands", or asks you to interpret what they were doing — run one of these instead of asking.
+`where` is the only filter you need — there's no SQL syntax to learn.
+`=~` runs on `fancy-regex`, so lookarounds work directly — `where command =~ '^(?!ls|cd)'` drops the noise commands without a second pass.
+If the user references "what I just tried", "my last commands", or asks you to interpret what they were doing — run one of these instead of asking.
 
 ## Mutation
 
@@ -89,7 +97,9 @@ use ~/repos/nu-history-tools/nu-history-tools *   # or the absolute path above
 
 ### Retag cwd (move exercises out of the wrong directory)
 
-`update-entries` writes piped rows back to sqlite, keyed by `item_id`. Whatever columns you pipe in get written; the rest are left alone. Friendly names (`item_id`, `command`, `duration`) are auto-translated to sqlite column names.
+`update-entries` writes piped rows back to sqlite, keyed by `item_id`.
+Whatever columns you pipe in get written; the rest are left alone.
+Friendly names (`item_id`, `command`, `duration`) are auto-translated to sqlite column names.
 
 ```nu
 # Move all apt-get exercises from git-learning to a dedicated apt-learning dir
@@ -101,7 +111,8 @@ history --long
 | update-entries
 ```
 
-The `select item_id cwd` step is mandatory — `update-entries` refuses unknown columns (e.g. `idx` from `history --long`) so the caller has to be explicit about what gets written. Backups go to `<history-dir>/history-backup-<timestamp>.nuon` automatically; pass `--no-backup` to skip.
+The `select item_id cwd` step is mandatory — `update-entries` refuses unknown columns (e.g. `idx` from `history --long`) so the caller has to be explicit about what gets written.
+Backups go to `<history-dir>/history-backup-<timestamp>.nuon` automatically; pass `--no-backup` to skip.
 
 The same shape works for any field:
 
@@ -116,7 +127,8 @@ history --long
 
 ### Remove entries
 
-`query-from-history --remove` deletes rows matching piped-in filter values. It selects on the first column it recognizes (`id`, `command_line`, `session_id`, `cwd`) — pipe just the column you want to filter by.
+`query-from-history --remove` deletes rows matching piped-in filter values.
+It selects on the first column it recognizes (`id`, `command_line`, `session_id`, `cwd`) — pipe just the column you want to filter by.
 
 ```nu
 # Delete failed apt-get fumbles
@@ -125,16 +137,16 @@ history --long | where command =~ 'apt get ' | query-from-history --remove
 
 ### Look up rows from sqlite by piped filter values
 
-`query-from-history` (without `--remove`) re-queries sqlite for full row data matching piped values. Useful when `history --long` doesn't give you all the columns you need.
+`query-from-history` (without `--remove`) re-queries sqlite for full row data matching piped values.
+Useful when `history --long` doesn't give you all the columns you need.
 
 ## Schema gotcha
 
 The friendly column names from `history --long` differ from the underlying sqlite columns:
 
-| Friendly (`history --long`) | sqlite (`history` table) |
-|----------------------------|--------------------------|
-| `item_id`                  | `id`                     |
-| `command`                  | `command_line`           |
-| `duration`                 | `duration_ms`            |
+- `item_id` → `id`
+- `command` → `command_line`
+- `duration` → `duration_ms`
 
-`update-entries` translates these automatically. If you write raw SQL via `open $nu.history-path | query db ...` (don't, unless you must), use the sqlite names.
+`update-entries` translates these automatically.
+If you write raw SQL via `open $nu.history-path | query db ...` (don't, unless you must), use the sqlite names.

@@ -1,13 +1,13 @@
 # Nushell MCP Server
 
-Nushell has a built-in MCP (Model Context Protocol) server, started with `nu --mcp`. Included by default since v0.110. It exposes Nushell's shell capabilities as tools.
+Nushell has a built-in MCP (Model Context Protocol) server, started with `nu --mcp`.
+Included by default since v0.110.
+It exposes Nushell's shell capabilities as tools.
 
 ## Transport
 
-| Transport | Flag | Default | Since |
-|-----------|------|---------|-------|
-| stdio | `nu --mcp` | Yes | 0.110 |
-| HTTP | `nu --mcp --mcp-transport http` | port 8080 | 0.111 |
+- stdio — `nu --mcp`, the default, since 0.110
+- HTTP — `nu --mcp --mcp-transport http`, port 8080, since 0.111
 
 Set a custom HTTP port with `--mcp-port`:
 
@@ -29,11 +29,9 @@ claude mcp add --transport http nushell --url http://localhost:8080
 
 ## Tools
 
-| Tool | Purpose |
-|------|---------|
-| `evaluate` | Execute Nushell or shell commands, returns structured output |
-| `list_commands` | List/search available Nushell native commands |
-| `command_help` | Get detailed help for a specific command (flags, types, examples) |
+- `evaluate` — execute Nushell or shell commands, returns structured output
+- `list_commands` — list/search available Nushell native commands
+- `command_help` — get detailed help for a specific command (flags, types, examples)
 
 ## Key Behaviors
 
@@ -46,7 +44,9 @@ let x = 42
 $x  # → 42
 ```
 
-**Structured output** — native Nushell commands return NUON, not text. No need to pipe to `to json`. Since 0.114 the evaluation result is emitted as NUON directly (previously it was wrapped as an escaped string inside the response — 0.114 also uses raw strings `r#'...'#` to cut escaping), and success/error responses are additionally exposed as MCP `structuredContent` JSON for clients that support structured tool output.
+**Structured output** — native Nushell commands return NUON, not text.
+No need to pipe to `to json`.
+Since 0.114 the evaluation result is emitted as NUON directly (previously it was wrapped as an escaped string inside the response — 0.114 also uses raw strings `r#'...'#` to cut escaping), and success/error responses are additionally exposed as MCP `structuredContent` JSON for clients that support structured tool output.
 
 **History** — `$history` stores all previous command outputs as `list<any>`:
 
@@ -56,17 +56,24 @@ $history.0        # first command output
 $history | last   # most recent output
 ```
 
-Ring buffer, 100 entries by default. Configure with `$env.NU_MCP_HISTORY_LIMIT`.
+Ring buffer, 100 entries by default.
+Configure with `$env.NU_MCP_HISTORY_LIMIT`.
 
-**`$ans` does not work here** — 0.115's last-result variable is filled only by the interactive REPL loop, so in an MCP session it parses but stays `null`, even after setting `$env.config.max_last_result_size` (which defaults to `0b` anyway). The session reports `$nu.is-interactive` as `true`, which makes the opposite look plausible. Use `$history` for the previous result.
+**`$ans` does not work here** — 0.115's last-result variable is filled only by the interactive REPL loop, so in an MCP session it parses but stays `null`, even after setting `$env.config.max_last_result_size` (which defaults to `0b` anyway).
+The session reports `$nu.is-interactive` as `true`, which makes the opposite look plausible.
+Use `$history` for the previous result.
 
-**Truncation** — on by default: responses larger than 10kb are truncated, with the full output still stored in `$history`. Adjust the limit with `$env.NU_MCP_OUTPUT_LIMIT`:
+**Truncation** — on by default: responses larger than 10kb are truncated, with the full output still stored in `$history`.
+Adjust the limit with `$env.NU_MCP_OUTPUT_LIMIT`:
 
 ```nu
 $env.NU_MCP_OUTPUT_LIMIT = 100kb
 ```
 
-**Long evaluations become background jobs** (since 0.112) — an `evaluate` call that runs past the promote timeout (default 120sec; 10sec when introduced) or is cancelled by the client is promoted to a background job instead of being discarded. The tool call then errors with a job id; collect the result with `job recv`. Promoted jobs appear in `job list` as `mcp: <command>` and can be stopped with `job kill`. Before a known long-running command, widen the window so it stays synchronous:
+**Long evaluations become background jobs** (since 0.112) — an `evaluate` call that runs past the promote timeout (default 120sec; 10sec when introduced) or is cancelled by the client is promoted to a background job instead of being discarded.
+The tool call then errors with a job id; collect the result with `job recv`.
+Promoted jobs appear in `job list` as `mcp: <command>` and can be stopped with `job kill`.
+Before a known long-running command, widen the window so it stays synchronous:
 
 ```nu
 $env.NU_MCP_PROMOTE_AFTER = 10min

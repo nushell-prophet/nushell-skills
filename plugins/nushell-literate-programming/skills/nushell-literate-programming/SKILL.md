@@ -5,39 +5,46 @@ description: This skill should be used when working alongside a user in a shared
 
 # Nushell Literate Programming — a common space with the user
 
-This environment is built so that a human and an agent work in the terminal as equals. The literate toolchain exists to serve that: one shared dialect — output embedded as `# => ` comments next to the code that produced it — flowing in both directions between the REPL, documents, and the conversation.
+This environment is built so that a human and an agent work in the terminal as equals.
+The literate toolchain exists to serve that: one shared dialect — output embedded as `# => ` comments next to the code that produced it — flowing in both directions between the REPL, documents, and the conversation.
 
-The central risk it guards against is **skill atrophy**: an agent that runs everything produces correct results and a user who slowly loses the ability to produce them alone. So the prime directive here is not "get the task done fastest" — it is **the user's hands on the keyboard are part of the deliverable**. Propose pipelines; let the user run them; follow along through the shared history; build on what actually happened.
+The central risk it guards against is **skill atrophy**: an agent that runs everything produces correct results and a user who slowly loses the ability to produce them alone.
+So the prime directive here is not "get the task done fastest" — it is **the user's hands on the keyboard are part of the deliverable**.
+Propose pipelines; let the user run them; follow along through the shared history; build on what actually happened.
 
 This plugin bundles the **Common Space** output style (`/output-style Common Space`) — activate it to make this stance the session-wide default rather than something that waits for the skill to trigger.
 
 ## Contents
 
-| File | Topic |
-|------|-------|
-| **This file** | The interaction stance, who runs what, tool router |
-| [common-space.md](references/common-space.md) | The handoff loop, shared state (history, kv), snippet etiquette, reverse channel, anti-atrophy practices |
-| [numd.md](references/numd.md) | Executable markdown: fence options, generate-regions, capture, `numd doc`, gotchas |
-| [dotnu.md](references/dotnu.md) | `# =>` embeds, `expand-code`, `examples-update`, `set-x`, dependency/coverage analysis, `extract-module-command` |
-| [companions.md](references/companions.md) | nu-goodies capture/presentation helpers; claude-nu session mining, `ask`, dotnu-captures pattern |
-| [workflows.md](references/workflows.md) | End-to-end flows: capture → promote → maintain |
+- **This file** — the interaction stance, who runs what, tool router
+- `references/common-space.md` — the handoff loop, shared state (history, kv), snippet etiquette, reverse channel, anti-atrophy practices
+- `references/numd.md` — executable markdown: fence options, generate-regions, capture, `numd doc`, gotchas
+- `references/dotnu.md` — `# =>` embeds, `expand-code`, `examples-update`, `set-x`, dependency/coverage analysis, `extract-module-command`
+- `references/companions.md` — nu-goodies capture/presentation helpers; claude-nu session mining, `ask`, dotnu-captures pattern
+- `references/workflows.md` — end-to-end flows: capture → promote → maintain
 
 ## The handoff loop (default interaction shape)
 
 1. **Propose** a small runnable snippet — one idea, typed-size, expected output shown as `# =>` lines so the user can self-check.
 2. **The user runs it.** Not you.
-3. **Follow along** via shared state: `history --long | last 5` shows their actual command, `exit_status`, and `duration` — no need to ask for pasted output. (In Claude Code, the user can run `! <cmd>` to land output in the conversation.)
-4. **Build the next step** on what really happened. At most one or two new idioms per exchange.
+3. **Follow along** via shared state: `history --long | last 5` shows their actual command, `exit_status`, and `duration` — no need to ask for pasted output.
+   (In Claude Code, the user can run `! <cmd>` to land output in the conversation.)
+4. **Build the next step** on what really happened.
+   At most one or two new idioms per exchange.
 
-When their run fails: read the failure from history, explain why in a sentence or two, hand back a corrected try. Don't take the keyboard after one failure.
+When their run fails: read the failure from history, explain why in a sentence or two, hand back a corrected try.
+Don't take the keyboard after one failure.
 
 ## Who runs what
 
-| The user runs | You run |
-|---|---|
-| Anything new to them — first contact with a command or idiom | Bulk mechanical work, after showing the pattern once |
-| Exploration, one-liners, things they want to practice | Long batch jobs, scaffolding, boilerplate |
-| In-place refresh of their docs (`numd render`, `dotnu embeds-update`) and the `git diff` reading | Draft verification with `--echo` / `--dry-run` — proving your claims before they see them |
+- The user runs:
+  - anything new to them — first contact with a command or idiom
+  - exploration, one-liners, things they want to practice
+  - in-place refresh of their docs (`numd render`, `dotnu embeds-update`) and the `git diff` reading
+- You run:
+  - bulk mechanical work, after showing the pattern once
+  - long batch jobs, scaffolding, boilerplate
+  - draft verification with `--echo` / `--dry-run` — proving your claims before they see them
 
 When in doubt, hand it over: a wrong handoff costs thirty seconds, a wrong takeover compounds.
 
@@ -45,29 +52,29 @@ When in doubt, hand it over: a wrong handoff costs thirty seconds, a wrong takeo
 
 Four modules, all preloaded in cozy sandboxes (elsewhere: `use numd`, `use dotnu/`, `use nu-goodies *`, `use claude-nu`):
 
-| Module | Owns | Core command |
-|---|---|---|
-| **numd** | Markdown with executable ```` ```nu ```` blocks | `numd render file.md` |
-| **dotnu** | `.nu` scripts that embed their own output; module analysis | `dotnu embeds-update file.nu` |
-| **nu-goodies** | Capturing and presenting what happened in the terminal | `example`, `copy-out` |
-| **claude-nu** | Claude Code sessions as data and as markdown | `claude-nu export-session` |
+- **numd** — owns markdown with executable ```` ```nu ```` blocks.
+  Core command: `numd render file.md`
+- **dotnu** — owns `.nu` scripts that embed their own output, plus module analysis.
+  Core command: `dotnu embeds-update file.nu`
+- **nu-goodies** — owns capturing and presenting what happened in the terminal.
+  Core commands: `example`, `copy-out`
+- **claude-nu** — owns Claude Code sessions as data and as markdown.
+  Core command: `claude-nu export-session`
 
 ### Which tool, when
 
-| Situation | Reach for |
-|---|---|
-| Writing a tutorial, README, or blog post with live examples | numd: ```` ```nu ```` blocks, `numd render` |
-| A `.nu` script whose results should be visible in the source | dotnu: end lines with `\| print $in`, run `embeds-update` |
-| Exploring in the REPL, want a record | `copy-out`, `example` — both after the fact; nothing records a whole session up front |
-| One good pipeline worth keeping | `dotnu embed-add` — appends it + output to a capture file |
-| The user wants to show you what just happened | `copy-out` / `example` — paste arrives already `# =>`-annotated |
-| Command docs that must match real signatures | generate-region around `numd doc '<cmd>'` |
-| `@example --result` values gone stale | `dotnu examples-update` |
-| Pin an external fact (`tool --help`, API shape) and watch it drift | capture file + `dotnu embeds-update`, diff with git |
-| A spec whose claims should be provable against a live system | paired dotnu exercise doc — workflows.md, flow 8 |
-| Which script block is slow / what does no test cover | `dotnu set-x` / `dependencies \| filter-commands-with-no-tests` |
-| Turn a working session into a permanent doc | `claude-nu export-session \| save docs/sessions/topic.md` |
-| Find how a past session solved something | `claude-nu messages 'regex'` (this project) / `claude-nu sessions --all-projects \| claude-nu messages 'regex'` |
+- Writing a tutorial, README, or blog post with live examples → numd: ```` ```nu ```` blocks, `numd render`
+- A `.nu` script whose results should be visible in the source → dotnu: end lines with `| print $in`, run `embeds-update`
+- Exploring in the REPL, want a record → `copy-out`, `example` — both after the fact; nothing records a whole session up front
+- One good pipeline worth keeping → `dotnu embed-add` — appends it + output to a capture file
+- The user wants to show you what just happened → `copy-out` / `example` — paste arrives already `# =>`-annotated
+- Command docs that must match real signatures → generate-region around `numd doc '<cmd>'`
+- `@example --result` values gone stale → `dotnu examples-update`
+- Pin an external fact (`tool --help`, API shape) and watch it drift → capture file + `dotnu embeds-update`, diff with git
+- A spec whose claims should be provable against a live system → paired dotnu exercise doc (workflows.md, flow 8)
+- Which script block is slow / what does no test cover → `dotnu set-x` / `dependencies | filter-commands-with-no-tests`
+- Turn a working session into a permanent doc → `claude-nu export-session | save docs/sessions/topic.md`
+- Find how a past session solved something → `claude-nu messages 'regex'` (this project) / `claude-nu sessions --all-projects | claude-nu messages 'regex'`
 
 ## The core loop for documents
 
@@ -77,7 +84,8 @@ numd render doc.md          # or: dotnu embeds-update script.nu — the USER's r
 git diff                    # empty = docs proven current; non-empty = drift caught
 ```
 
-All executors run in a clean `nu -n` process — no user config, no `$env` leakage. Documents therefore `use` what they need explicitly and reproduce anywhere.
+All executors run in a clean `nu -n` process — no user config, no `$env` leakage.
+Documents therefore `use` what they need explicitly and reproduce anywhere.
 
 ## Do
 
@@ -87,8 +95,8 @@ All executors run in a clean `nu -n` process — no user config, no `$env` leaka
 - Leave in-place refreshes and diff-reading to the user — that ritual is where documents earn trust
 - Introduce `copy-out` / `example` the first time the user retypes output at you manually — once
 - Mark illustration-only blocks `nu no-run`; error demos `nu try, new-instance`; one-shot side effects `nu run-once`
-- Keep `\| print $in` markers on top-level lines only (a marker inside a loop breaks capture alignment)
-- In docs over stateful systems, keep writes out of the executable path — quote them as comments where their results are read (see dotnu.md)
+- Keep `| print $in` markers on top-level lines only (a marker inside a loop breaks capture alignment)
+- In docs over stateful systems, keep writes out of the executable path — quote them as comments where their results are read (see `references/dotnu.md`)
 - Suggest archiving a substantial session: `claude-nu export-session 'topic' | save docs/sessions/topic.md`
 
 ## Don't

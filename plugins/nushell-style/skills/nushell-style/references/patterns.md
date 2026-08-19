@@ -21,7 +21,8 @@ let row_type = $file_lines | each {
 } | scan --fold 'text' {|curr prev| ... }
 ```
 
-A pipeline on the right of `let x = …` is a nested expression, so its `|` sits one level in from the `let`. A top-level pipeline is not nested, so its `|` stays at column 0:
+A pipeline on the right of `let x = …` is a nested expression, so its `|` sits one level in from the `let`.
+A top-level pipeline is not nested, so its `|` stays at column 0:
 
 ```nushell
 $file_lines | wrap line
@@ -33,9 +34,12 @@ $file_lines | wrap line
 
 ## One Step Per Line
 
-A new line per `|` is the default. Two cases earn an exception:
+A new line per `|` is the default.
+Two cases earn an exception:
 
-**1. The stages read as one action.** `| lines | str trim` is "get clean lines"; `| uniq --count | sort-by count --reverse` is "rank by frequency". The reader takes each group in as a single move, so splitting it adds noise instead of removing it.
+**1. The stages read as one action.**
+`| lines | str trim` is "get clean lines"; `| uniq --count | sort-by count --reverse` is "rank by frequency".
+The reader takes each group in as a single move, so splitting it adds noise instead of removing it.
 
 ```nushell
 # Preferred — one transformation per line, groups left intact
@@ -49,7 +53,8 @@ history --long
 history --long | where start_timestamp > ((date now) - 1wk) | get command | uniq --count | sort-by count --reverse
 ```
 
-**2. A short parenthesised subexpression.** These are arguments to a command, not the shape of the pipeline, so they stay inline:
+**2. A short parenthesised subexpression.**
+These are arguments to a command, not the shape of the pipeline, so they stay inline:
 
 ```nushell
 | merge ($row_type | wrap row_type)
@@ -59,11 +64,14 @@ let cfg = (open $file | from json)
 
 When a parenthesised subexpression grows past roughly one screen-width, give it its own `let` instead of breaking it across lines.
 
-This is judgement, not a counter. `git branch | lines | str trim` stays on one line because fetching and cleaning are one thought; a three-stage chain that filters, then rewrites, then writes does not. The test is whether a reader must stop and follow each stage separately — not how many `|` the line contains.
+This is judgement, not a counter.
+`git branch | lines | str trim` stays on one line because fetching and cleaning are one thought; a three-stage chain that filters, then rewrites, then writes does not.
+The test is whether a reader must stop and follow each stage separately — not how many `|` the line contains.
 
 ## Other Operators Need Parentheses
 
-`|` is the only operator that continues a line on its own. A multi-line expression built with `++`, `+`, `and`, `or`, … does not parse: a leading operator is read as a command name (``Command `++` not found``), a trailing one leaves an `Incomplete math expression`.
+`|` is the only operator that continues a line on its own.
+A multi-line expression built with `++`, `+`, `and`, `or`, … does not parse: a leading operator is read as a command name (``Command `++` not found``), a trailing one leaves an `Incomplete math expression`.
 
 ```nushell
 # Fails to parse
@@ -160,10 +168,8 @@ use std/iter scan
 }
 ```
 
-Since 0.114 `scan` mirrors `reduce`: the seed goes in `--fold` (and stays in
-the output); without `--fold` the first element seeds. The old positional
-init and `--noinit` are gone — for the `--noinit` behavior (seed excluded
-from output), follow `--fold $init` with `| skip 1`.
+Since 0.114 `scan` mirrors `reduce`: the seed goes in `--fold` (and stays in the output); without `--fold` the first element seeds.
+The old positional init and `--noinit` are gone — for the `--noinit` behavior (seed excluded from output), follow `--fold $init` with `| skip 1`.
 
 ## `window` for Adjacent Elements
 
@@ -189,7 +195,8 @@ When consecutive `each` calls perform operations that can be piped, combine them
 
 ## Closure Parameters: `$in` vs Named
 
-Use `$in` for simple single-operation closures. Use short-named parameters (`|b|`, `|r|`, `|x|`) when the closure has multiple operations or references the value more than twice:
+Use `$in` for simple single-operation closures.
+Use short-named parameters (`|b|`, `|r|`, `|x|`) when the closure has multiple operations or references the value more than twice:
 
 ```nushell
 # Multiple operations - use named parameter
@@ -214,7 +221,8 @@ Use `$in` for simple single-operation closures. Use short-named parameters (`|b|
 
 ## Data-First Filtering
 
-Define all data upfront, then filter. Prefer `where` over `each {if} | compact`:
+Define all data upfront, then filter.
+Prefer `where` over `each {if} | compact`:
 
 ```nushell
 # Preferred: data-first, filter with where
@@ -410,7 +418,8 @@ Use meaningful labels instead of pattern matching throughout:
 
 ### Module Exports for Testing
 
-**Key pattern:** Nushell has no private/public distinction within a file. Use a two-file pattern:
+**Key pattern:** Nushell has no private/public distinction within a file.
+Use a two-file pattern:
 
 1. **commands.nu** — export ALL commands (public + helpers) for testability
 2. **mod.nu** — re-export only the public API
@@ -484,7 +493,8 @@ def apply-output-formatting []: string -> string { ... }
 
 ### Comments
 
-Prefer comments that explain "why", not "what". **Never remove existing comments**:
+Prefer comments that explain "why", not "what".
+**Never remove existing comments**:
 
 ```nushell
 # Good: explain non-obvious decisions

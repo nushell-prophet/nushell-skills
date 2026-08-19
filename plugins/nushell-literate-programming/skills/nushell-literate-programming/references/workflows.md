@@ -1,19 +1,25 @@
 # Everyday literate workflows
 
-Concrete flows, assembled from real usage in this environment. Each starts at the terminal and ends with a git-diffable artifact.
+Concrete flows, assembled from real usage in this environment.
+Each starts at the terminal and ends with a git-diffable artifact.
 
 ## 1. Explore, then keep it — four capture routes
 
-The session is the raw material. Pick the route by how the exploration happened. Nothing here records a whole session up front — every route is decided in the moment or after the fact:
+The session is the raw material.
+Pick the route by how the exploration happened.
+Nothing here records a whole session up front — every route is decided in the moment or after the fact:
 
-| Route | When | Result |
-|---|---|---|
-| `pipeline \| dotnu embed-add` | One pipeline at a time turns out to be worth keeping | Appends command + output to a growing `.nu` capture file |
-| `copy-out 3` | The interesting thing *already happened*, nothing was set up | Clipboard snippet with `# =>` output, from Zellij scrollback |
-| `pipeline \| example` | You want to *share* the last command as a runnable snippet | Clipboard: `nu -c '...'` wrap + `# =>` output |
-| `hist-to-script` | Reconstruct a whole session after the fact | Bare `.nu` file of the session's commands |
+- `pipeline | dotnu embed-add` — when one pipeline at a time turns out to be worth keeping.
+  Appends command + output to a growing `.nu` capture file.
+- `copy-out 3` — when the interesting thing *already happened* and nothing was set up.
+  Gives a clipboard snippet with `# =>` output, from Zellij scrollback.
+- `pipeline | example` — when you want to *share* the last command as a runnable snippet.
+  Gives a clipboard `nu -c '...'` wrap + `# =>` output.
+- `hist-to-script` — when you reconstruct a whole session after the fact.
+  Gives a bare `.nu` file of the session's commands.
 
-The convention that unifies them: output lives in `# => ` comments. Every capture is immediately valid input for the refresh tools.
+The convention that unifies them: output lives in `# => ` comments.
+Every capture is immediately valid input for the refresh tools.
 
 ## 2. Promote a capture into a document
 
@@ -51,7 +57,9 @@ numd render README.md
 git diff                        # only genuine behavior changes show up
 ```
 
-If the diff is empty, the docs are proven current. If it isn't, either the code changed (update the prose) or the doc caught a regression (fix the code). Both outcomes are wins — this is documentation as a test suite.
+If the diff is empty, the docs are proven current.
+If it isn't, either the code changed (update the prose) or the doc caught a regression (fix the code).
+Both outcomes are wins — this is documentation as a test suite.
 
 ## 4. Pin external facts, diff the world
 
@@ -69,19 +77,31 @@ glob dotnu-captures/*.nu | each { dotnu embeds-update $in }
 git diff   # exactly what changed in the outside world
 ```
 
-Same shape for `@example` results (`dotnu examples-update module.nu`) and for whole tutorial documents (`numd render docs/*.md`). The rhythm is always: **commit → refresh → read the diff**.
+Same shape for `@example` results (`dotnu examples-update module.nu`) and for whole tutorial documents (`numd render docs/*.md`).
+The rhythm is always: **commit → refresh → read the diff**.
 
-The same shape also points inward: a capture file can pin facts about a system *under construction*, not just the outside world. Then `embeds-update` doubles as a cross-repo regression test — refresh the doc, and any behavior change in the modules it `use`s lands in the diff. Flow 8 grows this into a full pattern.
+The same shape also points inward: a capture file can pin facts about a system *under construction*, not just the outside world.
+Then `embeds-update` doubles as a cross-repo regression test — refresh the doc, and any behavior change in the modules it `use`s lands in the diff.
+Flow 8 grows this into a full pattern.
 
 ## 5. The companion loop — user and agent in one terminal
 
 The full interaction protocol lives in `common-space.md`; this is how the literate tooling carries it:
 
-- **The agent proposes, the user runs.** Answers to "how do I X" arrive as snippets with expected `# =>` output; the user executes them in the REPL and the agent follows along through the shared sqlite history (`history --long | last 5` — command, `exit_status`, `duration`). No pasting required.
-- **Drafts are the agent's, refreshes are the user's.** The agent verifies a drafted doc with `numd render draft.md --echo` before showing it — wrong output means wrong explanation, caught early. But the in-place `numd render` on the user's documents, and reading the resulting `git diff`, is the user's ritual. The git gate exists so they can run it fearlessly.
-- **The user shows, the agent reads.** `copy-out` and `example` lift what just happened in the terminal into `# =>`-annotated snippets that paste straight into the conversation — the reverse channel that replaces screenshots and retyping.
-- **Both respect the clean environment.** Blocks run under `nu -n`: `use` the modules a block needs inside the doc itself, so it works for any reader on any machine.
-- **The user archives decisions.** After a substantial session: `claude-nu export-session 'topic' | save docs/sessions/topic.md` puts the conversation in `docs/sessions/` under git. Before re-solving a problem: `claude-nu messages 'topic'` — and when the same ask keeps recurring, that's the cue to turn it into a snippet the user practices instead of a task the agent repeats.
+- **The agent proposes, the user runs.**
+  Answers to "how do I X" arrive as snippets with expected `# =>` output; the user executes them in the REPL and the agent follows along through the shared sqlite history (`history --long | last 5` — command, `exit_status`, `duration`).
+  No pasting required.
+- **Drafts are the agent's, refreshes are the user's.**
+  The agent verifies a drafted doc with `numd render draft.md --echo` before showing it — wrong output means wrong explanation, caught early.
+  But the in-place `numd render` on the user's documents, and reading the resulting `git diff`, is the user's ritual.
+  The git gate exists so they can run it fearlessly.
+- **The user shows, the agent reads.**
+  `copy-out` and `example` lift what just happened in the terminal into `# =>`-annotated snippets that paste straight into the conversation — the reverse channel that replaces screenshots and retyping.
+- **Both respect the clean environment.**
+  Blocks run under `nu -n`: `use` the modules a block needs inside the doc itself, so it works for any reader on any machine.
+- **The user archives decisions.**
+  After a substantial session: `claude-nu export-session 'topic' | save docs/sessions/topic.md` puts the conversation in `docs/sessions/` under git.
+  Before re-solving a problem: `claude-nu messages 'topic'` — and when the same ask keeps recurring, that's the cue to turn it into a snippet the user practices instead of a task the agent repeats.
 
 ## 6. Debugging and profiling, literate-style
 
@@ -115,11 +135,19 @@ glob my-module/*.nu | append (glob tests/*.nu)
 
 ## 8. The proof companion — a spec that cannot lie
 
-Sibling of flow 3, one level up: flow 3 keeps a README honest about one tool; a proof companion keeps a prose spec honest about a *system*. Next to the spec lives a dotnu file where each claim of the spec gets a runnable read query, evidence embedded as `# =>` lines. Writes into the system stay out of the executable path — quoted as comments where their results are read (see dotnu.md, "One-shot side effects").
+Sibling of flow 3, one level up: flow 3 keeps a README honest about one tool; a proof companion keeps a prose spec honest about a *system*.
+Next to the spec lives a dotnu file where each claim of the spec gets a runnable read query, evidence embedded as `# =>` lines.
+Writes into the system stay out of the executable path — quoted as comments where their results are read (see `dotnu.md`, "One-shot side effects").
 
-The maintenance loop is the usual commit → `dotnu embeds-update` → read the diff, but the diff means more here. When the embedded outputs are deterministic — content hashes, CIDs, sorted lists — an empty diff is not "docs current": it is a reproducibility check of the whole system, and a non-empty diff means the *system* drifted from the spec. The doc doubles as an integration test across every repo it `use`s, at zero extra cost, because it is just the doc.
+The maintenance loop is the usual commit → `dotnu embeds-update` → read the diff, but the diff means more here.
+When the embedded outputs are deterministic — content hashes, CIDs, sorted lists — an empty diff is not "docs current": it is a reproducibility check of the whole system, and a non-empty diff means the *system* drifted from the spec.
+The doc doubles as an integration test across every repo it `use`s, at zero extra cost, because it is just the doc.
 
 Two conventions complete the pattern:
 
-- **A committed refresh is a dated verification pass.** The doc's git history is an audit log — this author re-ran the queries on that date, and this is what the system answered. The file's history of changes, passes included, is versioned alongside the code it verifies.
-- **The regeneration header.** Atomic diffs are the rule, but a format change can force wholesale regeneration — every embed differs at once. Record the why in the file's header comment (what changed, which versions), so the wholesale diff carries its own intent.
+- **A committed refresh is a dated verification pass.**
+  The doc's git history is an audit log — this author re-ran the queries on that date, and this is what the system answered.
+  The file's history of changes, passes included, is versioned alongside the code it verifies.
+- **The regeneration header.**
+  Atomic diffs are the rule, but a format change can force wholesale regeneration — every embed differs at once.
+  Record the why in the file's header comment (what changed, which versions), so the wholesale diff carries its own intent.

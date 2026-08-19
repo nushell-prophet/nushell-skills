@@ -1,26 +1,28 @@
 # NUON (Nushell Object Notation)
 
-NUON is Nushell's native data format—a superset of JSON that supports most Nushell data types. NUON code is valid Nushell code that describes data structures.
+NUON is Nushell's native data format—a superset of JSON that supports most Nushell data types.
+NUON code is valid Nushell code that describes data structures.
 
 ## Overview
 
-| Feature | JSON | NUON |
-|---------|------|------|
-| Strings | `"text"` | `"text"` or `'text'` |
-| Numbers | `123`, `1.5` | `123`, `1.5`, `0xff`, `0o755`, `0b1010` |
-| Booleans | `true`/`false` | `true`/`false` |
-| Null | `null` | `null` |
-| Lists | `[1, 2, 3]` | `[1 2 3]` (commas optional) |
-| Records | `{"a": 1}` | `{a: 1}` |
-| Dates | not supported | `2024-01-15T10:30:00Z` |
-| Durations | not supported | `5min`, `2hr`, `100ms` |
-| File sizes | not supported | `64mb`, `512kb`, `2gib` |
-| Binary | not supported | `0x[DEADBEEF]` |
-| Ranges | not supported | `1..5`, `0..<10` |
-| Comments | not supported | `# comment` |
-| Closures/Blocks | N/A | **not supported** |
+How each feature is written in JSON versus NUON:
 
-**Key point:** Any valid JSON is valid NUON, but NUON cannot serialize closures or blocks. `to nuon --serialize` is the escape hatch: it renders a closure as its source string (`{|| 1 } | to nuon --serialize` → `"{|| 1 }"`), so it survives the export but deserializes as a string, not a closure.
+- Strings — JSON `"text"`; NUON `"text"` or `'text'`
+- Numbers — JSON `123`, `1.5`; NUON `123`, `1.5`, `0xff`, `0o755`, `0b1010`
+- Booleans — JSON `true`/`false`; NUON the same
+- Null — JSON `null`; NUON the same
+- Lists — JSON `[1, 2, 3]`; NUON `[1 2 3]` (commas optional)
+- Records — JSON `{"a": 1}`; NUON `{a: 1}`
+- Dates — JSON not supported; NUON `2024-01-15T10:30:00Z`
+- Durations — JSON not supported; NUON `5min`, `2hr`, `100ms`
+- File sizes — JSON not supported; NUON `64mb`, `512kb`, `2gib`
+- Binary — JSON not supported; NUON `0x[DEADBEEF]`
+- Ranges — JSON not supported; NUON `1..5`, `0..<10`
+- Comments — JSON not supported; NUON `# comment`
+- Closures/Blocks — not applicable in JSON; **not supported** in NUON either
+
+**Key point:** Any valid JSON is valid NUON, but NUON cannot serialize closures or blocks.
+`to nuon --serialize` is the escape hatch: it renders a closure as its source string (`{|| 1 } | to nuon --serialize` → `"{|| 1 }"`), so it survives the export but deserializes as a string, not a closure.
 
 ## Converting Data
 
@@ -199,12 +201,19 @@ def is-valid-nuon []: string -> bool {
 
 ## NUON vs JSON
 
-| Use NUON when | Use JSON when |
-|---------------|---------------|
-| Nushell-only workflows | Interoperability with other tools |
-| Need durations, sizes, dates | External API requirements |
-| Config files for Nu scripts | Web APIs, cross-language data |
-| Human-edited data files | Standard data exchange |
+Use NUON when:
+
+- the workflow is Nushell-only
+- you need durations, sizes, dates
+- it is a config file for Nu scripts
+- the data file is human-edited
+
+Use JSON when:
+
+- you need interoperability with other tools
+- an external API requires it
+- it is a web API or cross-language data
+- it is standard data exchange
 
 ## Common Commands
 

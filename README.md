@@ -18,11 +18,11 @@ Then install the plugins you want:
 
 ## Plugins
 
-| Plugin | What it does |
-|--------|-------------|
-| **nushell-completions** | Teaches Claude Code to write Nushell completions — inline lists, custom completers, `extern` definitions, module naming rules. Point it at `--help` output and it produces a ready-to-use completion file. |
-| **nushell-style** | Opinionated Nushell style guide — pipeline patterns, command choices, formatting conventions, testing patterns. Activates automatically when editing `.nu` files. |
-| **nushell-history** | Inspects and rewrites the Nushell sqlite command history — `history --long \| where ...` recipes and `nu-history-tools` mutation flows (retag cwd, remove entries). |
+- **nushell-completions** — teaches Claude Code to write Nushell completions: inline lists, custom completers, `extern` definitions, module naming rules.
+  Point it at `--help` output and it produces a ready-to-use completion file.
+- **nushell-style** — opinionated Nushell style guide: pipeline patterns, command choices, formatting conventions, testing patterns.
+  Activates automatically when editing `.nu` files.
+- **nushell-history** — inspects and rewrites the Nushell sqlite command history: `history --long | where ...` recipes and `nu-history-tools` mutation flows (retag cwd, remove entries).
 
 ## Development
 

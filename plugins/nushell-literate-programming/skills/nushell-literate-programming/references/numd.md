@@ -1,15 +1,22 @@
 # numd — executable markdown documents
 
-numd treats a markdown file as a document with embedded, runnable Nushell. `numd render file.md` finds the ```` ```nu ```` / ```` ```nushell ```` fenced blocks, executes them top-to-bottom in one fresh `nu` process, captures each block's output, and writes that output back into the same file. Prose is untouched; code is untouched; only output lines change.
+numd treats a markdown file as a document with embedded, runnable Nushell.
+`numd render file.md` finds the ```` ```nu ```` / ```` ```nushell ```` fenced blocks, executes them top-to-bottom in one fresh `nu` process, captures each block's output, and writes that output back into the same file.
+Prose is untouched; code is untouched; only output lines change.
 
-The design goal is **idempotency**: running the same file twice produces zero diff (unless a command is genuinely dynamic — timestamps, `git tag`, network). This turns `git diff` into a regression test for your documentation: re-run the doc after a Nushell upgrade or a module change, and any behavioral drift shows up as a diff.
+The design goal is **idempotency**: running the same file twice produces zero diff (unless a command is genuinely dynamic — timestamps, `git tag`, network).
+This turns `git diff` into a regression test for your documentation: re-run the doc after a Nushell upgrade or a module change, and any behavioral drift shows up as a diff.
 
 ## Mental model
 
 - `render` = parse file into blocks → build one intermediate `.nu` script → execute it in a separate process → splice captured output back → save.
-- Output lines are comments prefixed `# => `. On every run, numd first **strips** all existing `# => ` lines and `output-numd` blocks, then regenerates them. Never hand-write meaningful `# => ` lines — they are volatile. Plain `#` comments survive.
+- Output lines are comments prefixed `# => `.
+  On every run, numd first **strips** all existing `# => ` lines and `output-numd` blocks, then regenerates them.
+  Never hand-write meaningful `# => ` lines — they are volatile.
+  Plain `#` comments survive.
 - All blocks in a file share one process: a `let` or `def` from an earlier block is visible in later blocks.
-- By default the intermediate script runs with `nu -n` — no user config, env, or plugins — so output is reproducible on any machine. Pass `--use-host-config` when the doc genuinely needs your config.
+- By default the intermediate script runs with `nu -n` — no user config, env, or plugins — so output is reproducible on any machine.
+  Pass `--use-host-config` when the doc genuinely needs your config.
 
 ## Quickstart
 
@@ -19,22 +26,24 @@ numd render demo.md           # execute and update the file in place
 numd render demo.md --dry-run # table of blocks that would execute, no execution
 ```
 
-`numd render` refuses to overwrite a git-tracked file that has uncommitted changes (`--ignore-git-check` to override). Commit first, run, then read the diff — git is the undo button.
+`numd render` refuses to overwrite a git-tracked file that has uncommitted changes (`--ignore-git-check` to override).
+Commit first, run, then read the diff — git is the undo button.
 
 ## Fence options
 
-Options go after the language in the infostring, comma-separated: ```` ```nu try, new-instance ````. Both `nu` and `nushell` work. An unknown option is a **hard error** — deliberate fail-fast, so a typo in a safety tag like `no-run` stops the run instead of silently executing the block.
+Options go after the language in the infostring, comma-separated: ```` ```nu try, new-instance ````.
+Both `nu` and `nushell` work.
+An unknown option is a **hard error** — deliberate fail-fast, so a typo in a safety tag like `no-run` stops the run instead of silently executing the block.
 
-| Option | Meaning |
-|---|---|
-| `no-run` | Don't execute — the block is illustration only |
-| `no-output` | Execute, but capture no output (setup blocks) |
-| `try` | Wrap in `try {} catch {\|error\| $error}` — for demonstrating errors |
-| `new-instance` | Run in a fresh `nu -c` subprocess for nicely formatted error messages — only honored together with `try` (`try, new-instance`); alone it has no effect |
-| `separate-block` | Put output in a following ` ```output-numd ` block instead of inline (lines still carry the `# =>` prefix) |
-| `run-once` | Execute once, then the fence is rewritten to `no-run` with output frozen — for side effects that must not repeat |
+- `no-run` — don't execute; the block is illustration only
+- `no-output` — execute, but capture no output (setup blocks)
+- `try` — wrap in `try {} catch {|error| $error}`, for demonstrating errors
+- `new-instance` — run in a fresh `nu -c` subprocess for nicely formatted error messages.
+  Only honored together with `try` (`try, new-instance`); alone it has no effect
+- `separate-block` — put output in a following ` ```output-numd ` block instead of inline (lines still carry the `# =>` prefix)
+- `run-once` — execute once, then the fence is rewritten to `no-run` with output frozen, for side effects that must not repeat
 
-`numd list-fence-options` returns this table at the prompt.
+`numd list-fence-options` returns the same options as a table at the prompt.
 
 ## What the output looks like
 
@@ -50,7 +59,8 @@ whoami
 ```
 ````
 
-Output attaches per command group — groups are split by blank lines inside the block. Assignments (`let`, `mut`, `def`, `use`), statements ending in `;`, and `print` calls produce no `# =>` lines (numd decides via AST whether appending `| print` is safe).
+Output attaches per command group — groups are split by blank lines inside the block.
+Assignments (`let`, `mut`, `def`, `use`), statements ending in `;`, and `print` calls produce no `# =>` lines (numd decides via AST whether appending `| print` is safe).
 
 Separate block (`separate-block` option):
 
@@ -85,38 +95,38 @@ On the next `numd render` it expands into a marker pair with the command's raw s
 <!-- numd-gen-end -->
 ```
 
-Every run replaces the region content with fresh output. This is how numd's own README keeps its command reference current: each command section is a region around `use numd; numd doc 'numd render'`, so the docs regenerate from live `scope` data and can never drift from the actual signatures.
+Every run replaces the region content with fresh output.
+This is how numd's own README keeps its command reference current: each command section is a region around `use numd; numd doc 'numd render'`, so the docs regenerate from live `scope` data and can never drift from the actual signatures.
 
 ## Command reference
 
 ### `numd render <file.md>`
 
-| Flag | Effect |
-|---|---|
-| `--echo` | Print result to stdout, don't save |
-| `--dry-run` | Show blocks that would execute |
-| `--eval: string` | Nushell code prepended to the intermediate script — styling/config, e.g. `--eval '$env.numd.table-width = 80'` or `--eval (open -r numd_config.nu)` |
-| `--print-block-results` | Stream each block's result as it executes (long-running docs) |
-| `--save-intermed-script: path` | Keep the generated intermediate `.nu` for debugging |
-| `--no-fail-on-error` | Don't abort on block errors (file is never saved on error either way) |
-| `--ignore-git-check` | Skip the uncommitted-changes gate |
-| `--no-stats` | Suppress the change-stats summary |
-| `--use-host-config` | Load host env/config/plugins instead of `nu -n` |
+- `--echo` — print result to stdout, don't save
+- `--dry-run` — show blocks that would execute
+- `--eval: string` — Nushell code prepended to the intermediate script, for styling/config.
+  E.g. `--eval '$env.numd.table-width = 80'` or `--eval (open -r numd_config.nu)`
+- `--print-block-results` — stream each block's result as it executes (long-running docs)
+- `--save-intermed-script: path` — keep the generated intermediate `.nu` for debugging
+- `--no-fail-on-error` — don't abort on block errors (the file is never saved on error either way)
+- `--ignore-git-check` — skip the uncommitted-changes gate
+- `--no-stats` — suppress the change-stats summary
+- `--use-host-config` — load host env/config/plugins instead of `nu -n`
 
 ### `numd clear-outputs <file.md>`
 
 Strips all generated output — the inverse of `render`, and reversible, so there is no git gate.
 
-| Flag | Effect |
-|---|---|
-| `--echo` | Print instead of saving |
-| `--strip-markdown` | Emit only the Nushell code — turns a literate doc back into a plain script |
-| `--keep-outputs` | Keep inline `# =>` lines (only collapse regions) |
-| `--keep-generated` | Keep generate-region content |
+- `--echo` — print instead of saving
+- `--strip-markdown` — emit only the Nushell code; turns a literate doc back into a plain script
+- `--keep-outputs` — keep inline `# =>` lines (only collapse regions)
+- `--keep-generated` — keep generate-region content
 
 ### `numd doc <target>`
 
-Renders markdown documentation for a module (all commands) or one command (`numd doc 'numd render'`) from live `scope` data: description, signature, flags, `@example` blocks, input/output types. `--header-level` and `--no-header` control how it nests under hand-written headers. Made to be placed inside a generate-region.
+Renders markdown documentation for a module (all commands) or one command (`numd doc 'numd render'`) from live `scope` data: description, signature, flags, `@example` blocks, input/output types.
+`--header-level` and `--no-header` control how it nests under hand-written headers.
+Made to be placed inside a generate-region.
 
 ### Parsing helpers
 
@@ -127,10 +137,17 @@ Renders markdown documentation for a module (all commands) or one command (`numd
 
 ## Gotchas
 
-- **Shared state**: blocks run in one process. A `def` in block 1 exists in block 10. Good for tutorials, surprising if you expect isolation — and note there is no pure isolation option: `new-instance` only takes effect together with `try`.
+- **Shared state**: blocks run in one process.
+  A `def` in block 1 exists in block 10.
+  Good for tutorials, surprising if you expect isolation — and note there is no pure isolation option: `new-instance` only takes effect together with `try`.
 - **Working directory** is where `numd render` was invoked; relative paths in blocks resolve against it.
-- **Errors abort the save.** If any block errors, the file is left untouched (the error is reported). Use the `try` fence option for blocks that are *supposed* to error.
+- **Errors abort the save.**
+  If any block errors, the file is left untouched (the error is reported).
+  Use the `try` fence option for blocks that are *supposed* to error.
 - **Trailing comment on a block's last line is stripped** before execution — don't end a block with a line whose `#` is not really a comment.
-- **The `# =>` capture is width-sensitive**: tables render at `$env.numd.table-width` (default 120). Pin it via `--eval` for stable diffs across terminals.
+- **The `# =>` capture is width-sensitive**: tables render at `$env.numd.table-width` (default 120).
+  Pin it via `--eval` for stable diffs across terminals.
 - **`run-once` is one-shot** — after the first run the fence says `no-run` and the output is frozen; re-running won't refresh it.
-- **`open <file>.md` is not the file's text.** Since Nushell 0.112 `open` runs `from md` on a `.md` path and returns a table of `element`/`content` rows. Inside a `nu` block that reads a markdown file — including the doc being processed — use `open --raw`, or string commands fail with `Input type not supported.` and `open x.md | save y.md` silently writes the parsed AST as a markdown table.
+- **`open <file>.md` is not the file's text.**
+  Since Nushell 0.112 `open` runs `from md` on a `.md` path and returns a table of `element`/`content` rows.
+  Inside a `nu` block that reads a markdown file — including the doc being processed — use `open --raw`, or string commands fail with `Input type not supported.` and `open x.md | save y.md` silently writes the parsed AST as a markdown table.
