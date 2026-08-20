@@ -92,7 +92,7 @@ When updating skills for a new Nushell release or verifying a claim, read these 
 
 - `../nushell-docs/` — sparse shallow clone of nushell.github.io (`blog/`, `book/`, `cookbook/`).
   Release notes: `blog/<date>-nushell_v0_<minor>_<patch>.md`.
-  Refresh with `git pull`.
+  Refresh with `cozy docs nushell` (`../cozy/cozy-module/docs.nu`), which pulls an existing checkout or clones a fresh one with this same sparse list.
   Command signatures are not in this checkout — read `../nushell/` for those.
   Default lookup target — small and fast to grep.
 - `../nushell.github.io/` — full clone incl. `lang-guide/`, `contributor-book/`, translations.
