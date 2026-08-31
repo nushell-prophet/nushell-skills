@@ -70,6 +70,7 @@ Four modules, all preloaded in cozy sandboxes (elsewhere: `use numd`, `use dotnu
 - The user wants to show you what just happened → `copy-out` / `example` — paste arrives already `# =>`-annotated
 - Command docs that must match real signatures → generate-region around `numd doc '<cmd>'`
 - `@example --result` values gone stale → `dotnu examples-update`
+- A module's own pipelines, offered for the user to run → an `example` command built from its `@example` blocks, which pastes the picked one into their command line (pattern in the `nushell-style` skill, `references/patterns.md`)
 - Pin an external fact (`tool --help`, API shape) and watch it drift → capture file + `dotnu embeds-update`, diff with git
 - A spec whose claims should be provable against a live system → paired dotnu exercise doc (workflows.md, flow 8)
 - Which script block is slow / what does no test cover → `dotnu set-x` / `dependencies | filter-commands-with-no-tests`

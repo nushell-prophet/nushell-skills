@@ -113,6 +113,10 @@ Descriptive names are prose, and prose wants possessives and contractions.
 Rewrite them: `X's Y` → `the Y of X`, `doesn't` → `does not`, `cannot`/`is not` instead of `can't`/`isn't`.
 Say what is tested in words rather than pasting the value under test: `a record {a: 1} round-trips` → `a single-field record round-trips`.
 
+Nushell's own standard library answers the same constraint the other way — its test runner re-emits names too, and it sidesteps the whole class by using bare identifiers (`str-dedent_leave_blankline_tab` in `crates/nu-std/tests/`).
+That is safe, and unreadable in a failure report.
+We keep the prose form: spaces and hyphens are not in the failure set, so the readable option costs nothing as long as the character rule above is followed.
+
 ### Setup and Teardown
 
 Use `@before-each` and `@after-each` for test fixtures:

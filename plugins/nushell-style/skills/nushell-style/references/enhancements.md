@@ -681,22 +681,22 @@ def ls [] { echo "custom" }
 %ls  # => real ls output
 ```
 
-### Dynamic `%` sigil dispatch (v0.113)
+### Dynamic `%` sigil dispatch (v0.113) — last resort
 
-`%$cmd` and `%($cmd)` resolve the builtin to invoke at runtime.
-**Only builtins are eligible** — custom commands, aliases, and externals fail with `command_not_found`.
-Use this when you stored a builtin name in a variable and need to call it without `eval`-style string interpretation; arguments are forwarded as parsed values.
+`%$cmd` and `%($cmd)` resolve the builtin to invoke at runtime, multi-word names included.
+**Only builtins are eligible.**
+A custom command, an alias and an external all fail with `Command not found` — verified for each.
+
+Because the command is unknown at parse time, a bare cell-path argument is read as a column name.
+The fix is the `$.a.b` literal, which carries its own structure (see "Cell-Paths Are Values" in `patterns.md`):
 
 ```nushell
-let cmd = 'echo'
-%$cmd 'hello'        # => hello
-%('echo') 'world'    # => world
-%($cmd) 'hello'      # => hello
-
-def custom_cmd [] { 'nope' }
-let c = 'custom_cmd'
-%($c)                # error: only builtins resolve
+let g = 'get'
+{a: {b: 7}} | %$g a.b      # => error: Cannot find column 'a.b'
+{a: {b: 7}} | %$g $.a.b    # => 7
 ```
+
+Prefer the static `%get` whenever the command set is known as you write — `SKILL.md` lists the costs under Don't.
 
 ### Fish-style abbreviations (v0.113)
 

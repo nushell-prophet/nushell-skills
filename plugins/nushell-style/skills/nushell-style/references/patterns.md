@@ -193,6 +193,42 @@ When consecutive `each` calls perform operations that can be piped, combine them
 | each { str length }
 ```
 
+## `each --keep-empty` Preserves Position
+
+`each` drops the elements whose closure returned nothing, so the output is shorter than the input and the indices no longer line up.
+`--keep-empty` keeps a `null` in place instead:
+
+```nushell
+[1 2 3] | each {|x| if $x mod 2 == 0 { $x } }                # => [2]
+[1 2 3] | each --keep-empty {|x| if $x mod 2 == 0 { $x } }   # => [null, 2, null]
+```
+
+Reach for it whenever the result is going to be `zip`ped, `merge`d, or `wrap`ped back alongside the input — the same reason `get --optional` beats `each { $in.field? } | compact`.
+It is also what makes "repeat a value n times" work when the value may be `null`:
+
+```nushell
+let item = null
+1..3 | each { $item }                # => []
+1..3 | each --keep-empty { $item }   # => [null, null, null]
+```
+
+## Composing Closures with `reduce --fold`
+
+A list of transformations can be folded into a single closure, each one wrapping the last:
+
+```nushell
+let pipeline = [{str uppercase} {str reverse}]
+    | reduce --fold ({|| $in }) {|step prev|
+        {|| do $prev | do $step }
+    }
+
+"abc" | do $pipeline   # => CBA
+```
+
+The seed `{|| $in }` is the identity closure, so an empty list yields a pass-through.
+Use this when the *set* of steps is data — driven by flags, a config record, or a table of columns.
+For a fixed set of steps, just write the pipeline.
+
 ## Closure Parameters: `$in` vs Named
 
 Use `$in` for simple single-operation closures.
@@ -290,6 +326,59 @@ export def classify-block-action [
 }
 ```
 
+### Input-Type Dispatch with `peek | metadata access`
+
+When a command has to behave differently depending on what type it was piped, don't collect the input to look at it.
+`peek` stashes the first `n` elements in the pipeline metadata while the stream keeps flowing, and `metadata access` reads them:
+
+```nushell
+export def "into list" []: any -> list {
+    peek | metadata access {|md|
+        match $md.peek.type {
+            "range" => { each {|| } }
+            "list" => { }
+            "record" => { transpose key value }
+            _ => { [$in] }
+        }
+    }
+}
+```
+
+`1..3` → `[1 2 3]`, `[1 2]` → `[1 2]`, `{a: 1}` → a two-column table, `"x"` → `["x"]`.
+
+Prefer this over `let x = $in; match ($x | describe) { … }`, which collects the whole stream just to name its type.
+
+**`peek` reports a coarser type than `describe`, and that decides most sites.**
+`$md.peek.type` is the bare type name, so the distinctions `describe` draws inside the angle brackets are all gone (measured on 0.115.1):
+
+```nushell
+[[a b]; [1 2]] | describe                                  # => table<a: int, b: int>
+[[a b]; [1 2]] | peek | metadata access {|md| $md.peek }    # => {type: list, stream: false}
+stor open | describe                                        # => SQLiteDatabase
+stor open | peek | metadata access {|md| $md.peek }         # => {type: custom, stream: false}
+```
+
+So a table cannot be told from a list, and one custom value cannot be told from another — every plugin value is `custom`.
+A branch that turns on either distinction is not convertible, and rewriting it with `peek` silently sends every table down the list arm.
+Check what the branches actually separate before reaching for the idiom; `describe` is the right tool when the answer lives inside `table<…>`.
+
+**`value` needs a count.** Bare `peek` stores `{type, stream}` and nothing else — there is no `value` to destructure.
+`peek 1` (or more) adds one, but only for list-shaped input; a string, an int and a record never get one:
+
+```nushell
+[1 2 3] | peek 2 | metadata access {|md| $md.peek }   # => {type: list, stream: false, value: [1, 2]}
+[] | peek 1 | metadata access {|md| $md.peek }        # => {type: list, stream: false, value: []}
+"x" | peek 1 | metadata access {|md| $md.peek }       # => {type: string, stream: false}
+```
+
+With a count, then, the empty case is `value: []` rather than a missing field; `peek 2` is how `std-rfc/iter only` tells "exactly one" from "more than one".
+An empty `{ }` body passes the input through.
+
+**A site qualifies only if the value arrives by pipe, uncollected.**
+`describe` on a named parameter, on a `let`-bound variable, or on a field pulled out of a record is not a dispatch site: the value is already in hand, so `peek` spares nothing and only lengthens the line.
+`let x = $in` followed by uses of `$x` as *data* is the same case — converting it means restructuring the whole body inside `metadata access`, which is rarely worth it.
+Applied across six of our modules, this left almost nothing: of 20 `describe` sites, 3 converted, 6 were branch-on-table-vs-list or on a custom value's name, and 11 were values already in hand.
+
 ### `items` for Record Iteration
 
 ```nushell
@@ -308,6 +397,35 @@ $record
 $env.numd?.table-width? | default 120
 $env.numd?.prepend-code?
 ```
+
+### Cell-Paths Are Values
+
+A cell-path is a first-class value, not just syntax inside `get`.
+`$.` is the literal form, and two commands take it apart and put it back together:
+
+```nushell
+$.a.b | describe                        # => cell-path
+$.a.b | split cell-path | get value     # => [a, b]
+```
+
+`split cell-path` yields one row per step — `{value, optional, insensitive}` — so a path can be rewritten with ordinary table commands and rebuilt with `into cell-path`:
+
+```nushell
+# make every step optional, so a missing path yields null instead of an error
+let loose = $.a.b | split cell-path | update optional true | into cell-path
+{} | get $loose        # => null
+
+# build an accessor from data
+let dynamic = ["users" 0 "name"]
+    | each {|s| {value: $s, optional: false, insensitive: false} }
+    | into cell-path
+{users: [{name: "ada"}]} | get $dynamic   # => ada
+```
+
+A list index must stay an `int` in the `value` field — `"0"` as a string makes `get` look for a *column* named `0` and fail with `column_not_found`.
+
+Use this instead of building a path as a string and interpolating it into `get`: the value form carries the optional and case-insensitive flags, and it cannot be mangled by a `.` inside a column name.
+`split cell-path` is also how you render a path for an error message — `$col | split cell-path | get value | str join "."`.
 
 ### `in` for Membership Testing
 
@@ -364,6 +482,73 @@ For simple conditions on lists, use row condition syntax (`$it`) instead of clos
 
 ---
 
+## Error Construction
+
+`error make` takes more than `msg`, and the extra fields are what turn a bare failure into a message the caller can act on.
+The whole of `std/assert` is built on them.
+
+```nushell
+def "assert even" [n: int] {
+    if $n mod 2 != 0 {
+        error make {
+            msg: "not an even number"
+            label: {text: $"($n) is odd", span: (metadata $n).span}
+            help: "pass a multiple of two"
+            code: "demo::assert::not_even"
+        }
+    }
+}
+```
+
+- `label` — one `{text, span}` record; `labels` is the plural form and takes a table, for pointing at two arguments at once.
+  Both may appear in the same call and both render.
+  Since 0.115 a label missing its `span: {start, end}` is an error rather than being silently replaced by the record's own span.
+- `span: (metadata $n).span` is the important part.
+  `metadata` on a *parameter* returns the span of the value **as the caller wrote it**, so the error underlines the caller's argument, not a line inside your command.
+  That is the only way a custom `assert` can point where a built-in one does.
+  **It holds for a direct call only.**
+  Raise the same error one level down — in a helper the command calls — and the span is that inner call site, a line in your own module source.
+  That is worse than no label: it points confidently at the wrong place.
+  So in a layered module, only the commands a user actually types qualify; a helper raising the error gets `help:` and no label.
+  Verified on 0.115.1: a `def helper [name] { … (metadata $name).span … }` called as `helper $name` underlines `helper $name` in the calling file, never the user's command line.
+- `help` — renders as a `help:` line under the error.
+  Put the fix here, not in `msg`.
+- `code` — the machine-readable code (`nu::shell::type_mismatch` and friends).
+  Set it when a caller might reasonably match on it.
+
+For an error with no meaningful source location, `error make --unspanned {msg: "…"}` skips the span rather than pointing at something arbitrary.
+**The flag and a label are mutually exclusive, and nothing warns.**
+Under `--unspanned` the label is dropped and only `msg` and `help:` render, so the flag is not an independent switch to leave in place while adding a label — removing it is part of adopting one:
+
+```nushell
+# --unspanned kept — the label is silently swallowed
+export def with-unspanned [n: int] {
+    error make --unspanned {msg: "…" label: {text: "points here" span: (metadata $n).span} help: "the help line"}
+}
+# =>   x …
+# =>   help: the help line
+
+# --unspanned dropped — the caret appears, help: unchanged
+export def without-unspanned [n: int] {
+    error make {msg: "…" label: {text: "points here" span: (metadata $n).span} help: "the help line"}
+}
+# =>   x …
+# =>  1 | without-unspanned 42
+# =>    :                   ^| points here
+# =>   help: the help line
+```
+
+Keep `--unspanned` wherever there is no caller argument to point at; drop it wherever there is one.
+
+Two shorthands from 0.110 cover the cases that need none of the above:
+
+```nushell
+error make "something went wrong"   # string shorthand
+{msg: "oops"} | error make          # record from the pipeline
+```
+
+Pass `metadata` a pipeline instead of a parameter to underline the *input*: `ls | metadata access {|m| error make {msg: "bad" label: {text: "here" span: $m.span}} }`.
+
 ## Code Structure Examples
 
 ### Type Signatures
@@ -402,6 +587,116 @@ export def code-block-marker [
     ...
 }
 ```
+
+### `@category` and `@search-terms` on Exported Commands
+
+`@example` is not the only attribute worth writing.
+`@category` groups the command in `help commands`; `@search-terms` adds words that `help commands --find` will match.
+Both land in `scope commands`:
+
+```nushell
+@category math
+@search-terms "multiply" "scale"
+@example "double five" { 5 | double } --result 10
+export def double []: int -> int { $in * 2 }
+```
+
+```nushell
+scope commands | where name == 'double' | select category search_terms
+# => [[category, search_terms]; [math, "multiply, scale"]]
+```
+
+**`@category` goes on everything exported through a `mod.nu`.**
+It is not a guessing game — the command belongs to a group or it does not.
+Skip internal helpers, where nobody is searching.
+
+**`@search-terms` goes almost nowhere.**
+`help commands --find` searches the name, the description and the search terms together — verified in `crates/nu-command/src/help/help_commands.rs:62`, which hands all three columns to the matcher.
+So a term repeating a word already in the name or the description matches nothing new.
+Delete it.
+
+A term earns its place only when all three hold:
+
+- a user would really type that word;
+- it appears nowhere in the name or the description;
+- you would be glad to see *this* command returned as the answer to it.
+
+The third one is what rules out generic verbs.
+`save`, `list`, `clear`, `add`, `output`, `text` each match half a module, so the search returns a page and the right command is no easier to find inside it.
+Wider is not better: a term that widens the match without narrowing the answer costs more than it gives.
+
+The tell for a bad set is a fixed count per command.
+150 `@search-terms` lines were once added across these modules, four terms each, and all 150 were removed again — four is a quota being filled, not four words anyone would type.
+
+- Bad — `@search-terms "save" "store" "put" "write"` on `kv set`: every word a synonym of the name.
+- Good — `@search-terms jq ".." nested` on `std-rfc`'s `recurse`: another tool's vocabulary, which a Nushell name and description cannot contain.
+
+Zero terms is the normal state.
+`@deprecated "Use new-cmd" --since "0.105.0"` belongs in the same place when you retire a name.
+
+### The Module's Own `example` Command
+
+Export an `example` command and the module's `@example` attributes become a menu: tab-complete a slug, and the pipeline lands in the command line for the user to read, edit and run.
+
+**Offer this for a module that has outgrown `help`, not for every module.**
+The test is whether a useful pipeline crosses commands — one subcommand's output feeding the next — because that is the knowledge no single command's help can show.
+A module with a handful of composing subcommands, typed by a user in the REPL, earns the menu.
+A one-command module does not: its own `help` already shows those examples.
+Neither does a library imported by scripts, since the paste needs a REPL buffer.
+
+```nushell
+claude-nu example                      # every example as a table: slug, description, pipeline
+claude-nu example <TAB>                # the same rows as a menu, each slug next to its pipeline
+claude-nu example search-every-project # writes that pipeline into the command line
+```
+
+The rows are not a second list to maintain.
+They are the `@example` attributes the module's own commands already carry, read at runtime:
+
+```nushell
+const MODULE = 'claude-nu' # the only per-module literal — a module copying this file changes it and nothing else
+
+export def example-table []: nothing -> table<slug: string, description: string, example: string> {
+    let exported = scope modules | where name == $MODULE | get 0?.commands? | default []
+    if ($exported | is-empty) { return [] }
+
+    let examples = scope commands | where decl_id in $exported.decl_id | select decl_id examples
+
+    $exported
+    | join $examples decl_id
+    | each {|cmd| $cmd.examples | each {|ex| {command: $cmd.name description: $ex.description example: $ex.example} } }
+    | flatten
+    | slugify-examples
+}
+```
+
+**Read the module, not the names an import happened to produce.**
+`scope commands | where name starts-with 'claude-nu '` looks equivalent and is the one thing that breaks.
+`use claude-nu *` imports the commands unprefixed, so that filter returns `[]` and every example vanishes — silently, since an empty menu is a valid menu.
+`scope modules` gives module-relative names and their `decl_id`, which both import forms share, so the table comes out identical under `use claude-nu` and under `use claude-nu *`.
+`main` arrives there under the module's own name, so an example on the module itself is labelled `claude-nu`, not `main`.
+
+**A pipeline that crosses commands hangs on the module's `main`.**
+No single subcommand owns it, and `main` usually exists already as a signpost that names the subcommands.
+Hanging the pipelines there as `@example` blocks replaces the copy such a `main` tends to keep in its help text: one source now reaches `help`, the menu, and `dotnu examples-update`.
+
+**The paste is REPL-only, and the bare form is the fallback.**
+`commandline edit --replace` has no buffer to write to in a script, so with no argument the command returns the table instead and composes like any other data.
+The user runs the pipeline; the command only fills the line.
+
+**Slugs come from the description**, so they read as a label rather than as an index nobody remembers.
+Two rules keep that usable when the convention is copied: fall back to the command name when the description is empty, and number a repeated slug (`same`, `same-2`) instead of losing the second example.
+Neither is hypothetical — `dotnu` writes `@example ''` on nearly all of its examples, so the first module to reuse this arrives with no descriptions at all.
+
+**Keep the authored order** — the completer returns `{options: {sort: false} completions: ...}` (see the `nushell-completions` skill for that record form).
+The order the module declares — its own pipelines first, then each command's — is the order a reader should meet them in, while alphabetical would follow whatever word a description happens to start with.
+
+**The check lives on the authoring side, not here.**
+`dotnu examples-update` runs each block and writes the real output back into `--result`, so a pipeline broken by a rename is caught there instead of being suggested to the user.
+Do not build the table from `dotnu find-examples`: it returns no description and drops any example without a `--result`, while the menu needs the description and must show result-less examples too.
+
+Working implementation, tests included: `example.nu` in [claude-nu](https://github.com/nushell-prophet/claude-nu).
+Note that `nu-goodies` exports an unrelated bare `example` (it shares the command you just ran); this one is always reached through its module prefix, so the two coexist.
 
 ### Semantic Action Labels
 
@@ -445,6 +740,53 @@ use ../module/commands.nu *  # access ALL commands including helpers
 - Keep them exported (for testing)
 - Keep their current names (consistency within the module)
 - The public API is controlled by mod.nu, not by removing exports
+
+### Shadowing a Builtin: Reach the Real One with `%`
+
+A module command may legitimately be named after a builtin — `assert length`, `assert str contains`, a `main update`.
+Inside that module the bare name now resolves to the custom command, and the failure is indirect: the *other* modules this one imports were parsed with the name already bound, so an imported body calling the builtin breaks while pointing at a file you did not touch.
+
+```nushell
+# bad.nu
+use ./helper.nu *
+export def update [] { "custom update" }
+```
+
+```
+Error: nu::parser::extra_positional
+   ╭─[helper.nu:3:12]
+ 3 │     update file { cwd-relative }
+   ·            ──┬─
+   ·              ╰── extra positional argument
+```
+
+The error names `helper.nu`, a file that is correct and that you did not change, so bisecting it finds nothing.
+
+**The fix is the `%` sigil, written wherever the builtin is called.**
+`%name` resolves to the builtin regardless of what is shadowing it:
+
+```nushell
+# helper.nu — immune to whatever imports it
+export def touch-rows []: table -> table {
+    $in | %update file { cwd-relative }
+}
+
+# and in the shadowing file's own bodies
+export def length [left: list right: int] {
+    if ($left | %length) != $right { error make {msg: "wrong length"} }
+}
+```
+
+Verified on 0.115.1 for all four cases: an imported helper whose importer shadows the name, a same-file shadow, a `def --env` body, and a multiword builtin (`%str contains`).
+
+Two limits:
+- `%` reaches **builtins only**.
+  A shadowed custom command, alias or external is not recoverable this way.
+- It has to be written at the call site, so it fixes code you control.
+  A third-party module that spells the name bare still breaks; the answer there is to not take the builtin's name.
+
+**On `alias "core length" = length`:** `std/assert` uses that instead, and it works, but it is not the modern answer — those aliases date to 2023-05-27 (`3005fe10e`), while `%` arrived in 0.112, and `nu-std` uses `%` nowhere.
+Prefer `%`; it needs no declaration, survives being copied into another file, and says at the call site which command is meant.
 
 ### Const for Static Data
 

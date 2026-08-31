@@ -8,7 +8,7 @@ description: This skill should be used when writing, editing, reviewing, or debu
 ## Contents
 
 - **This file** — quick reference lists, do/don't checklists
-- `references/patterns.md` — pipeline composition, command examples, code structure
+- `references/patterns.md` — pipeline composition, command examples, code structure, cell-paths as values, error construction
 - `references/formatting.md` — Topiary conventions, spacing, declarations
 - `references/debugging.md` — `--ide-check` for agents, diagnostic parsing
 - `references/regex.md` — fancy-regex flavor: lookaround, backrefs, where it applies
@@ -361,14 +361,22 @@ Ordinary builtins stay shadowable — `def ls` still works, and `%ls` reaches th
 - Use `match` for type dispatch
 - Use `in` for membership testing
 - Use `get --optional` for field extraction
+- Build a `get`/`update` path as a cell-path value (`$.a.b`, `into cell-path`), not an interpolated string (see `references/patterns.md`)
 - Use `scan` for stateful transforms
 - Use `where` for filtering
 - Use `where $it =~ ...` for list filtering
 - Combine consecutive `each` closures when operations can be piped
+- Use `each --keep-empty` when the result is zipped or merged back against the input
+- Dispatch on input type with `peek | metadata access` where a real stream is typed and the branch turns on a bare type name — `peek` reports `list` for a table and `custom` for every plugin value, so check what the branches separate first (see `references/patterns.md`)
 - Define data first, then filter
 - Include type signatures: `]: input -> output {`
 - Document non-obvious flags/parameters with a trailing `# comment` — it becomes their `help` description (see `references/formatting.md`)
 - Use `@example` attributes (nutest)
+- Add `@category` to commands exported through `mod.nu`
+- Leave `@search-terms` off unless a word passes all three tests in `references/patterns.md` — zero terms is the normal state
+- Give a module its own `example` command once its subcommands compose into pipelines a user types in the REPL — built from the `@example` attributes it already carries, it pastes one into their command line; not worth it for a single command or a script-only library (see `references/patterns.md`)
+- Give `error make` a `label` with `span: (metadata $param).span`, plus `help:` for the fix — only in a command the user calls directly, and drop `--unspanned` when you add one (see `references/patterns.md`)
+- Call a shadowed builtin through the `%` sigil (`%update`, `%str contains`) at the call site
 - Use `const` for static data
 - Keep custom commands focused
 - Export ALL commands from implementation files (enables testing helpers)
@@ -390,6 +398,9 @@ Ordinary builtins stay shadowable — `def ls` still works, and `%ls` reaches th
 - Use short flags in code (`save -f`, `open -r`) — write the long form (`save --force`, `open --raw`); short flags are for interactive typing
 - Write `\(` inside `$'...'` — single-quote interpolation has no escapes; literal parens need `$"..."` (see Agent Tip above)
 - Declare short flag aliases (`--force (-f)`) in command signatures unless the user explicitly asks for them
+- Fill a `@search-terms` quota — a fixed count per command means synonyms of its own name, which `help --find` already matches through the name and description
+- Rewrite a `describe` as `peek` when the value is already in hand — a named parameter, a `let`-bound variable, a record field. It spares no stream, which is the idiom's whole purpose, and only lengthens the line
+- Reach for dynamic `%$var` dispatch when the command set is known as you write — it blinds `dotnu diagnose`, changes how bare cell-path arguments parse, and turns any name from config or `$env` into an arbitrary-builtin call (see `references/enhancements.md`)
 
 ---
 
