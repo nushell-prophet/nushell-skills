@@ -1,0 +1,5 @@
+{
+  "name": "claude-nu",
+  "description": "Mine Claude Code session transcripts with claude-nu instead of jq or python — what the user said, what agents ran and what came back, raw records, per-session numbers, one scope model for all of them.",
+  "version": "0.1.0"
+}

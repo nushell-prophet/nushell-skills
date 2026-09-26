@@ -63,7 +63,7 @@ claude-nu projects                    # all projects, most recent first; rows pi
 claude-nu sessions                    # this project's sessions: summary, timestamps, user messages...
 claude-nu sessions --last --columns token_usage
 claude-nu messages 'regex'            # this project's user messages matching a regex
-claude-nu sessions --all-projects | claude-nu messages 'monorepo'   # ...across every project
+claude-nu projects | claude-nu messages 'monorepo'   # ...across every project; the claude-nu skill has the rest
 ```
 
 Useful columns beyond the defaults (`--columns` or `--all-columns`): `bash_commands`, `skill_invocations`, `tool_errors`, `git_branch`, `token_usage`, `edited_files`, `read_files`.

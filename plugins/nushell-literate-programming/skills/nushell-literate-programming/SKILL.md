@@ -75,7 +75,7 @@ Four modules, all preloaded in cozy sandboxes (elsewhere: `use numd`, `use dotnu
 - A spec whose claims should be provable against a live system → paired dotnu exercise doc (workflows.md, flow 8)
 - Which script block is slow / what does no test cover → `dotnu set-x` / `dependencies | filter-commands-with-no-tests`
 - Turn a working session into a permanent doc → `claude-nu export-session | save docs/sessions/topic.md`
-- Find how a past session solved something → `claude-nu messages 'regex'` (this project) / `claude-nu sessions --all-projects | claude-nu messages 'regex'`
+- Find how a past session solved something → `claude-nu messages 'regex'` (this project) / `claude-nu projects | claude-nu messages 'regex'`
 
 ## The core loop for documents
 

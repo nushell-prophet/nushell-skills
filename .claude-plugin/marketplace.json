@@ -31,6 +31,12 @@
       "source": "./plugins/nushell-history",
       "description": "Inspect and rewrite the Nushell sqlite command history — `history --long | where ...` recipes and `nu-history-tools` mutation flows (retag cwd, remove, etc.)",
       "version": "0.1.0"
+    },
+    {
+      "name": "claude-nu",
+      "source": "./plugins/claude-nu",
+      "description": "Mine Claude Code session transcripts with claude-nu instead of jq or python — what the user said, what agents ran and what came back, raw records, per-session numbers, one scope model for all of them.",
+      "version": "0.1.0"
     }
   ]
 }
