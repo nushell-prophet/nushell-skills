@@ -45,13 +45,16 @@ Both use quoted heredoc (`<< 'EOF'`) which bypasses the escaping entirely.
 ## Unit Tests with nutest
 
 Use the [nutest](https://github.com/vyadh/nutest) framework for unit tests.
-Note: `@test`, `@before-each`, `@after-each`, and `@example` are nutest-specific attributes, not part of standard Nushell.
+The tags nutest looks for — `@test`, `@ignore`, `@before-each`, `@after-each`, `@before-all`, `@after-all` — are defined by the standard library's `std/testing` (each one an alias of `echo`).
+A test file must `use std/testing *`: without it the first tag is an unknown command, and nutest reports the whole suite as a `nu::parser::unknown_command` error.
+`@example` is different — it is built into Nushell (`attr example`) and needs no import.
 
 ### Test File Structure
 
 ```nushell
 # tests/test_commands.nu
 use std/assert
+use std/testing *
 
 # Import all custom commands (including internals) for testability
 use ../module/commands.nu *
@@ -167,7 +170,7 @@ Snapshot tests run commands and save output to files committed to git.
 
 1. Define test as closure capturing the command to run
 2. Save output with embedded source code as header
-3. Use `git diff --quiet` to detect changes
+3. Use `git status --porcelain` to detect changes, a new untracked snapshot included
 4. Optionally `--update` to stage changed files
 
 ```nushell
@@ -205,8 +208,6 @@ For integration tests that compare output against committed files:
 
 ```nushell
 def run-snapshot-test [name: string output_file: string command_src: closure] {
-    mkdir ($output_file | path dirname)
-
     # Embed source code as header comment for self-documentation
     let command_text = view source $command_src
         | lines | skip | drop | str trim
@@ -214,11 +215,13 @@ def run-snapshot-test [name: string output_file: string command_src: closure] {
         | str join (char nl)
 
     try {
+        # save --force creates missing parent directories (0.116+)
         $command_text + (char nl) + (do $command_src)
         | save --force $output_file
 
-        let diff = do { ^git diff --quiet $output_file } | complete
-        let status = if $diff.exit_code == 0 { 'passed' } else { 'changed' }
+        # Not `git diff --quiet`: it exits 0 for an untracked file, so a new snapshot would pass without ever being staged.
+        # Only the worktree column counts: an index-only entry (`M `, `A `) is a snapshot already accepted with --update.
+        let status = if (^git status --porcelain -- $output_file | str substring 1..1) in ['' ' '] { 'passed' } else { 'changed' }
         {type: 'integration' name: $name status: $status file: $output_file message: null}
     } catch {|err|
         {type: 'integration' name: $name status: 'failed' file: $output_file message: $err.msg}
@@ -235,8 +238,7 @@ def run-integration-test [name: string command_src: closure] {
     try {
         do $command_src
 
-        let diff = do { ^git diff --quiet $name } | complete
-        let status = if $diff.exit_code == 0 { 'passed' } else { 'changed' }
+        let status = if (^git status --porcelain -- $name | str substring 1..1) in ['' ' '] { 'passed' } else { 'changed' }
         {type: 'integration' name: ($name | path basename) status: $status file: $name message: null}
     } catch {|err|
         {type: 'integration' name: ($name | path basename) status: 'failed' file: $name message: $err.msg}
@@ -414,12 +416,12 @@ run-snapshot-test 'coverage' 'tests/output/coverage.yaml' {
 # GitHub Actions example
 - name: Run tests
   run: |
-    nu -c "use nutest; nutest run-tests --fail --report {type: junit, path: results.xml}"
+    nu --commands "use nutest; nutest run-tests --fail --report {type: junit, path: results.xml}"
 
 # GitLab CI example
 test:
   script:
-    - nu -c "use nutest; nutest run-tests --fail"
+    - nu --commands "use nutest; nutest run-tests --fail --report {type: junit, path: results.xml}"
   artifacts:
     reports:
       junit: results.xml
@@ -454,13 +456,19 @@ def "test" [] {
 
 ### Serial execution for shared state
 ```nushell
-# Use @strategy for tests that must run sequentially
-@strategy: serial
-module test_database {
-    @test
-    def "test 1" [] { ... }
-
-    @test
-    def "test 2" [] { ... }
+# A suite whose tests must run one at a time.
+# `#[strategy]` is a description tag: std/testing defines no `strategy` attribute, so `@strategy` is an unknown command.
+#[strategy]
+def threads []: nothing -> record {
+    { threads: 1 }
 }
+
+@test
+def "test 1" [] { ... }
+
+@test
+def "test 2" [] { ... }
 ```
+
+The strategy covers the whole suite file.
+For one run instead, pass `--strategy {threads: 1}` to `nutest run-tests`.

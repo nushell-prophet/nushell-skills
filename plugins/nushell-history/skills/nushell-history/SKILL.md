@@ -61,7 +61,7 @@ Direct reads use the sqlite column names (see *Schema gotcha* below).
 - `hostname` — string
 - `cwd` — string, absolute working directory
 - `duration` — duration
-- `exit_status` — int, 0 on success
+- `exit_status` — int, 0 on success; `null` (like `duration`) when the command's end was never recorded, e.g. one still running
 - `idx` — int, row number in the returned table
 
 ### Recipes
@@ -70,8 +70,8 @@ Direct reads use the sqlite column names (see *Schema gotcha* below).
 # Last 20 commands the user ran in the current directory
 history --long | where cwd == $env.PWD | last 20
 
-# Last 20 failures, anywhere
-history --long | where exit_status != 0 | last 20
+# Last 20 failures, anywhere (`!= 0` alone also keeps the null rows, which have no recorded end, not a failure)
+history --long | where exit_status not-in [0 null] | last 20
 
 # Search for what the user tried — e.g. apt-get fumbles in this dir
 history --long | where cwd == $env.PWD | where command =~ '(?i)apt|dpkg'

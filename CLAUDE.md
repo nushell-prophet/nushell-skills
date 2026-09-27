@@ -35,8 +35,9 @@ plugins/
         testing.md                 # nutest framework, snapshots, coverage
         toolkit.md                 # toolkit.nu patterns, commit conventions
         mcp.md                     # nu --mcp server, tools, persistent state
-        migration.md               # Breaking changes, renamed commands (0.100 -> 0.115)
-        enhancements.md            # New features for existing scripts (0.100 -> 0.115)
+        tui.md                     # tui command family: layout, data flow, hooks, tui debug
+        migration.md               # Breaking changes, renamed commands (0.100 -> 0.116)
+        enhancements.md            # New features for existing scripts (0.100 -> 0.116)
   nushell-literate-programming/
     .claude-plugin/plugin.json     # Plugin manifest
     output-styles/common-space.md  # Bundled "Common Space" output style

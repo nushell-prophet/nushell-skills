@@ -1,7 +1,8 @@
 # NUON (Nushell Object Notation)
 
-NUON is Nushell's native data format—a superset of JSON that supports most Nushell data types.
+NUON is Nushell's native data format—close to a superset of JSON, and it supports most Nushell data types.
 NUON code is valid Nushell code that describes data structures.
+The format's specification lives in the Nushell repo at `crates/nuon/spec/nuon_formal_specification.md` (added in 0.116), with `bugs_to_fix.md` next to it listing where Nushell still differs from it.
 
 ## Overview
 
@@ -21,7 +22,9 @@ How each feature is written in JSON versus NUON:
 - Comments — JSON not supported; NUON `# comment`
 - Closures/Blocks — not applicable in JSON; **not supported** in NUON either
 
-**Key point:** Any valid JSON is valid NUON, but NUON cannot serialize closures or blocks.
+**Key point:** NUON cannot serialize closures or blocks.
+Nearly all JSON is valid NUON, with two exceptions that `from nuon` rejects: a duplicate key (`{"a": 1, "a": 2}`), and a `\uXXXX` escape (NUON spells it `\u{41}`).
+Parse such input with `from json` (a duplicate key there resolves to the last value).
 `to nuon --serialize` is the escape hatch: it renders a closure as its source string (`{|| 1 } | to nuon --serialize` → `"{|| 1 }"`), so it survives the export but deserializes as a string, not a closure.
 
 ## Converting Data
@@ -37,11 +40,11 @@ How each feature is written in JSON versus NUON:
 $data | to nuon --pretty
 $data | to nuon --indent 2
 
-# Compact single-line output
-$data | to nuon --indent 0
+# The default is already one line; --raw (same as --indent 0) also drops the spaces
+$data | to nuon --raw
 
-# Use tabs instead of spaces
-$data | to nuon --tabs
+# Use tabs instead of spaces (takes a count, like --indent)
+$data | to nuon --tabs 1
 ```
 
 ## Common Patterns
@@ -168,12 +171,15 @@ Tables are lists of records with consistent keys:
 ```nushell
 # Preferred: native types preserved
 {timeout: 30sec size: 10mb} | to nuon
-# => {timeout: 30sec, size: 10mb}
+# => {timeout: 30000000000ns, size: 10000000b}
 
 # Avoid: loses type information
-{timeout: 30sec size: 10mb} | to json
-# => {"timeout": 30000000000, "size": 10000000}
+{timeout: 30sec size: 10mb} | to json --raw
+# => {"timeout":30000000000,"size":10000000}
 ```
+
+The writer always emits durations in `ns` and file sizes in `b`, so a hand-written `30sec` comes back as `30000000000ns`.
+The type survives; the spelling and any `#` comments do not — keep that in mind before rewriting a hand-edited config file with `to nuon`.
 
 ### Use `--indent` for Human-Readable Files
 
@@ -182,7 +188,7 @@ Tables are lists of records with consistent keys:
 $config | to nuon --indent 2 | save config.nuon
 
 # Data interchange - compact
-$data | to nuon --indent 0 | save data.nuon
+$data | to nuon --raw | save data.nuon
 ```
 
 ### Validate with `from nuon`
@@ -229,7 +235,7 @@ $data | to nuon             # convert to NUON string
 # Pretty printing
 $data | to nuon --pretty    # 0.114+: --indent 2 shorthand
 $data | to nuon --indent 4  # indented output
-$data | to nuon --tabs      # use tabs instead of spaces
+$data | to nuon --tabs 1    # use tabs instead of spaces
 ```
 
 With any indentation flag, `to nuon` (0.114+) aligns table columns:

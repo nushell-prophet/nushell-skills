@@ -38,3 +38,9 @@ If dotnu isn't available, that source is trivial to inline.
 
 1. When you finish writing or editing a `.nu` file, run `dotnu diagnose` on it before considering it done
 2. Empty result = no static errors; then run the file for runtime errors
+
+An empty result means "no errors" only if the file was read.
+Before 0.116, raw `nu --ide-check` on a path it could not read printed nothing and exited 0, which looks exactly like a clean file.
+Since 0.116 it prints `File not found` and exits 1.
+`dotnu diagnose` was already safe, because it opens the file itself first.
+Note that `--ide-check` exits 0 even when it reports diagnostics, so check its output, not its exit code.

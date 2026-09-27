@@ -11,26 +11,26 @@
     {
       "name": "nushell-completions",
       "source": "./plugins/nushell-completions",
-      "description": "Generate Nushell custom completions — completer functions, string@completer annotations, inline @[...] lists, @complete attribute, extern definitions.",
-      "version": "1.3.0"
+      "description": "Generate Nushell custom completions (0.116 model) — completers with token/place/buffer inputs, string@completer annotations, inline @[...] lists, @complete and @interactive, external completers (carapace), menu sources, extern definitions.",
+      "version": "2.0.0"
     },
     {
       "name": "nushell-style",
       "source": "./plugins/nushell-style",
       "description": "Opinionated Nushell patterns, pipeline composition, command choices, formatting (Topiary), testing (nutest), NUON, regex (fancy-regex), debugging (--ide-check), toolkit.nu, and MCP server conventions for .nu files.",
-      "version": "1.115.2"
+      "version": "1.116.0"
     },
     {
       "name": "nushell-literate-programming",
       "source": "./plugins/nushell-literate-programming",
       "description": "A common space for user and agent in the Nushell terminal — the agent proposes, the user runs, both share the `# =>` dialect. numd (executable markdown), dotnu (scripts that embed their own output), REPL capture, and nu-goodies/claude-nu companions, framed to grow the user's fluency instead of replacing it. Bundles the Common Space output style",
-      "version": "0.3.2"
+      "version": "0.3.3"
     },
     {
       "name": "nushell-history",
       "source": "./plugins/nushell-history",
       "description": "Inspect and rewrite the Nushell sqlite command history — `history --long | where ...` recipes and `nu-history-tools` mutation flows (retag cwd, remove, etc.)",
-      "version": "0.1.0"
+      "version": "0.1.1"
     },
     {
       "name": "claude-nu",

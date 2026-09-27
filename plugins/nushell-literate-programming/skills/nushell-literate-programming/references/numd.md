@@ -105,7 +105,7 @@ This is how numd's own README keeps its command reference current: each command 
 - `--echo` — print result to stdout, don't save
 - `--dry-run` — show blocks that would execute
 - `--eval: string` — Nushell code prepended to the intermediate script, for styling/config.
-  E.g. `--eval '$env.numd.table-width = 80'` or `--eval (open -r numd_config.nu)`
+  E.g. `--eval '$env.numd.table-width = 80'` or `--eval (open --raw numd_config.nu)`
 - `--print-block-results` — stream each block's result as it executes (long-running docs)
 - `--save-intermed-script: path` — keep the generated intermediate `.nu` for debugging
 - `--no-fail-on-error` — don't abort on block errors (the file is never saved on error either way)
@@ -131,7 +131,7 @@ Made to be placed inside a generate-region.
 ### Parsing helpers
 
 - `numd parse-help` — beautifies `--help` output for embedding in markdown; `--sections ['Usage' 'Flags']` filters, `--record` returns structured data.
-- `numd parse-frontmatter <file>` — YAML frontmatter → record with a `content` field; `to md-with-frontmatter` is the inverse.
+- `numd parse-frontmatter <file>` — YAML frontmatter → record with a `content` field; `numd to md-with-frontmatter` is the inverse.
 - `numd parse-md <file>` — full markdown → semantic block table (headers, paragraphs, code blocks with lang/options, lists, quotes) for programmatic doc processing.
 - `use numd/plumbing.nu` — the composable pipeline stages (`parse-file`, `strip-outputs`, `execute-blocks`, `to-markdown`, `to-numd-script`) when you need a custom flow.
 

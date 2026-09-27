@@ -80,9 +80,9 @@ Four modules, all preloaded in cozy sandboxes (elsewhere: `use numd`, `use dotnu
 ## The core loop for documents
 
 ```nushell
-git commit -am 'wip'        # the safety net; numd enforces it, dotnu deserves it
-numd render doc.md          # or: dotnu embeds-update script.nu — the USER's ritual
-git diff                    # empty = docs proven current; non-empty = drift caught
+git commit --all --message 'wip'  # the safety net; numd enforces it, dotnu deserves it
+numd render doc.md                 # or: dotnu embeds-update script.nu — the USER's ritual
+git diff                           # empty = docs proven current; non-empty = drift caught
 ```
 
 All executors run in a clean `nu -n` process — no user config, no `$env` leakage.

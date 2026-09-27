@@ -1,4 +1,4 @@
-# Nushell Migration Guide (0.100 → 0.115)
+# Nushell Migration Guide (0.100 → 0.116)
 
 When updating Nushell scripts, consult this reference for breaking changes, renamed commands, and new idioms.
 Versions noted as `(v0.NNN)`.
@@ -41,6 +41,9 @@ Versions noted as `(v0.NNN)`.
 - `grid`: implicit record handling → explicit `(column)` argument — removed 0.114 (deprecated 0.113)
 - `from xlsx` / `from ods`: `--header-row` → `--noheaders` / `--first-row` — removed 0.114 (added 0.113)
 - `std/iter scan`: positional init + `--noinit` → `--fold` (omit for no initial value) — 0.114
+- `to yaml`: `--compact-list-indent` → drop it (compact is the default) — removed 0.116.
+  The new `--list-indent indented` gives the other style
+- experimental option `background-completions` → `@interactive` on the completer command — added 0.115.1, removed 0.116 (see *Unified custom completers* below)
 
 ---
 
@@ -152,7 +155,9 @@ ls     # => duck
 
 ### `$ans` is a reserved variable name (v0.115)
 
-`$ans` now holds the last REPL result (`last`, `exit_code`, `duration`, `command`), joining `$in`, `$nu` and `$env` as a builtin variable.
+`$ans` is now a builtin variable, like `$in`, `$nu` and `$env`.
+In the REPL it holds a record about the last line (`exit_code`, `duration`, `command`, and `last` for the value when `$env.config.max_last_result_size` is above its `0b` default).
+In a script it is `null`.
 Any script binding that name breaks at parse time — rename the variable.
 
 ```nushell
@@ -173,6 +178,46 @@ Ordinary built-in commands are still shadowable — that is what the `%` sigil i
 
 Related: a module named after a keyword may no longer export `main`, because the parser intercepts the call before the module can be reached (`nu::parser::keyword_shadow_module_main`).
 Rename the module, or drop `export def main` and import the rest with `use if.nu *`.
+
+### External arguments starting with `{` are parsed as Nushell values (v0.116)
+
+An argument to an external command that begins with `{` is now parsed as a record or a closure, not as a string.
+Nushell then fails at run time, because a record or a closure cannot become a string argument.
+The common victims are `find -exec ... {}`, `xargs -I {}` and `fd --exec ... {}`.
+Quote the braces.
+An argument where `{` is not the first character (`--format={a}`, `x{a}`) is unchanged.
+
+```nushell
+# before: ^find . -name 'f1.txt' -exec echo found {} ';'
+#   0.116: nu::shell::cant_convert — can't convert record to string
+^find . -name 'f1.txt' -exec echo found '{}' ';'   # => found ./f1.txt
+^echo '{"a":1}'                                      # quote JSON too
+```
+
+### `;` is rejected in list literals and `match` list patterns (v0.116)
+
+Before, a `;` inside a list silently cut it: `[1; 2]` gave `[1]`.
+Now it is `nu::parser::error` ("Unexpected semicolon in list"), and the same in a `match` list pattern.
+The table form `[[a b]; [1 2]]` is unchanged, but a header with no rows, `[[a b];]`, is now a parse error (it used to give the list `[[a, b]]`).
+
+```nushell
+# [1; 2]                            # error (0.115: silently [1])
+# match $x { [$a; $b] => ... }      # error — use [$a, $b] or [$a $b]
+[[a b]; [1 2]]                      # still a table
+```
+
+### `take while` / `take until`: a flag after the closure is a parse error (v0.116)
+
+`take while`, `take until`, `skip while`, `skip until` and `chunk-by` now accept a row condition as well as a closure.
+The row condition reads everything after it as part of the condition, so a flag written after the closure — or after a `$closure` variable — fails with `Parse mismatch: expected operator`.
+Of these commands only `take while` and `take until` have a flag (`--include`); put it before the condition.
+A closure or `$closure` variable with nothing after it works as before.
+
+```nushell
+# [1 2 3 4 5] | take while {|x| $x < 3 } --include 1   # 0.116: parse error (0.115: [1, 2, 3])
+# [1 2 3 4 5] | take while $pred --include 1           # same error
+[1 2 3 4 5] | take while --include 1 {|x| $x < 3 }     # => [1, 2, 3]
+```
 
 ---
 
@@ -212,6 +257,34 @@ date now | describe  # => "datetime" (was "date")
 # before: errors collected into list<error>
 # after:  first error thrown immediately
 ```
+
+### `length`, `columns`, `is-empty`, `is-not-empty` raise stream errors (v0.116)
+
+Before, these commands ignored an error inside a stream and returned a wrong answer.
+Now they raise the error.
+A check like `if ($rows | is-empty)` that "worked" may now fail — the error was always there.
+
+```nushell
+[[name size]; [a 100b] [b 200b]] | where size <= 150 | length
+# before: 2
+# after:  nu::shell::operator_incompatible_types (filesize vs int)
+```
+
+### `each while` raises errors (v0.116)
+
+Before, an error in the closure stopped `each while` silently, and the partial result looked like a normal early stop.
+Now the error is raised.
+
+```nushell
+[1 2 3] | each while {|x| if $x == 2 { error make {msg: boom} } else { $x } }
+# before: [1]
+# after:  error: boom
+```
+
+### Semver comparisons type as `bool` (v0.115.1)
+
+`('0.9.0' | into semver) < ('1.0.0' | into semver)` is typed `bool`, so it works with `or`/`and`, in `let` and as a `bool` argument.
+Per the 0.115.1 release notes, 0.115.0 rejected these at parse time; drop any workaround written for it.
 
 ### Immediate error return on error values (v0.102)
 
@@ -345,7 +418,7 @@ match 1 { _ => {|| print hi } } # returns closure (was: executed it)
 
 ```nushell
 # before: params was a record {a: 1, b: 2}
-# after:  params is a table [[key, value]; [a, 1], [b, 2]]
+# after:  params is a table [[key, value]; [a, "1"], [b, "2"]]  (values stay strings)
 ```
 
 ### `overlay list` returns table (v0.107)
@@ -364,8 +437,8 @@ http get --max-time 30sec $url   # was: --max-time 30
 ### `format filesize` is case-sensitive (v0.102)
 
 ```nushell
-1000 | format filesize kB    # metric
-1000 | format filesize KiB   # binary
+1000b | format filesize kB    # => 1 kB (metric)
+1000b | format filesize KiB   # => 0.97 KiB (binary)
 ```
 
 ### `format bits` outputs big endian (v0.107)
@@ -411,10 +484,9 @@ Byte/string streams from external processes are no longer implicitly split by li
 Pipe through `lines` first.
 
 ```nushell
-# before
-^cat file.log | parse --regex '(?P<level>\w+)\s+(?P<msg>.+)'
-# after
-^cat file.log | lines | parse --regex '(?P<level>\w+)\s+(?P<msg>.+)'
+# file.log holds "INFO one\nWARN two"
+^cat file.log | parse '{level} {msg}'           # => one row, msg: "one\nWARN two"
+^cat file.log | lines | parse '{level} {msg}'   # => [[level, msg]; [INFO, one], [WARN, two]]
 ```
 
 ### `kill -0` no longer accepted as shorthand (v0.113)
@@ -433,47 +505,21 @@ Use the long form.
 Verbose flags now return queryable structured tables instead of human text.
 Scripts that parsed the text output need to consume the table columns.
 
+One row per argument, with the absolute path.
+Since 0.116, a directory that already existed reports `created: false` (it was `true`).
+
 ```nushell
 mkdir --verbose a/b/c
-# => [[path created error]; [a true ""] [a/b true ""] [a/b/c true ""]]
+# => [[path, created, error]; ["/abs/a/b/c", true, null]]
 
 mv --verbose src dst   # columns: source, destination, message
-rm --verbose old.txt   # columns: path, …
+rm --verbose old.txt   # columns: path, deleted, error
 ```
 
-### `from xlsx --header-row` default change (v0.113)
+### `to yaml` quoting changed in 0.113 and 0.114 (superseded)
 
-Default is now the first non-empty row (was row 0).
-Pass `--header-row null` for no header, or an explicit 0-indexed integer to restore old behavior.
-
-```nushell
-open data.xlsx                          # first non-empty row as header
-open data.xlsx | from xlsx --header-row null   # treat all rows as data
-open data.xlsx | from xlsx --header-row 0      # old default
-```
-
-### `to yaml` now quotes ambiguous string values (v0.113)
-
-Previously emitted bare `off` / `on` / `yes` / `no` / `0.0.0.0:8444` etc., which re-parse as booleans or invalid YAML.
-Now wrapped in single quotes.
-Scripts that compared the round-tripped text need updating.
-
-```nushell
-'{"value": "off"}' | from json | to yaml
-# before: value: off
-# after:  value: 'off'
-```
-
-### `to yaml` quotes fewer strings again (v0.114)
-
-Follow-up to the 0.113 change: only values that would re-parse as non-strings (`off`, `yes`, numbers) stay quoted; plain scalars like paths and `host:port` strings are emitted bare per YAML 1.2 rules.
-Multiline strings now use `|-` block scalars.
-Text-comparing scripts churn again; the full YAML rework landed in 0.115 (next entry).
-
-```yaml
-# 0.113:  path: '/dev/stdout'      0.114:  path: /dev/stdout
-# both:   value: 'off'
-```
+0.113 quoted ambiguous strings like `off` and `/dev/stdout`; 0.114 quoted fewer of them.
+The 0.115 rework (next entry) replaced both, so compare YAML text against 0.115+ output only.
 
 ### YAML reworked — `from yaml` defaults to YAML 1.2 (v0.115)
 
@@ -495,7 +541,7 @@ Pass `--key-resolution verbatim` to keep the original key text instead.
 
 ```nushell
 # 'true: enabled' | from yaml                          # error: Found unsupported key
-'true: enabled' | from yaml --key-resolution verbatim  # => {true: enabled}
+'true: enabled' | from yaml --key-resolution verbatim  # => {"true": enabled}
 ```
 
 Tags are real now: an unknown tag errors instead of being silently dropped.
@@ -507,12 +553,14 @@ Tags are real now: an unknown tag errors instead of being silently dropped.
 ```
 
 `to yaml` errors on values that cannot round-trip (closures, etc.) instead of mangling them.
-Choose the fallback explicitly with `--non-roundtrip "null"` or `--non-roundtrip "lossy"` — the flag takes a *string*, so bare `null` is a parse error.
-`--serialize` still works but may be deprecated.
+Choose the fallback explicitly: `--non-roundtrip null` writes `null`, `--serialize` writes a lossy string form.
+Since 0.116 a bare `null` works as well as the string `"null"` (in 0.115 only the string did).
+`--non-roundtrip lossy` is listed in the error text but rejected with `Incompatible parameters` in 0.115 and 0.116 — use `--serialize`.
 
 ```nushell
-# {|| $in } | to yaml                    # error: Found non-roundtrippable closure
-{|| $in } | to yaml --non-roundtrip "null"  # => null
+# {|| $in } | to yaml                     # error: Found non-roundtrippable closure
+{|| $in } | to yaml --non-roundtrip null  # => null
+{|| $in } | to yaml --serialize          # => !closure "{|| $in }"
 ```
 
 Emitted YAML also looks different — quoting follows 1.2 rules and Nushell types get local tags (`!filesize`, `!cell-path`).
@@ -521,6 +569,13 @@ Scripts that compare YAML text need rechecking.
 ```nushell
 {b: "off"} | to yaml             # => b: off      (bare; 0.113/0.114 quoted it)
 {b: "off"} | to yaml --spec 1.1  # => b: "off"
+```
+
+In 0.116 the list style flag changed: `--compact-list-indent` is gone (compact was already the default), and `--list-indent indented` gives the other style.
+
+```nushell
+{a: [1 2]} | to yaml                         # => "a:\n- 1\n- 2\n"
+{a: [1 2]} | to yaml --list-indent indented  # => "a:\n  - 1\n  - 2\n"
 ```
 
 Also new (not breaking): multi-document streams (`--multiple auto|list|single` on read, `--multiple` on write), working anchors/aliases/merge keys, and `--indent` / `--quote` / `--add-directives` for output shape.
@@ -569,7 +624,8 @@ Values are rounded to the step's precision, removing artifacts like `0.300000000
 ### `to csv` / `to tsv` now stream and fail on schema drift (v0.113)
 
 Rows are written as they arrive instead of buffered.
-If a later row introduces a new column, the export errors mid-stream.
+If a later row of a *stream* (for example the output of `each`) introduces a new column, the export errors mid-stream: "streamed csv schema changed".
+A list that is already collected (a literal, a variable) still gets the union of columns.
 
 ```nushell
 # fix 1: declare columns up front
@@ -607,9 +663,70 @@ Use `format date` first for custom format.
 Body size increased.
 Use `to json --raw` before piping if compact JSON needed.
 
-### `mktemp` without template (v0.111)
+### Where `mktemp` creates things (v0.111, v0.116)
 
-Creates in tmpdir instead of current directory.
+- No template: in the temp dir (v0.111), for files and `--directory` alike
+- A template: in the current directory — since 0.116 also with `--directory` (it went to the temp dir before)
+- `--tmpdir` puts a templated file or directory in the temp dir
+
+```nushell
+mktemp --directory mydir.XXX            # => $env.PWD/mydir.OjL, an absolute path (0.115: /tmp/mydir.OjL)
+mktemp --directory --tmpdir mydir.XXX   # => /tmp/mydir.Df1
+```
+
+### `default` column arguments are cell paths (v0.116)
+
+A dotted argument now names a nested field, and missing records on the way are created.
+Quote it to target a key that really contains a dot.
+
+```nushell
+{} | default 5 a.b              # => {a: {b: 5}}   (0.115: {"a.b": 5})
+{a: {c: 1}} | default 5 a.b     # => {a: {c: 1, b: 5}}
+{} | default 5 "a.b"            # => {"a.b": 5}
+```
+
+### `lines --skip-empty` works on strings and byte streams (v0.116)
+
+Before, the flag only worked on list input; on a string or an external's output it did nothing.
+Now it drops empty and whitespace-only lines for every input.
+
+```nushell
+"foo\n\n  \nbar" | lines --skip-empty   # => [foo, bar]   (0.115: [foo, "", "  ", bar])
+```
+
+### `format pattern` / `parse` reject an unclosed `{` (v0.116)
+
+A pattern with a `{` that has no matching `}` used to succeed and drop the brace; now it is `nu::shell::delimiter_error`.
+Write `{{` for a literal brace in `format pattern`.
+A lone `}` in `parse` is still a literal character, and `parse --regex` is unchanged.
+
+```nushell
+# {} | format pattern 'x{'        # error (0.115: "x")
+# "hello " | parse "hello {"      # error (0.115: one empty row)
+{a: 1} | format pattern '{{a}} = {a}'   # => "{a} = 1"
+```
+
+### `flatten` keeps a nested field that clashes with a top-level column (v0.116)
+
+When a top-level column came after a nested record field with the same name, `flatten` silently dropped the nested one.
+Now the nested field is renamed to `<parent>_<field>`, the same as it already was for the other order.
+
+```nushell
+{a: {b: 1}, b: 2} | flatten   # => [[a_b, b]; [1, 2]]   (0.115: [[b]; [2]])
+```
+
+### `into float` reads a comma as the decimal separator (v0.116)
+
+This used to be an error; now it converts.
+A thousands separator is read as a decimal point, so `"1,500"` becomes `1.5` with no error — while `into int` still reads it as `1500`.
+Strip separators before converting numbers written with them.
+
+```nushell
+"1,5"   | into float    # => 1.5   (0.115: error)
+"1,500" | into float    # => 1.5   (!)
+"1,500" | into int      # => 1500
+"1,500" | str replace --all ',' '' | into float   # => 1500.0
+```
 
 ---
 
@@ -627,6 +744,12 @@ Creates in tmpdir instead of current directory.
 - `def foo [x: string@completer_fn]` → `def foo [x: string@[a b c]]` (inline) — 0.108
 - `find ... | result` → `find --no-highlight ...` (strip ANSI) — 0.102
 - manual `http get --full | get headers` → `http get url | metadata | get http_response` — 0.108
+- `^find . -exec cmd {} ';'` → `^find . -exec cmd '{}' ';'` (quote a leading `{` for externals) — 0.116
+- `def comp [context: string, pos: int]` → `def comp [place: record]` (`$place.command`, `$place.cursor`) — 0.116
+- `def comp [spans]` / external `{|spans| ...}` → `[place: record]` / `{|place| ...}` (`$place.command`) — 0.116
+- `to yaml --compact-list-indent` → `to yaml` — 0.116
+- `take while {|x| ...} --include 1` → `take while --include 1 {|x| ...}` (flag before the condition; same for `take until`) — 0.116
+- `default 0 a.b` meant as a key with a dot → `default 0 "a.b"` (unquoted is now a nested path) — 0.116
 
 ### Background jobs (v0.103, experimental)
 
@@ -657,10 +780,28 @@ def "test add" [] { assert equal (1 + 1) 2 }
 
 Returns default for empty strings/lists/records/binary, not just null.
 
-### `try..catch..finally` (v0.111)
+### `try..catch..finally` (v0.111; semantics fixed v0.116)
 
 ```nushell
 try { risky } catch { handle } finally { cleanup }
+```
+
+Since 0.116, `finally` runs however the `try` is left, and the rest follows from that:
+
+- An error with no `catch` runs `finally`, then propagates — the statements after the `try` no longer run (0.115 ran them)
+- An error caught by an *outer* `try` runs every `finally` in between, innermost first (0.115 skipped them)
+- `break` and `continue` run `finally` before the loop moves on (0.115 skipped it)
+- An error raised inside `finally` replaces the original error
+- `finally` receives a value as `$in` and as its optional parameter (`finally {|x| ... }`): the result of `try`/`catch` on success, the error record on an uncaught error, `nothing` after `return`, `exit`, `break` or `continue`
+- The result of the whole expression is the `try`/`catch` value; the value of `finally` is dropped
+
+```nushell
+def g [] {
+    try { error make {msg: boom} } finally { print "cleanup" }
+    print "after"   # 0.115 printed this; 0.116 does not
+}
+try { g } catch {|e| $e.msg }           # prints "cleanup", => boom
+try { 42 } finally {|x| print $x }      # prints 42, => 42
 ```
 
 ### `timeit --output` (v0.110)
@@ -738,6 +879,21 @@ $env.config.filesize.precision = 1     # decimal places, or null
 ### `PROMPT_*` not inherited (v0.103)
 
 `PROMPT_COMMAND` etc. from parent process are ignored.
+
+### Unified custom completers (v0.116)
+
+Every completer — a parameter completer, `@complete`, the external completer and a menu `source` — now gets its input by the *names* of its parameters: `token`, `place`, `buffer`, in any order.
+The old positional forms of parameter and command completers still run for now, with a `nu::shell::deprecated` warning; the bridge will be removed.
+Migrate:
+
+- `def comp [context: string, pos: int]` → `def comp [place: record]`: the old `context` was the current command's text, which is `$place.command` (not `$buffer`, the whole line); `$place.cursor` replaces `pos`
+- `def comp [spans]` and external `{|spans| ...}` → `[place: record]` / `{|place| ...}`; `$place.command` is the old `spans`
+- menu `source: {|buffer, position| ...}` → `{|token| ...}`, `{|place| ...}` or `{|buffer| ...}`
+
+The `background-completions` experimental option (added in 0.115.1) is gone: `nu --experimental-options '[background-completions=false]'` now fails at startup with "Invalid value".
+A completer that needs the terminal (`fzf`, `input list`) gets `@interactive` on its `def` instead.
+`'git checkout mai' | commandline complete --input` shows the record a completer would receive.
+The full model — outputs, `fallback`, options — is in the `nushell-completions` skill.
 
 ### Completion config changes
 

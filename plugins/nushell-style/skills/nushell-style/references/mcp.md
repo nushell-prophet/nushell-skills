@@ -15,6 +15,9 @@ Set a custom HTTP port with `--mcp-port`:
 nu --mcp --mcp-transport http --mcp-port 3000
 ```
 
+Since 0.116 the HTTP server binds `127.0.0.1` only, so other hosts on the network cannot reach it; before 0.116 it bound `0.0.0.0`.
+0.116.0 lists `--mcp-host` in `nu --help` to change the bind address, but rejects it with `Unknown flag '--mcp-host'`, so the address cannot be changed in that release.
+
 HTTP transport supports request cancellation, 30-minute idle session cleanup, and structured error codes with line/column details.
 
 ## Adding to Claude Code

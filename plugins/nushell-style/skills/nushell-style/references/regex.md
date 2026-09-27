@@ -1,6 +1,6 @@
 # Regex Flavor: fancy-regex
 
-Nushell's built-in regex engine is [`fancy-regex`](https://docs.rs/fancy-regex) (0.19 as of Nushell 0.115), **not** the Rust `regex` crate.
+Nushell's built-in regex engine is [`fancy-regex`](https://docs.rs/fancy-regex) (0.19 as of Nushell 0.116), **not** the Rust `regex` crate.
 Nushell switched in 0.67 ([#6227](https://github.com/nushell/nushell/pull/6227)) and has stayed on it since.
 
 This matters because most "Rust regex" advice says lookaround and backreferences are impossible.
@@ -66,4 +66,4 @@ Compiling the pattern is not a per-call cost: since 0.115 the built-in commands 
 ## Errors
 
 An invalid pattern is a **runtime** error, not a parse error — `nu --ide-check` / `dotnu diagnose` will not catch it.
-The message can be terse (`Unsupported input` for `(?<`), so test a new pattern against a sample before wiring it into a script.
+The error is `Invalid value`, and the label carries the engine's reason (`Parsing error at position 1: Could not parse group name` for `(?<`), so test a new pattern against a sample before wiring it into a script.

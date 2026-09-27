@@ -1,6 +1,6 @@
 ---
 name: nushell-style
-description: This skill should be used when writing, editing, reviewing, or debugging Nushell (.nu) files. Covers opinionated pipeline composition, command choices (where vs filter, match vs if/else, get --optional), formatting conventions (Topiary), type signatures, module structure, testing with nutest (unit tests, snapshot tests, @example attributes, coverage), NUON data format, the fancy-regex flavor behind =~ and --regex flags, toolkit.nu patterns, nu --ide-check debugging, the Nushell MCP server, and migration guide for updating scripts across Nushell versions (0.100–0.115: breaking changes, renamed commands, new idioms). Relevant when the user says "write nushell code," "review my .nu file," "nushell style," "nushell best practices," "format nushell," "nushell pipeline," "nutest," "NUON," "nushell regex," "lookahead," "lookbehind," "backreference," "nu --ide-check," "nushell MCP," "update nushell script," "nushell breaking changes," or "nushell migration."
+description: This skill should be used when writing, editing, reviewing, or debugging Nushell (.nu) files. Covers opinionated pipeline composition, command choices (where vs filter, match vs if/else, get --optional), formatting conventions (Topiary), type signatures, module structure, testing with nutest (unit tests, snapshot tests, @example attributes, coverage), NUON data format, the fancy-regex flavor behind =~ and --regex flags, toolkit.nu patterns, nu --ide-check debugging, the Nushell MCP server, the `tui` command family (pickers, forms and panes, tested headlessly with `tui debug`), and migration guide for updating scripts across Nushell versions (0.100–0.116: breaking changes, renamed commands, new idioms). Relevant when the user says "write nushell code," "review my .nu file," "nushell style," "nushell best practices," "format nushell," "nushell pipeline," "nutest," "NUON," "nushell regex," "lookahead," "lookbehind," "backreference," "nu --ide-check," "nushell MCP," "tui," "terminal UI," "picker," "tui debug," "update nushell script," "nushell breaking changes," or "nushell migration."
 ---
 
 # Nushell Code Style Guide
@@ -16,8 +16,9 @@ description: This skill should be used when writing, editing, reviewing, or debu
 - `references/testing.md` — nutest framework, snapshots, coverage
 - `references/toolkit.md` — toolkit.nu, repo utilities, commit conventions
 - `references/mcp.md` — Nushell as MCP server (`nu --mcp`), tools, persistent state
-- `references/migration.md` — breaking changes, renamed commands, new idioms (0.100 → 0.115)
-- `references/enhancements.md` — new features to improve existing scripts (0.100 → 0.115)
+- `references/tui.md` — the `tui` family: pickers, forms and panes from a pipeline, tested headlessly with `tui debug`
+- `references/migration.md` — breaking changes, renamed commands, new idioms (0.100 → 0.116)
+- `references/enhancements.md` — new features to improve existing scripts (0.100 → 0.116)
 
 ---
 
@@ -85,7 +86,26 @@ open x.md | str replace 'a' 'b'      # ✗ Error: Input type not supported.
 open x.md | save y.md                # ✗ silent — writes the parsed AST as a markdown table
 ```
 
-`hide 'from md'` turns the conversion off for the rest of the session.
+`hide 'from md'` turns the conversion off.
+In a script it covers the whole file: measured on 0.116, `open` calls on lines *above* a top-level `hide` also returned text — so put it at the top, where it reads as it runs.
+
+## Agent Tip: Two Parse Changes in 0.116
+
+An external argument that starts with `{` is now parsed as a record or closure, so a literal brace must be quoted:
+
+```nushell
+^find . -exec cat '{}' ';'           # ✓
+^find . -exec cat {} ';'             # ✗ Can't convert to string.
+```
+
+In `take while` / `take until`, a flag after the closure is now a parse error — put the flag first:
+
+```nushell
+[1 2 3 4 5] | take while --include 1 {|x| $x < 3 }   # ✓ [1, 2, 3]
+[1 2 3 4 5] | take while {|x| $x < 3 } --include 1   # ✗ Parse mismatch: expected operator
+```
+
+See `references/migration.md` for the rest of the 0.116 breaks.
 
 ---
 
@@ -106,15 +126,15 @@ Leverage implicit features:
 
 ## Command Choices
 
-- Filtering — prefer `where`, avoid `filter`, `each {if} | compact`
+- Filtering — prefer `where`, avoid `filter` (deprecated since 0.105), `each {if} | compact`
 - List filtering — prefer `where $it =~ ...`, avoid `where { $in =~ ... }`
 - Parallel with order — prefer `par-each --keep-order`, avoid `par-each` (when order matters)
 - Pattern dispatch — prefer `match` expression, avoid long `if/else if` chains
 - Record iteration — prefer `items {|k v| ...}`, avoid manual key extraction
 - Table grouping — prefer `group-by ... --to-table`, avoid manual grouping
 - Line joining — prefer `str join (char nl)`, avoid `to text` (context dependent)
-- Syntax check (human) — prefer `nu -c 'open file.nu | nu-check'`, avoid `source file.nu`
-- Syntax check (agent) — prefer `nu --ide-check 10 file.nu`, avoid `nu-check` (unstructured)
+- Syntax check (human) — prefer `nu-check file.nu` (returns `true`/`false`), avoid `source file.nu`
+- Syntax check (agent) — prefer `dotnu diagnose file.nu`, avoid raw `nu --ide-check` and `nu-check` (see Agent Tip above)
 - Membership — prefer `in` operator, avoid multiple `or` conditions
 - Field extraction — prefer `get --optional`, avoid `each {$in.field?} | compact`
 - Negation — prefer `$x !~ ...`, avoid `not ($x =~ ...)`
@@ -140,7 +160,7 @@ help commands | where name == 'str trim' | get input_output.0
 # => [[input, output]; [string, string], [list<string>, list<string>], ...]
 ```
 
-Common command families that accept `list<string>` directly: `str` (19 commands), `path` (9), `split` (4), `into` (4), `ansi` (3), `url` (2), `fill`.
+Common command families that accept `list<string>` directly: `str`, `path`, `split`, `into`, `ansi`, `url`, `fill` — not every member, so check the one you use.
 
 ```nushell
 # Preferred                          # Avoid
@@ -371,7 +391,7 @@ Ordinary builtins stay shadowable — `def ls` still works, and `%ls` reaches th
 - Define data first, then filter
 - Include type signatures: `]: input -> output {`
 - Document non-obvious flags/parameters with a trailing `# comment` — it becomes their `help` description (see `references/formatting.md`)
-- Use `@example` attributes (nutest)
+- Use `@example` attributes (built into Nushell; see `references/testing.md`)
 - Add `@category` to commands exported through `mod.nu`
 - Leave `@search-terms` off unless a word passes all three tests in `references/patterns.md` — zero terms is the normal state
 - Give a module its own `example` command once its subcommands compose into pipelines a user types in the REPL — built from the `@example` attributes it already carries, it pastes one into their command line; not worth it for a single command or a script-only library (see `references/patterns.md`)

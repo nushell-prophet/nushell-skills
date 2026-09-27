@@ -58,7 +58,8 @@ export def 'main test-unit' [--json --pretty --all] { ... }
 ```
 
 Skip the comment when the name is already the whole explanation (`--force`, `--verbose`).
-A single-line comment only — Nushell's parser does not read a second line as more of the description.
+Keep it to one line.
+A comment-only line right below is appended to the description, and `help` prints that second line flush left, outside the `Flags:` layout.
 
 ## Multi-line Records
 

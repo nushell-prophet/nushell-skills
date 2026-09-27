@@ -439,14 +439,18 @@ Use this instead of building a path as a string and interpolating it into `get`:
 
 ### `get --optional` for Field Extraction
 
-Both forms produce the same result (list with nulls for missing fields), but `get` is more concise:
+`get --optional` keeps a `null` for every missing field, so the result lines up with the input.
+Plain `each` does not — it drops the nulls (see `each --keep-empty` above):
 
 ```nushell
 # Preferred: get treats list-of-records as table
-| get content --optional      # → [null, "result", null]
+| get content --optional                # → [null, "result", null]
 
 # Equivalent but verbose
-| each { $in.content? }       # → [null, "result", null]
+| each --keep-empty { $in.content? }    # → [null, "result", null]
+
+# Not equivalent: each drops the nulls
+| each { $in.content? }                 # → ["result"]
 
 # For nested fields
 | get input.file_path --optional
@@ -540,12 +544,15 @@ export def without-unspanned [n: int] {
 
 Keep `--unspanned` wherever there is no caller argument to point at; drop it wherever there is one.
 
-Two shorthands from 0.110 cover the cases that need none of the above:
+For an error that needs none of the above, the string form is enough:
 
 ```nushell
-error make "something went wrong"   # string shorthand
-{msg: "oops"} | error make          # record from the pipeline
+error make "something went wrong"
 ```
+
+Input piped into `error make` is not a shorthand for the argument: it is chained in as an *inner* error.
+`{msg: "oops"} | error make` raises `originates from here`, with `oops` shown as a second error below it.
+That is what the pipeline form is for — re-raising a caught error with context: `try { … } catch {|err| $err | error make {msg: "loading the config failed"} }`.
 
 Pass `metadata` a pipeline instead of a parameter to underline the *input*: `ls | metadata access {|m| error make {msg: "bad" label: {text: "here" span: $m.span}} }`.
 
@@ -572,9 +579,9 @@ export def run [
 }
 ```
 
-### @example Attributes (nutest)
+### @example Attributes
 
-Document commands with executable examples using [nutest](https://github.com/vyadh/nutest) attributes:
+Document commands with executable examples using the built-in `@example` attribute (`attr example` — no import needed; `dotnu examples-update` keeps the `--result` values current):
 
 ```nushell
 @example "generate marker for block 3" {

@@ -1,5 +1,5 @@
 {
   "name": "nushell-completions",
-  "description": "Generate Nushell custom completions — completer functions, string@completer annotations, inline @[...] lists, @complete attribute, extern definitions",
-  "version": "1.3.0"
+  "description": "Generate Nushell custom completions (0.116 model) — completers with token/place/buffer inputs, string@completer annotations, inline @[...] lists, @complete and @interactive, external completers (carapace), menu sources, extern definitions",
+  "version": "2.0.0"
 }

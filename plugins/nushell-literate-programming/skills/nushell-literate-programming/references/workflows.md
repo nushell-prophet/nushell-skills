@@ -52,9 +52,9 @@ The pattern used by numd's and dotnu's own READMEs:
 The maintenance loop is three commands:
 
 ```nushell
-git commit -am 'readme edits'   # numd refuses to run over uncommitted changes anyway
+git commit --all --message 'readme edits'  # numd refuses to run over uncommitted changes anyway
 numd render README.md
-git diff                        # only genuine behavior changes show up
+git diff                                   # only genuine behavior changes show up
 ```
 
 If the diff is empty, the docs are proven current.
