@@ -93,17 +93,18 @@ The managed skills list is defined as `const managed_skills` in `toolkit.nu`.
 
 ## Local Nushell Sources (fact-check against these, not WebFetch)
 
-Sibling directories of this repo hold canonical Nushell material.
+Directories next to this repo, or in `../upstream-big-repos/`, hold canonical Nushell material.
 When updating skills for a new Nushell release or verifying a claim, read these instead of fetching the web:
 
 - `../nushell-docs/` — sparse shallow clone of nushell.github.io (`blog/`, `book/`, `cookbook/`).
   Release notes: `blog/<date>-nushell_v0_<minor>_<patch>.md`.
-  Refresh with `cozy docs nushell` (`../cozy/cozy-module/docs.nu`), which pulls an existing checkout or clones a fresh one with this same sparse list.
-  Command signatures are not in this checkout — read `../nushell/` for those.
+  Refresh with `cozy docs nushell --output-dir ../nushell-docs` (`../cozy/cozy-module/docs.nu`); the default target is `./nushell-docs`, relative to the current directory.
+  It pulls an existing checkout or clones a fresh one with this same sparse list.
+  Command signatures are not in this checkout — read `../upstream-big-repos/nushell/` for those.
   Default lookup target — small and fast to grep.
-- `../nushell.github.io/` — full clone incl. `lang-guide/`, `contributor-book/`, translations.
+- `../upstream-big-repos/nushell.github.io/` — full clone incl. `lang-guide/`, `contributor-book/`, translations.
   The user works in it (branches, stashes) — no destructive git commands.
-- `../nushell/` — Nushell source.
+- `../upstream-big-repos/nushell/` — Nushell source.
   Ground truth for command signatures (`crates/nu-command/`, `crates/nu-cli/`) and std (`crates/nu-std/std/`).
   Release-note prose is sometimes imprecise — verify flags and behavior here.
 
