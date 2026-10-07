@@ -1,6 +1,6 @@
 ---
 name: claude-nu
-description: This skill should be used whenever you need something out of Claude Code session transcripts (`~/.claude/projects/**/*.jsonl`) — what the user said and when, the session where something was decided, what an agent ran and what it returned, which tool calls failed, the raw shape of a record type, token or tool counts per session. Reach for it before writing jq, python or grep over those files: the user's `claude-nu` Nushell module already does the parsing, the filtering and the scoping.
+description: This skill should be used whenever you need something out of Claude Code session transcripts (`~/.claude/projects/**/*.jsonl`) — what the user said and when, the session where something was decided, what an agent ran and what it returned, which tool calls failed, the raw shape of a record type, token or tool counts per session. Reach for it before writing jq, python or grep over those files: the user's `claude-nu` Nushell module already does the parsing, the filtering and the scoping. Load it before the first `claude-nu` command of a session: it names the columns each command returns, and a guessed name fails.
 ---
 
 # claude-nu — Claude Code sessions as tables
@@ -13,7 +13,7 @@ Do not parse the transcripts by hand; when claude-nu cannot answer, `claude-nu r
 ## Load it
 
 In a cozy sandbox it is autoloaded for interactive nu, including the nushell MCP `evaluate` tool.
-From the Bash tool, `nu --commands` skips autoload: `nu --config ~/.config/nushell/autoload/modules-core.nu --commands '...'`, or put `use claude-nu` at the top of a script file and run `nu file.nu` — nu inside bash quotes is painful.
+From the Bash tool, `nu --commands` skips autoload: `nu --config ~/.config/nushell/autoload/modules-core.nu --commands '...'`, or put `use ~/repos/claude-nu/claude-nu` at the top of a script file (a bare `use claude-nu` is not found: `~/repos` is not in `NU_LIB_DIRS`) and run `nu file.nu` — nu inside bash quotes is painful.
 Elsewhere: `use /path/to/claude-nu/claude-nu`.
 End every pipeline you are going to read with `| to nuon`.
 
@@ -27,12 +27,13 @@ Every command reads the sessions piped into it; with no input, the current proje
   Not `claude-nu sessions --all-projects | ...`: the same set, but it parses every file for session columns first (40 s against 2.4 s).
 - Subagent transcripts too: `claude-nu sessions --subagents | ...`.
 - Any list: `glob .../*.jsonl | ...`, `['9787e004' 'agent-a1'] | ...`.
-- Any result: every row carries `session`, so `claude-nu messages 'x' | claude-nu tool-calls` reads the sessions where x was said.
+- Any result: every row of `messages`, `tool-calls` and the others carries `session`, so `claude-nu messages 'x' | claude-nu tool-calls` reads the sessions where x was said.
 
 ## Commands, by what you want
 
 - **What the user said**: `claude-nu messages 'regex'`.
   Rows `{message, kind, timestamp, uuid, session, project, project_name}`.
+  The text is in `message`: not `content` (the raw record's name), not `text` (the name in `timeline`).
   `where kind == typed` keeps the user's own words; the other kinds are `bash-input` and `bash-output` (a `!` command and its output), `system`, `response`.
   Already dropped: tool results, slash-command and hook wrappers, turns that open with `<system-reminder>`, `[Request interrupted by user]`, and the copies a resumed session makes of its parent's records.
   `--include-responses` adds the assistant's text (a `role` column), `--include-system` keeps the wrappers, `--raw` gives the records.
@@ -48,6 +49,8 @@ Every command reads the sessions piped into it; with no input, the current proje
   A subagent row of `sessions --subagents` names itself with the columns `agent_id`, `agent_type`, `workflow`, `agent_label`, `phase`.
 - **What the user typed as commands**: `claude-nu slash-commands` (`--all` keeps /clear, /model ...).
 - **Anything else in a transcript**: `claude-nu records` — one row per line, `{type, uuid, timestamp, record, ...}`, the whole line under `record`; its regex matches the line as JSON (`records '"permissionMode":"plan"'`).
+- **The sessions themselves**: `claude-nu sessions` rows are `{summary, last_timestamp, user_messages, path, parent_session_id}`.
+  There is no `session` column: the id is the file name in `path`.
 - **Numbers per session**: `claude-nu sessions --columns a,b` (tab-completes; `--all-columns` for every one).
   `tool_counts`, `token_usage`, `turn_count`, `first_timestamp`, `edited_files`, `git_branch`, `plan_mode_used` ...
   `size` and `modified` come from the file listing and open no file; `projects` rows carry `size` too.
