@@ -38,7 +38,7 @@ Every command reads the sessions piped into it; with no input, the current proje
   Already dropped: tool results, slash-command and hook wrappers, turns that open with `<system-reminder>`, `[Request interrupted by user]`, and the copies a resumed session makes of its parent's records.
   `--include-responses` adds the assistant's text (a `role` column), `--include-system` keeps the wrappers, `--raw` gives the records.
   `--context N` also returns the N rows before and after each hit in its session; `hit` marks the matches.
-- **What the agent did**: `claude-nu tool-calls 'regex'` — the regex matches the tool name or the input rendered as NUON.
+- **What the agent did**: `claude-nu tool-calls 'regex'` — the regex matches the tool name or the input rendered as JSON.
   Rows `{tool, input, timestamp, id, uuid, ...}`.
   One tool: `--tool Bash` or `--tool [Read Edit]`, exact names with their own rg pre-filter, so a rare tool is found 5x faster than with `where tool == ...` machine-wide.
   The nushell MCP tool keeps its command in `input.input`.
@@ -56,7 +56,7 @@ Every command reads the sessions piped into it; with no input, the current proje
   `size` and `modified` come from the file listing and open no file; `projects` rows carry `size` too.
 - **A session as markdown**: `... | claude-nu export-session` (`--tools` keeps the calls).
 
-`--since`/`--until` take a duration (`1wk`, meaning ago), a date or a datetime, on `sessions`, `messages`, `tool-calls` and `slash-commands`.
+`--since`/`--until` take a duration (`1wk`, meaning ago), a date or a datetime, on `sessions`, `messages`, `tool-calls`, `slash-commands` and `timeline`.
 A message or call is compared by its own timestamp, a session by its file mtime.
 For a session, `--active-since`/`--active-until` compare its record span instead: it keeps a session that was open inside the window.
 
@@ -84,7 +84,7 @@ claude-nu sessions --last | claude-nu tool-calls --results | where is_error == t
 
 - A datetime column renders as "4 months ago"; `format date '%F %T'` when you quote it.
 - Rows come session by session, newest session first; `sort-by timestamp` for one timeline.
-- `sessions` rows name a session `session_id`; `messages`, `tool-calls` and `records` rows name it `session`. Both pipe onward.
+- `sessions` rows name a session by `path` (`session_id` only with `--columns session_id`); `messages`, `tool-calls` and `records` rows name it `session`. Both pipe onward.
 - A regex with a line anchor or a JSON-escaped character can hide from the rg pre-filter over the raw file; `--no-rg` matches in-engine.
 - A plain `rg` over `~/.claude` can return nothing, silently: on this machine `~/.claude` is a git repo whose `.gitignore` is `*`. claude-nu passes `--no-ignore`; a hand-rolled rg needs it too.
 
