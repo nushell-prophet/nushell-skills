@@ -32,8 +32,8 @@ Every command reads the sessions piped into it; with no input, the current proje
 ## Commands, by what you want
 
 - **What the user said**: `claude-nu messages 'regex'`.
-  Rows `{message, kind, timestamp, uuid, session, project, project_name}`.
-  The text is in `message`: not `content` (the raw record's name), not `text` (the name in `timeline`).
+  Rows `{text, kind, timestamp, uuid, session, project, project_name}`.
+  The text is in `text`, the name `timeline` uses too: not `message` (the raw record's envelope), not `content`.
   `where kind == typed` keeps the user's own words; the other kinds are `bash-input` and `bash-output` (a `!` command and its output), `system`, `response`.
   Already dropped: tool results, slash-command and hook wrappers, turns that open with `<system-reminder>`, `[Request interrupted by user]`, and the copies a resumed session makes of its parent's records.
   `--include-responses` adds the assistant's text (a `role` column), `--include-system` keeps the wrappers, `--raw` gives the records.
@@ -49,15 +49,15 @@ Every command reads the sessions piped into it; with no input, the current proje
   A subagent row of `sessions --subagents` names itself with the columns `agent_id`, `agent_type`, `workflow`, `agent_label`, `phase`.
 - **What the user typed as commands**: `claude-nu slash-commands` (`--all` keeps /clear, /model ...).
 - **Anything else in a transcript**: `claude-nu records` — one row per line, `{type, uuid, timestamp, record, ...}`, the whole line under `record`; its regex matches the line as JSON (`records '"permissionMode":"plan"'`).
-- **The sessions themselves**: `claude-nu sessions` rows are `{summary, last_timestamp, user_messages, path, parent_session_id}`.
-  There is no `session` column: the id is the file name in `path`.
+- **The sessions themselves**: `claude-nu sessions` rows are `{summary, last_timestamp, user_messages, path, session, parent_session_id}`.
+  `session` is the key every other command uses (`agent-<id>` on a subagent row); `session_id` names the parent there.
 - **Numbers per session**: `claude-nu sessions --columns a,b` (tab-completes; `--all-columns` for every one).
   `tool_counts`, `token_usage`, `turn_count`, `first_timestamp`, `edited_files`, `git_branch`, `plan_mode_used` ...
   `size` and `modified` come from the file listing and open no file; `projects` rows carry `size` too.
 - **A session as markdown**: `... | claude-nu export-session` (`--tools` keeps the calls).
 
-`--since`/`--until` take a duration (`1wk`, meaning ago), a date or a datetime, on `sessions`, `messages`, `tool-calls`, `slash-commands` and `timeline`.
-A message or call is compared by its own timestamp, a session by its file mtime.
+`--since`/`--until` take a duration (`1wk`, meaning ago), a date or a datetime, on `sessions`, `messages`, `tool-calls`, `slash-commands`, `timeline`, `records` and `workflows`.
+A message, call or record is compared by its own timestamp, a workflow run by its `started`, a session by its file mtime.
 For a session, `--active-since`/`--active-until` compare its record span instead: it keeps a session that was open inside the window.
 
 ## Recipes
@@ -66,7 +66,7 @@ Each of these is a past intent from the transcripts, redone; `references/recipes
 
 ```nu
 # Where did the user say it, across every project
-claude-nu projects | claude-nu messages 'semantic.feed' | select timestamp project_name message
+claude-nu projects | claude-nu messages 'semantic.feed' | select timestamp project_name text
 
 # The turns around a hit: the reply the user was answering, and the one after
 claude-nu projects | claude-nu messages 'dropped --rename' --context 1 --include-responses

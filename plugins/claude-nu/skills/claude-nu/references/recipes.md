@@ -19,7 +19,7 @@ claude-nu projects | claude-nu messages | where kind == typed
 
 # The assistant reply the user was answering, and the one after (1 s)
 claude-nu projects | claude-nu messages 'dropped --rename' --context 1 --include-responses
-| select hit role message
+| select hit role text
 ```
 
 ## What the agents ran
@@ -91,4 +91,4 @@ claude-nu records | where type == system | get record | first | columns
 
 About 1,500 of the past commands ran jq or python over corpora built from transcripts (a `harvest/*.jsonl` of the user's words, theme files), not over the transcripts.
 Once such a corpus exists, query it as the data it is: `open harvest/prompts.jsonl | from json --objects | where ...`.
-When a corpus exists only to have the user's words with an address back to the record, `claude-nu projects | claude-nu messages | select uuid session timestamp message` is that corpus, rebuilt on demand.
+When a corpus exists only to have the user's words with an address back to the record, `claude-nu projects | claude-nu messages | select uuid session timestamp text` is that corpus, rebuilt on demand.
