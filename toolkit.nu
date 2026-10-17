@@ -103,6 +103,15 @@ export def 'main install-locally' [
         $total_files = $total_files + $file_count
     }
 
+    # Why: nushell-style ships the nushell-reviewer agent, and a local install
+    # without it would test the skill apart from the agent that loads it.
+    let agents_dir = '~/.claude/agents' | path expand
+    for agent in (glob 'plugins/*/agents/*.md') {
+        mkdir $agents_dir
+        cp $agent $agents_dir
+        print $"(ansi green)✓(ansi reset) agents/($agent | path basename)"
+    }
+
     print $"\n(ansi attr_dimmed)Installed ($total_files) files to ($global_dir)(ansi reset)"
     print $"(ansi green)✓(ansi reset) Skills ready at (ansi cyan)($global_dir)(ansi reset)"
 }

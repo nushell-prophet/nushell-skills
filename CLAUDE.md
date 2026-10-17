@@ -24,6 +24,7 @@ plugins/
       SKILL.md                     # The skill content (completions reference)
   nushell-style/
     .claude-plugin/plugin.json     # Plugin manifest
+    agents/nushell-reviewer.md     # Subagent: reviews a Nushell change for scope
     skills/nushell-style/
       SKILL.md                     # Main skill (quick reference, do/don't checklists)
       references/                  # Detailed reference docs loaded by SKILL.md
