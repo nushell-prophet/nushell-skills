@@ -34,7 +34,7 @@ It filters `nu --ide-check` output to real diagnostics and resolves byte spans t
 Without dotnu, the raw fallback is:
 
 ```bash
-nu --ide-check 10 file.nu | nu --stdin -c 'lines | each { from json } | where type == "diagnostic"'
+nu --ide-check 10 file.nu | nu --stdin --commands 'lines | each { from json } | where type == "diagnostic"'
 ```
 
 ## Agent Tip: `!=` and `!~` in Bash
@@ -143,7 +143,11 @@ Leverage implicit features:
 
 Always spell Nushell flags out in full: `uniq --count`, `sort-by --reverse`, `parse --regex`, `print --stderr`, `ps --long`.
 Short flags are for typing at the prompt, not for code someone else reads.
-External commands keep their own idiom — `git commit -am`, `rg -n` — since their flags are not Nushell's to style.
+External commands take long flags too, wherever the tool has them: `git commit --all --message`, `rg --line-number`, `nu --commands`.
+The externals `^ln -s`, `^cp -r` and `^readlink -f`, and the same tools in sh scripts, stay short: they also run on the macOS host, whose BSD tools have no long forms.
+The Nushell builtin `cp` is not the BSD tool, so it takes `cp --recursive` like any builtin.
+The same holds for any external in code that runs on the host: a long flag only where the BSD tool has one.
+A tool with no long form keeps its flag (`git -C`, `ssh-keygen -Y`).
 A `-x` after `--` is data, not a flag, and stays as written.
 
 ### Skip `each` When Commands Accept `list<string>`

@@ -484,6 +484,11 @@ For simple conditions on lists, use row condition syntax (`$it`) instead of clos
 | where { $in | str starts-with "test" }
 ```
 
+A bare boolean column is a row condition too, but write it as a `$it` cell path: `where $it.valid`, `where not $it.valid`.
+The bare form (`where valid`) runs, and the topiary grammar cannot parse it, so the whole file stops formatting.
+`$it.valid` gives the same rows and the same errors, null included.
+Not `where valid == true` / `where valid == false`: `== false` silently drops the rows where `valid` is null, where `not` raises an error.
+
 ---
 
 ## Error Construction
@@ -516,7 +521,8 @@ def "assert even" [n: int] {
   So in a layered module, only the commands a user actually types qualify; a helper raising the error gets `help:` and no label.
   Verified on 0.115.1: a `def helper [name] { … (metadata $name).span … }` called as `helper $name` underlines `helper $name` in the calling file, never the user's command line.
 - `help` — renders as a `help:` line under the error.
-  Put the fix here, not in `msg`.
+  Put the fix here, not in `msg`: `msg` says what is wrong, `help` says what to do.
+  A test that checks the fix reads it from `$e.details.help`; `$e.msg` holds only the verdict.
 - `code` — the machine-readable code (`nu::shell::type_mismatch` and friends).
   Set it when a caller might reasonably match on it.
 
@@ -578,6 +584,11 @@ export def run [
     ...
 }
 ```
+
+A command that returns a value or null declares `oneof<T, nothing>`, not `any`: `]: nothing -> oneof<string, nothing>`.
+`any` was the only choice before `oneof` existed; keep it for a value that really can be of any type, or a pass-through of the input.
+When the body can end in `error make`, the parser may reject `oneof<...>` with `output_type_mismatch`; then `any` stays, and `dotnu diagnose` shows which case it is.
+On 0.116.2 `oneof` is checked at parse time only: a command declared `-> oneof<string, nothing>` that returns an int raises no runtime error.
 
 ### @example Attributes
 
@@ -747,6 +758,19 @@ use ../module/commands.nu *  # access ALL commands including helpers
 - Keep them exported (for testing)
 - Keep their current names (consistency within the module)
 - The public API is controlled by mod.nu, not by removing exports
+
+A named list flattens the namespace: `export use ots.nu [ stamp ]` publishes `mod stamp`, not `mod ots stamp`.
+When a file holds subcommands, wrap them in an inline module of the same name, and import the file's `main` outside the wrapper:
+
+```nushell
+# mod.nu
+export use ots.nu [ main ]                                  # `mod ots`; inside the wrapper it would be `mod ots ots`
+module ots { export use ots.nu [ info stamp verify ] }      # only these subcommands are public
+export use ots                                              # `mod ots stamp`, `mod ots verify`
+```
+
+An exported alias goes into the wrapper list by its name, like a command (`module container { export use container.nu [ up ] }` for `export alias up = main up`).
+After a change to mod.nu, `use` the module in a fresh `nu` and compare `scope commands` names and signatures with the state before: the public set must not move.
 
 ### Shadowing a Builtin: Reach the Real One with `%`
 

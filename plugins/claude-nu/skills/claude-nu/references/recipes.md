@@ -50,7 +50,7 @@ claude-nu sessions --session '9787e004' --columns edited_files | get 0.edited_fi
 ```nu
 # Which tools fail most in one project (12 s for a large one)
 claude-nu projects | where name =~ 'cozy$' | claude-nu tool-calls --results
-| where is_error == true | get tool | uniq --count | sort-by count --reverse
+| where $it.is_error | get tool | uniq --count | sort-by count --reverse
 
 # Which session printed a string that no message or command contains
 claude-nu projects | where name =~ 'cozy$' | claude-nu tool-calls --results 'Permission denied'

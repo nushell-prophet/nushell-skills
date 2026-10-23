@@ -11,9 +11,11 @@ def has-uncommitted-changes [path: path]: nothing -> bool {
     let dir = if ($path | path type) == 'dir' { $path } else { $path | path dirname }
 
     let git_check = do { cd $dir; ^git rev-parse --git-dir } | complete
+
     if $git_check.exit_code != 0 { return false }
 
     let status = do { cd $dir; ^git status --porcelain -- $path } | complete
+
     ($status.stdout | str trim | is-not-empty)
 }
 
@@ -29,7 +31,7 @@ export def main [] { }
 @example "Vendor without committing" { nu toolkit.nu vendor --no-commit }
 export def 'main vendor' [
     --no-commit # Skip creating a git commit after copying
-] {
+]: nothing -> nothing {
     let global_dir = $skills_global_dir | path expand
     mut total_files = 0
 
@@ -42,10 +44,11 @@ export def 'main vendor' [
             continue
         }
 
-        if ($dest | path exists) { rm -rf $dest }
+        if ($dest | path exists) { rm --recursive --force $dest }
         mkdir $dest
-        cp -r ($"($source)/*" | into glob) $dest
+        cp --recursive ($"($source)/*" | into glob) $dest
         let file_count = glob $"($dest)/**/*" | where ($it | path type) == 'file' | length
+
         print $"(ansi green)✓(ansi reset) ($skill) \(($file_count) files\)"
         $total_files = $total_files + $file_count
     }
@@ -54,10 +57,12 @@ export def 'main vendor' [
 
     if not $no_commit {
         let status = git status --porcelain plugins/ | str trim
+
         if $status != "" {
             git add plugins/
             let date = date now | format date "%Y-%m-%d"
-            git commit -m $"chore: vendor skills \(($date)\)"
+
+            git commit --message $"chore: vendor skills \(($date)\)"
             print $"(ansi green)Committed skill updates(ansi reset)"
         } else {
             print $"(ansi attr_dimmed)No changes to commit(ansi reset)"
@@ -70,13 +75,14 @@ export def 'main vendor' [
 @example "Force overwrite" { nu toolkit.nu install-locally --force }
 export def 'main install-locally' [
     --force # Overwrite even if destination has uncommitted changes
-] {
+]: nothing -> nothing {
     let global_dir = $skills_global_dir | path expand
 
     if not $force {
         let dirty = $managed_skills
             | each { $"($global_dir)/($in)" }
             | where { has-uncommitted-changes $in }
+
         if ($dirty | is-not-empty) {
             print $"(ansi yellow)⚠(ansi reset) Uncommitted changes in destination:"
             $dirty | each { print $"  ($in)" }
@@ -96,9 +102,10 @@ export def 'main install-locally' [
             continue
         }
 
-        if ($dest | path exists) { rm -rf $dest }
-        cp -r $source $dest
+        if ($dest | path exists) { rm --recursive --force $dest }
+        cp --recursive $source $dest
         let file_count = glob $"($dest)/**/*" | where ($it | path type) == 'file' | length
+
         print $"(ansi green)✓(ansi reset) ($skill) \(($file_count) files\)"
         $total_files = $total_files + $file_count
     }
@@ -106,6 +113,7 @@ export def 'main install-locally' [
     # Why: nushell-style ships the nushell-reviewer agent, and a local install
     # without it would test the skill apart from the agent that loads it.
     let agents_dir = '~/.claude/agents' | path expand
+
     for agent in (glob 'plugins/*/agents/*.md') {
         mkdir $agents_dir
         cp $agent $agents_dir

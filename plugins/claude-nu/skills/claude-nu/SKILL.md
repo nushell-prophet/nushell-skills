@@ -77,7 +77,7 @@ claude-nu projects | where name =~ 'claude-nu' | claude-nu tool-calls --results 
 | where input.command =~ 'git commit' | select timestamp session result
 
 # What failed in the last session
-claude-nu sessions --last | claude-nu tool-calls --results | where is_error == true | select tool input result
+claude-nu sessions --last | claude-nu tool-calls --results | where $it.is_error | select tool input result
 ```
 
 ## Pitfalls
