@@ -151,7 +151,7 @@ This is the promotion path: REPL capture → `.nu` script with embeds → markdo
 
 ## Gotchas
 
-- Default is **save in place** for `embeds-update`, `expand-code`, `examples-update`, `set-x`; use `--echo` (or pipe a string in) to preview.
+- Default is **save in place** for `embeds-update`, `expand-code`, `examples-update`; `set-x` saves `<name>_setx.nu` beside the file. Use `--echo` to preview; `embeds-update` and `expand-code` also return a string when a script is piped in.
   Same discipline as numd: commit first, run, read the diff.
 - `embed-add` needs sqlite history and remembers `--capture-path` per session.
 - All execution paths use a clean `nu -n` — reproducible, but blind to your config.

@@ -34,7 +34,7 @@ Every command reads the sessions piped into it; with no input, the current proje
 - **What the user said**: `claude-nu messages 'regex'`.
   Rows `{text, kind, timestamp, uuid, session, project, project_name}`.
   The text is in `text`, the name `timeline` uses too: not `message` (the raw record's envelope), not `content`.
-  `where kind == typed` keeps the user's own words; the other kinds are `bash-input` and `bash-output` (a `!` command and its output), `system`, `response`.
+  `where kind == typed` keeps the user's own words; the other kinds are `bash-input` and `bash-output` (a `!` command and its output), `file` (a file attached with `@`, or changed on disk during the session), `system`, `response`.
   Already dropped: tool results, slash-command and hook wrappers, turns that open with `<system-reminder>`, `[Request interrupted by user]`, and the copies a resumed session makes of its parent's records.
   `--include-responses` adds the assistant's text (a `role` column), `--include-system` keeps the wrappers, `--raw` gives the records.
   `--context N` also returns the N rows before and after each hit in its session; `hit` marks the matches.
@@ -84,7 +84,7 @@ claude-nu sessions --last | claude-nu tool-calls --results | where $it.is_error 
 
 - A datetime column renders as "4 months ago"; `format date '%F %T'` when you quote it.
 - Rows come session by session, newest session first; `sort-by timestamp` for one timeline.
-- `sessions` rows name a session by `path` (`session_id` only with `--columns session_id`); `messages`, `tool-calls` and `records` rows name it `session`. Both pipe onward.
+- `sessions` rows carry both `path` and `session`; `messages`, `tool-calls` and `records` rows name it `session`. Both pipe onward.
 - A regex with a line anchor or a JSON-escaped character can hide from the rg pre-filter over the raw file; `--no-rg` matches in-engine.
 - A plain `rg` over `~/.claude` can return nothing, silently: on this machine `~/.claude` is a git repo whose `.gitignore` is `*`. claude-nu passes `--no-ignore`; a hand-rolled rg needs it too.
 

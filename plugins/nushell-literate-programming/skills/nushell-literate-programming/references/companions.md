@@ -25,7 +25,7 @@ When the interesting thing already happened and you didn't pipe it anywhere:
 
 ```nushell
 copy-out       # last command + its output, output commented with '# => '
-copy-out 3     # from 3rd-to-last through the last command
+copy-out 3     # the 3rd-to-last command only
 copy-out 3 1   # 3rd-to-last and last, separately
 ```
 
