@@ -24,7 +24,7 @@
       "name": "nushell-literate-programming",
       "source": "./plugins/nushell-literate-programming",
       "description": "A common space for user and agent in the Nushell terminal — the agent proposes, the user runs, both share the `# =>` dialect. numd (executable markdown), dotnu (scripts that embed their own output), REPL capture, and nu-goodies/claude-nu companions, framed to grow the user's fluency instead of replacing it. Bundles the Common Space output style",
-      "version": "0.3.3"
+      "version": "0.3.4"
     },
     {
       "name": "nushell-history",
@@ -36,7 +36,7 @@
       "name": "claude-nu",
       "source": "./plugins/claude-nu",
       "description": "Mine Claude Code session transcripts with claude-nu instead of jq or python — what the user said, what agents ran and what came back, raw records, per-session numbers, one scope model for all of them.",
-      "version": "0.1.0"
+      "version": "0.1.1"
     }
   ]
 }

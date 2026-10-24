@@ -48,7 +48,7 @@ Dumps the commands of the current session (or directory) into a `.nu` file — t
 - `tile-right` / `tile-left` / `tile-up` / `tile-down` — compose two text blocks into one figure, ANSI-aware
 - `rgv` — ripgrep as a table of `path:line:col` links
 - `fzf-preview` — pick from any piped table with a bat preview; `--content` previews cell values
-- `in-vd` / `in-hx` / `in-fx` — hand a table to VisiData / Helix / fx and round-trip the edits
+- `in-vd` / `in-hx` / `in-fx` — hand data to VisiData / Helix / fx; `in-hx` returns the path of the edited file, so `open` reads the edits back
 - `ansi-to-png`, `zellij-to-png`, `wez-to-png` / `wez-to-gif` — render colored terminal output to images for docs
 
 ## claude-nu — sessions as documents, Claude as a pipeline stage
