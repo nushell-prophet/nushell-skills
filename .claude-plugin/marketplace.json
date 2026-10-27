@@ -18,7 +18,7 @@
       "name": "nushell-style",
       "source": "./plugins/nushell-style",
       "description": "Opinionated Nushell patterns, pipeline composition, command choices, formatting (Topiary), testing (nutest), NUON, regex (fancy-regex), debugging (--ide-check), toolkit.nu, and MCP server conventions for .nu files.",
-      "version": "1.116.1"
+      "version": "1.116.2"
     },
     {
       "name": "nushell-literate-programming",

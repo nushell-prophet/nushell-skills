@@ -2,7 +2,7 @@
 
 Nushell 0.116 added the `tui` command family ([#19025](https://github.com/nushell/nushell/pull/19025)).
 It builds a picker, a small form or a multi-pane browser from a pipeline, with no Rust project.
-Everything below was checked against Nushell 0.116.0.
+Everything below was checked against Nushell 0.116.2; 0.116.1 changed streams, borders and titles.
 
 ## When to use it
 
@@ -13,6 +13,7 @@ Everything below was checked against Nushell 0.116.0.
 ## The model
 
 - Builders (`tui table`, `tui split`, `tui textbox`, …) each append a widget to a `tui` value and pass it on.
+  A builder always outputs a `tui` value: `[1 2 3] | tui table | first` does not give back the rows.
 - `tui run` shows it on the alternate screen and blocks until the user submits or quits.
 - `tui debug` paints the same value into a string, with no terminal, and can replay keys first.
 - Both return one record: `{action, focused, selected, page, values, rows, live}`.
@@ -22,13 +23,13 @@ Everything below was checked against Nushell 0.116.0.
 - `tui debug` adds `screen`, `widgets` (the tree with each `rect`), `focus` (`{order, default}`) and `pages`.
 
 ```nushell
-ls | tui label --title "files" | tui table | tui run | get selected.name
+ls | tui label --titlebar "files" | tui table | tui run | get selected.name
 tui textbox --id name | tui run | get values.name
 ```
 
 ## Commands
 
-- `tui label` — static text; `--title` goes to the top bar, `--status` to the bottom bar; a closure follows the highlighted row
+- `tui label` — static text; `--titlebar` goes to the top bar, `--status` to the bottom bar; a closure follows the highlighted row
 - `tui menu [items]` — menu bar; entries are strings or `{name, items?, action?}`; `&` marks the mnemonic
 - `tui textbox` — editable field; `--placeholder`, `--value`
 - `tui table` — navigable rows; `--columns`, `--multi`, `--index`, `--capture-keys`, `--on-select`
@@ -47,6 +48,8 @@ tui textbox --id name | tui run | get values.name
 - `tui debug hook?` — the headless render; `--keys`, `--until`, `--size`, `--dialog`
 
 Every widget takes `--id` and `--focus`.
+`tui table`, `tui tree`, `tui select`, `tui log`, `tui preview`, `tui search` and `tui textbox` take `--title`, which replaces the default name on the border: `tui table --title files` draws `files (12)`.
+These and `tui box` take `--border` (see *Colors and borders*).
 The list widgets, `tui label`, `tui log` and `tui progress` also take `--data` and `--from`; `tui preview` takes `--from`.
 
 ## Layout
@@ -54,13 +57,13 @@ The list widgets, `tui label`, `tui log` and `tui progress` also take `--data` a
 - Widgets in the outer pipeline stack top to bottom, one row each.
 - Adjacent `tui button`s are the exception: they share one row, left to right.
 - `tui split`, `tui box` and `tui tab` take a list of child widgets, each built in parentheses.
-- Chrome — `tui label --title`, `tui label --status`, `tui menu` — goes in the outer pipeline only and stays visible on every page.
+- Chrome — `tui label --titlebar`, `tui label --status`, `tui menu` — goes in the outer pipeline only and stays visible on every page.
 - `tui tab` is outer-pipeline only and cannot nest; for a titled group inside a split use `tui box`.
 - `tui search` works in both places, and its position is its scope: in the outer pipeline it filters every list, inside a container only that container's lists.
 
 ```nushell
 ls
-| tui label --title "files"
+| tui label --titlebar "files"
 | tui split --sizes [60% 1fr] [
     (tui box "list" [ (tui search --bind /) (tui table --columns [name type size]) ])
     (tui preview { nu-highlight })
@@ -96,14 +99,13 @@ tui split [ (ps | tui table) (ls | tui table) ] | tui run       # each has its o
 tui split [ (tui table --data (ps)) (tui table --data (ls)) ] | tui run  # the same, spelled out
 ```
 
-- An external command's output (`tail -f log`, `^journalctl --follow`) stays live: the builder returns at once and rows appear as they come.
-- A bare unbounded range (`1..`) stays live too.
-- A Nushell stream (`ls`, `each`, `generate`) is collected until it ends or reaches 100k rows; only the rest after 100k stays live, as `help tui` says.
-  A fast endless one goes live within a moment, but a slow endless one — `1.. | each {|n| sleep 100ms; $n }` — blocks the builder for hours and nothing is painted.
-  The 0.116 release notes promise a quarter-second cut-off and `help tui log` shows exactly that slow example; the code (`crates/nu-tui/src/stream.rs`) has neither.
-  For a slow live feed, produce it with an external command.
-- A child list only holds collected values, so keep an endless producer in the outer pipeline.
-- A streamed table keeps its newest 10,000 rows.
+- A stream stays live: the builder returns at once, and rows appear while `tui run` is open.
+  This holds for an external command (`tail -f log`), a bare range (`1..`) and a slow Nushell stream (`1.. | each {|n| sleep 1sec; $n }`) alike.
+- A stream piped into a widget in a child list is live too: `tui split [(tail -f app.log | tui log) (ls | tui table)]`.
+- A stream keeps about its newest 100,000 rows; `tui log --max-lines` raises the limit.
+- A `tui` value saved with `let` reads its stream on the first run; a later run shows the same rows of a finished stream.
+- A hook that returns data replaces the piped data for the rest of the run, and no more rows arrive from the stream.
+- Data piped into a child list whose widgets all have `--data` is an error: `piped data has no widget to show it`.
 - When the TUI closes, a still-running external command is stopped.
 
 `--from <id>` makes a widget follow the highlighted row of a table, tree or select, with a closure over that row:
@@ -184,11 +186,24 @@ tui label "Delete everything?" | tui button Yes | tui button No | tui debug --ke
 - `q` quits only when no text field has focus; inside a search or text box it is a character, and Esc leaves the field first.
 - Enter on a text box submits the whole TUI with the text as `selected`; to read several fields, take `values` from the result instead.
 
-## Colors
+## Colors and borders
 
 `$env.config.tui` holds the styles (`config nu --doc` documents them):
 `border`, `border_focused`, `highlight`, `selected`, `status_bar`, `button`, `title_bar`, `muted`, `progress`, `tab_inactive`, `tab_active`, `header`.
 
 ```nushell
 $env.config.tui.highlight = {fg: magenta, attr: b}
+```
+
+`--border <name>` sets the outline of one widget; `$env.config.tui.border_type` sets the default for all of them, menu dropdowns and dialog frames included.
+The names are the `table --theme` names: `single` (the default), `rounded`, `double`, `heavy`, `basic`, …
+`none` and `default` are errors; `frameless` draws no lines but keeps the one-cell margin and the title.
+
+```nushell
+[a b] | tui table --border rounded | tui debug --size [30 5] | get screen
+# => ╭ table (2) ─────────────────╮
+# => │  item                      │
+# => │▶ a                         │
+# => │  b                         │
+# => ╰────────────────────────────╯
 ```

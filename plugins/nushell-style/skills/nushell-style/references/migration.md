@@ -43,6 +43,8 @@ Versions noted as `(v0.NNN)`.
 - `std/iter scan`: positional init + `--noinit` → `--fold` (omit for no initial value) — 0.114
 - `to yaml`: `--compact-list-indent` → drop it (compact is the default) — removed 0.116.
   The new `--list-indent indented` gives the other style
+- `tui label`: `--title` → `--titlebar` — deprecated 0.116.1, removed 0.118.
+  `--title` now names the border of a bordered widget
 - experimental option `background-completions` → `@interactive` on the completer command — added 0.115.1, removed 0.116 (see *Unified custom completers* below)
 
 ---
