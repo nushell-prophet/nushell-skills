@@ -107,6 +107,28 @@ In `take while` / `take until`, a flag after the closure is now a parse error â€
 
 See `references/migration.md` for the rest of the 0.116 breaks.
 
+## Agent Tip: History of One Command
+
+To get the history of one command, give `git log -L` a regex range that ends at the closing brace:
+
+```nushell
+git log -L '/^export def derive /,/^}/:mod.nu' --no-relative --no-patch --format='%h %s'   # the commits that changed `derive`
+git blame -L "/^export def 'main bootstrap'/,/^}/" mono.nu                                 # a quoted name: double quotes outside
+```
+
+The range is exact,
+because Topiary puts the closing `}` of a top-level `def` in column 0.
+The space after the name keeps `derive-key` out of the match.
+The `:name` form (`-L ':export def derive :mod.nu'`) is not exact:
+git ends it at the next line that starts with a letter, `_` or `$`,
+so it also takes the doc comment and the attributes of the next command.
+A multi-line string with `}` in column 0 ends the range early.
+
+The git config of the user can set `diff.relative = true`,
+and `git log -L` in a subdirectory then drops the commits from before the file moved there.
+Add `--no-relative` when you run it from a subdirectory:
+the flag is harmless where the setting is off.
+
 ---
 
 ## Conciseness for Advanced Users
