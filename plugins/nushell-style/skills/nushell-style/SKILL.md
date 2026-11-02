@@ -109,16 +109,21 @@ See `references/migration.md` for the rest of the 0.116 breaks.
 
 ## Agent Tip: History of One Command
 
-To get the history of one command, give `git log -L` a regex range that ends at the closing brace:
+To get the history of one command, start the `git log -L` range at the line number of its `def` and end it at the closing brace:
 
 ```nushell
-git log -L '/^export def derive /,/^}/:mod.nu' --no-relative --no-patch --format='%h %s'   # the commits that changed `derive`
-git blame -L "/^export def 'main bootstrap'/,/^}/" mono.nu                                 # a quoted name: double quotes outside
+git grep --line-number 'def .*derive' HEAD -- mod.nu                     # HEAD:mod.nu:17:export def derive [
+git log -L '17,/^}/:mod.nu' --no-relative --no-patch --format='%h %s'     # the commits that changed `derive`
 ```
 
-The range is exact,
-because Topiary puts the closing `}` of a top-level `def` in column 0.
-The space after the name keeps `derive-key` out of the match.
+Git searches the end regex from the start line,
+and Topiary puts the closing `}` of a top-level `def` in column 0,
+so the range is the exact body.
+A line number is safer than a start regex:
+the name can be bare or quoted (`def ls`, `def 'ls'`, `def "main bootstrap"`),
+and `--env` or `--wrapped` can stand between `def` and the name or between the name and the parameters.
+`git log -L` counts the lines in `HEAD`,
+so take the number from `HEAD`, not from a file with uncommitted edits.
 The `:name` form (`-L ':export def derive :mod.nu'`) is not exact:
 git ends it at the next line that starts with a letter, `_` or `$`,
 so it also takes the doc comment and the attributes of the next command.
