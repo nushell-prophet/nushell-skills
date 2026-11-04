@@ -37,6 +37,12 @@
       "source": "./plugins/claude-nu",
       "description": "Mine Claude Code session transcripts with claude-nu instead of jq or python — what the user said, what agents ran and what came back, raw records, per-session numbers, one scope model for all of them.",
       "version": "0.1.1"
+    },
+    {
+      "name": "nu-cmd-stack",
+      "source": "./plugins/nu-cmd-stack",
+      "description": "Hand commands to the user as a nu-cmd-stack file instead of a code block to copy — the user loads it with `cmd-stack load` at their own pace and runs the commands with ctrl+alt+k, and the agent reads which history row ran each one, with its exit status.",
+      "version": "0.1.0"
     }
   ]
 }

@@ -15,6 +15,7 @@ Then install the plugins you want:
 /plugin install nushell-style@nushell-skills
 /plugin install nushell-history@nushell-skills
 /plugin install claude-nu@nushell-skills
+/plugin install nu-cmd-stack@nushell-skills
 ```
 
 ## Plugins
@@ -25,6 +26,8 @@ Then install the plugins you want:
   Activates automatically when editing `.nu` files.
 - **nushell-history** — inspects and rewrites the Nushell sqlite command history: `history --long | where ...` recipes and `nu-history-tools` mutation flows (retag cwd, remove entries).
 - **claude-nu** — reads Claude Code session transcripts with the `claude-nu` module instead of jq or python: what the user said, what agents ran and what came back, raw records, per-session numbers.
+- **nu-cmd-stack** — hands commands to you as a [nu-cmd-stack](https://github.com/nushell-prophet/nu-cmd-stack) file instead of a code block to copy.
+  You load it with `cmd-stack load` when you are ready and run the commands with `ctrl+alt+k`; the agent reads which history row ran them, with the exit status.
 
 ## Development
 

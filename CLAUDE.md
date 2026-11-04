@@ -5,13 +5,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## What This Is
 
 A Claude Code plugin marketplace providing opinionated Nushell development skills.
-It contains five plugins distributed via the Claude Code plugin system:
+It contains these plugins, distributed via the Claude Code plugin system:
 
 - **nushell-completions** — teaches Claude to generate Nushell tab-completion definitions (inline lists, custom completers, `extern` definitions, module naming)
 - **nushell-style** — opinionated Nushell style guide (pipeline patterns, command choices, formatting, testing, debugging)
 - **nushell-literate-programming** — the shared user/agent space in the terminal: numd (executable markdown), dotnu (`.nu` scripts that embed their own output as `# =>` comments), REPL capture, claude-nu session archiving; also bundles the Common Space output style
 - **nushell-history** — inspecting and rewriting the user's sqlite command history (`history --long | where ...` recipes, `nu-history-tools` mutation flows)
 - **claude-nu** — reading Claude Code session transcripts with the `claude-nu` module: scope model, commands by intent, recipes redone from past jq/python mining
+- **nu-cmd-stack** — handing commands to the user as a nu-cmd-stack file that they load with `cmd-stack load`, instead of a code block, and reading which history row ran them
 
 ## Architecture
 
@@ -59,6 +60,10 @@ plugins/
     skills/claude-nu/
       SKILL.md                     # Scope rule, commands by intent, pitfalls
       references/recipes.md        # Past mining intents, redone with claude-nu
+  nu-cmd-stack/
+    .claude-plugin/plugin.json     # Plugin manifest
+    skills/nu-cmd-stack/
+      SKILL.md                     # Write a stack file, check it, read the runs
 toolkit.nu                         # Dev convenience commands (not distributed)
 ```
 
