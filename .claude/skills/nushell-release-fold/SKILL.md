@@ -6,17 +6,21 @@ description: Fold a new Nushell release into the skills of this repo — read th
 # Fold a Nushell release into the skills
 
 A skill that teaches a stale Nushell is worse than no skill: the agent states the old behavior with full confidence.
-Before starting, find the previous fold-in in git history: `git log --grep='fold Nushell' main` for the landed commit, `git tag --list 'archive/nushell-*'` for its per-step history.
+Before starting, find the previous fold-in in git history: `git log --grep='fold Nushell' master` for the landed commit, `git tag --list 'archive/nushell-skills/*'` for its per-step history.
 Read its message: it records what verification caught that reading alone missed.
 
 ## 1. Get the sources current
 
-- Refresh the docs: `cozy docs nushell --output-dir ../nushell-docs`.
-  Without the flag it works on `./nushell-docs`, so run from this repo it clones a second copy here instead of updating the sibling.
-  Then check the release note is there: `ls ../nushell-docs/blog | where name =~ 'nushell_v0_<minor>'`.
+The sources sit in the workspace root, `$env.WORKSPACE_DIR`, next to the mono.
+A `../` path does not reach them from a worktree of this project (`wtr/nushell-skills/nushell-skills`), so the commands below start from that variable, which the cozy sandbox sets.
+They are Nushell: write the path as `($env.WORKSPACE_DIR)/...`, because a bare `$env.WORKSPACE_DIR/...` fails with `column_not_found`; from Bash it is `$WORKSPACE_DIR/...`.
+
+- Refresh the docs: `cozy docs nushell --output-dir ($env.WORKSPACE_DIR)/nushell-docs`.
+  Without the flag it works on `./nushell-docs`, so run from this repo it clones a second copy here instead of updating the shared one.
+  Then check the release note is there: `ls ($env.WORKSPACE_DIR)/nushell-docs/blog | where name =~ 'nushell_v0_<minor>'`.
   If it is missing, stop and say so — do not fetch the web instead.
-- The full Nushell repo is `../upstream-big-repos/nushell/`; command signatures (`crates/nu-command/`) and std (`crates/nu-std/std/`) live there, not in the notes.
-  `git -C ../upstream-big-repos/nushell fetch --tags`, then read the release as tagged — `git grep <pattern> 0.<minor>.0`, `git show 0.<minor>.0:<path>` — without switching the user's checkout.
+- The full Nushell repo is `($env.WORKSPACE_DIR)/upstream-big-repos/nushell/`; command signatures (`crates/nu-command/`) and std (`crates/nu-std/std/`) live there, not in the notes.
+  `git -C ($env.WORKSPACE_DIR)/upstream-big-repos/nushell fetch --tags`, then read the release as tagged — `git grep <pattern> 0.<minor>.0`, `git show 0.<minor>.0:<path>` — without switching the user's checkout.
 - Check the binary: `nu --version` must print the new release.
   If it is older, stop: every claim below is verified by running it, and an old binary verifies nothing.
 - Check that the binary has the features the release touches: `nu --help | find mcp`.
@@ -27,7 +31,7 @@ Read its message: it records what verification caught that reading alone missed.
 ## 2. Sort the release note
 
 Read the whole note, and every patch release note since the last fold-in (`0.<minor>.1`, …).
-List them first: `ls ../nushell-docs/blog | where name =~ 'nushell_v0_'` and take every file newer than the last folded version.
+List them first: `ls ($env.WORKSPACE_DIR)/nushell-docs/blog | where name =~ 'nushell_v0_'` and take every file newer than the last folded version.
 Do not skip patch releases: the user notes that sometimes they are the real release.
 No patch release had been folded in up to 0.115, so check the patches of the previous minor too.
 A patch release alone is reason enough to run this skill; `nushell-style` then gets `1.<minor>.<n+1>`.
@@ -42,7 +46,7 @@ Put each item in one bucket:
 
 For a large release, hand the buckets to agents, one agent per file so none collide.
 Agents edit only: no `git add`, `git commit` or `git switch` — you commit.
-Each brief says to run every example on the new binary and to mark what could not be checked as ASSUMED in the report.
+Each brief says to run every example on the new binary, and to write a claim that could not be run with its label (step 3) instead of dropping it.
 Finish with one more agent whose brief is a verification sweep, not a writing assignment.
 Also check `git log` before each commit: another session may be committing to the same branch (in the 0.116 run a parallel session added `tui.md`).
 
@@ -52,11 +56,12 @@ Execute each example against the new binary before writing it down, in a fresh p
 The registered MCP server can run an older `nu` than the one on `PATH`: during the 0.115 run it was still 0.114.1.
 Release-note prose is sometimes imprecise; when the note and the source at the release tag disagree, the source wins.
 In the 0.115 run this caught a wrong record shape in the notes, a release-note example that does not parse, and a variable that is empty under `nu -c` and MCP.
-A claim you could not run is not written.
+A claim you could not run is written only with a label that says how it was checked: `source-checked` (read in the source at the release tag), `release notes only`, or `not run: <reason>`.
+Never write such a claim as plain fact.
 
 A bug found this way belongs upstream too, not only worked around in the skill.
-Report it and propose the fix where it lives: a wrong release-note or book example → a branch in `../upstream-big-repos/nushell.github.io/`; a bug in Nushell itself → a branch in `../upstream-big-repos/nushell/`, made from a freshly fetched upstream head.
-Make each branch with `git worktree add ../worktrees/<name> -b <name> <upstream>/main`, so the user's checkout and its local changes stay untouched.
+Report it and propose the fix where it lives: a wrong release-note or book example → a branch in `($env.WORKSPACE_DIR)/upstream-big-repos/nushell.github.io/`; a bug in Nushell itself → a branch in `($env.WORKSPACE_DIR)/upstream-big-repos/nushell/`, made from a freshly fetched upstream head.
+Make each branch from inside that repo with `git worktree add ../worktrees/<name> -b <name> <upstream>/main`, so the user's checkout and its local changes stay untouched.
 If a checkout fails on a corrupt object in a file the fix does not need (the 0.116 run hit a broken `.gif` in nushell.github.io), use `--no-checkout` plus `git sparse-checkout set --no-cone /<path>`, and report the corruption instead of repairing it.
 Do not push or open a PR — that step is the user's.
 
@@ -90,11 +95,12 @@ The covered range (`0.100–0.<minor>`) is written in several places; update all
 
 ## 7. Check the always-loaded pitfalls
 
-The pitfalls cheatsheet in `../cozy/docker-files/global-claude.md` loads in every session, whether a skill triggers or not.
+The pitfalls cheatsheet in `cozy/docker-files/global-claude.md` of the mono loads in every session, whether a skill triggers or not.
+A worktree of this project does not check it out: read it with `git show master:cozy/docker-files/global-claude.md`.
 Re-run each pitfall that touches a changed area against the new binary.
-That file lives in another repo: report what is stale and propose the change there, do not edit it from this task.
+That file belongs to another project of the mono: report what is stale and propose the change there, do not edit it from this task.
 
 ## 8. Commit
 
-One commit per bucket on a branch, then land it with `40-land-branch`.
+One commit per bucket on a branch, then land it with `/mono-land`.
 The body says what verification caught and why each placement call went where it did — the 0.115 message is the model.

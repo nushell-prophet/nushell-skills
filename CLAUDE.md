@@ -100,18 +100,20 @@ The managed skills list is defined as `const managed_skills` in `toolkit.nu`.
 
 ## Local Nushell Sources (fact-check against these, not WebFetch)
 
-Directories next to this repo, or in `../upstream-big-repos/`, hold canonical Nushell material.
+Directories in the workspace root, `$env.WORKSPACE_DIR` (next to the mono), hold canonical Nushell material.
+A `../` path does not reach them from a worktree of this project, so name them from that variable, which the cozy sandbox sets.
+In Nushell write `($env.WORKSPACE_DIR)/...`: a bare `$env.WORKSPACE_DIR/...` fails with `column_not_found`; from Bash it is `$WORKSPACE_DIR/...`.
 When updating skills for a new Nushell release or verifying a claim, read these instead of fetching the web:
 
-- `../nushell-docs/` — sparse shallow clone of nushell.github.io (`blog/`, `book/`, `cookbook/`).
+- `($env.WORKSPACE_DIR)/nushell-docs/` — sparse shallow clone of nushell.github.io (`blog/`, `book/`, `cookbook/`).
   Release notes: `blog/<date>-nushell_v0_<minor>_<patch>.md`.
-  Refresh with `cozy docs nushell --output-dir ../nushell-docs` (`../cozy/cozy-module/docs.nu`); the default target is `./nushell-docs`, relative to the current directory.
+  Refresh with `cozy docs nushell --output-dir ($env.WORKSPACE_DIR)/nushell-docs` (`cozy/cozy-module/docs.nu` in the mono); the default target is `./nushell-docs`, relative to the current directory.
   It pulls an existing checkout or clones a fresh one with this same sparse list.
-  Command signatures are not in this checkout — read `../upstream-big-repos/nushell/` for those.
+  Command signatures are not in this checkout — read `($env.WORKSPACE_DIR)/upstream-big-repos/nushell/` for those.
   Default lookup target — small and fast to grep.
-- `../upstream-big-repos/nushell.github.io/` — full clone incl. `lang-guide/`, `contributor-book/`, translations.
+- `($env.WORKSPACE_DIR)/upstream-big-repos/nushell.github.io/` — full clone incl. `lang-guide/`, `contributor-book/`, translations.
   The user works in it (branches, stashes) — no destructive git commands.
-- `../upstream-big-repos/nushell/` — Nushell source.
+- `($env.WORKSPACE_DIR)/upstream-big-repos/nushell/` — Nushell source.
   Ground truth for command signatures (`crates/nu-command/`, `crates/nu-cli/`) and std (`crates/nu-std/std/`).
   Release-note prose is sometimes imprecise — verify flags and behavior here.
 
@@ -119,7 +121,7 @@ When updating skills for a new Nushell release or verifying a claim, read these 
 
 The skills in this repo aren't always loaded — a session only pulls a skill in when its trigger matches.
 But Nushell is the main tool in the cozy sandbox environment, so the most critical pitfalls and rules must not depend on skill activation.
-Put those in `../cozy/docker-files/global-claude.md` (baked into every sandbox session as global memory); keep this repo's skills for the full, detailed guidance.
+Put those in `cozy/docker-files/global-claude.md` of the mono (baked into every sandbox session as global memory); keep this repo's skills for the full, detailed guidance.
 
 ## Editing Skills
 
