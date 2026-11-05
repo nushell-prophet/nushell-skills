@@ -93,7 +93,7 @@ mut x = 1
 
 ```nushell
 # has — useful in where clauses
-$table | where children has "e"   # instead of: where ("e" in $it.children)
+$table | where children has 'e'   # instead of: where ("e" in $it.children)
 ```
 
 ---
@@ -137,7 +137,7 @@ ls | get name | let files    # equivalent to: let files = ls | get name
 ### `let` mid-pipeline pass-through (v0.111)
 
 ```nushell
-"hello" | let msg | str length  # => 5; $msg = "hello"
+'hello' | let msg | str length  # => 5; $msg = "hello"
 ```
 
 ### `%` sigil for built-in commands (v0.112)
@@ -386,8 +386,8 @@ greet -- -Alice   # "-Alice" is a positional value, not an unknown flag
 ### `find` is case-sensitive by default (v0.107)
 
 ```nushell
-["Foo" "bar"] | find foo                  # no match
-["Foo" "bar"] | find --ignore-case foo    # matches "Foo"
+[Foo bar] | find foo                  # no match
+[Foo bar] | find --ignore-case foo    # matches "Foo"
 ```
 
 ### Cell-paths are case-sensitive by default (v0.105)
@@ -530,12 +530,12 @@ Nushell no longer parses YAML as a mix of the 1.1 and 1.2 specs; `from yaml` is 
 Pass `--spec 1.1` to get the old scalar magic back.
 
 ```nushell
-"yes"       | from yaml             # => "yes" (string; was true)
-"yes"       | from yaml --spec 1.1  # => true
-"0247"      | from yaml             # => 247 (leading zero is just a zero)
-"0247"      | from yaml --spec 1.1  # => 167 (octal 0o247)
-"190:20:30" | from yaml             # => "190:20:30" (string)
-"190:20:30" | from yaml --spec 1.1  # => 685230 (sexagesimal)
+'yes'       | from yaml             # => "yes" (string; was true)
+'yes'       | from yaml --spec 1.1  # => true
+'0247'      | from yaml             # => 247 (leading zero is just a zero)
+'0247'      | from yaml --spec 1.1  # => 167 (octal 0o247)
+'190:20:30' | from yaml             # => "190:20:30" (string)
+'190:20:30' | from yaml --spec 1.1  # => 685230 (sexagesimal)
 ```
 
 Mapping keys are stricter: a plain key that resolves to a bool, number or null is rejected, because Nushell record keys are strings.
@@ -569,8 +569,8 @@ Emitted YAML also looks different — quoting follows 1.2 rules and Nushell type
 Scripts that compare YAML text need rechecking.
 
 ```nushell
-{b: "off"} | to yaml             # => b: off      (bare; 0.113/0.114 quoted it)
-{b: "off"} | to yaml --spec 1.1  # => b: "off"
+{b: 'off'} | to yaml             # => b: off      (bare; 0.113/0.114 quoted it)
+{b: 'off'} | to yaml --spec 1.1  # => b: "off"
 ```
 
 In 0.116 the list style flag changed: `--compact-list-indent` is gone (compact was already the default), and `--list-indent indented` gives the other style.
@@ -684,7 +684,7 @@ Quote it to target a key that really contains a dot.
 ```nushell
 {} | default 5 a.b              # => {a: {b: 5}}   (0.115: {"a.b": 5})
 {a: {c: 1}} | default 5 a.b     # => {a: {c: 1, b: 5}}
-{} | default 5 "a.b"            # => {"a.b": 5}
+{} | default 5 'a.b'            # => {"a.b": 5}
 ```
 
 ### `lines --skip-empty` works on strings and byte streams (v0.116)
@@ -724,10 +724,10 @@ A thousands separator is read as a decimal point, so `"1,500"` becomes `1.5` wit
 Strip separators before converting numbers written with them.
 
 ```nushell
-"1,5"   | into float    # => 1.5   (0.115: error)
-"1,500" | into float    # => 1.5   (!)
-"1,500" | into int      # => 1500
-"1,500" | str replace --all ',' '' | into float   # => 1500.0
+'1,5'   | into float    # => 1.5   (0.115: error)
+'1,500' | into float    # => 1.5   (!)
+'1,500' | into int      # => 1500
+'1,500' | str replace --all ',' '' | into float   # => 1500.0
 ```
 
 ---
@@ -764,18 +764,18 @@ job kill $id
 ### Custom command attributes (v0.103+)
 
 ```nushell
-@example "double 2" { 2 | double } --result 4
-@deprecated "Use new-cmd" --since "0.105.0"
+@example 'double 2' { 2 | double } --result 4
+@deprecated 'Use new-cmd' --since '0.105.0'
 @search-terms ["math" "multiply"]
-@category "math"
+@category 'math'
 @test
-def "test add" [] { assert equal (1 + 1) 2 }
+def 'test add' [] { assert equal (1 + 1) 2 }
 ```
 
 ### `parse` with `_` placeholder (v0.105)
 
 ```nushell
-"hello world" | parse "{word} {_}"   # ignores second field
+'hello world' | parse '{word} {_}'   # ignores second field
 ```
 
 ### `default --empty` (v0.103)
@@ -799,8 +799,8 @@ Since 0.116, `finally` runs however the `try` is left, and the rest follows from
 
 ```nushell
 def g [] {
-    try { error make {msg: boom} } finally { print "cleanup" }
-    print "after"   # 0.115 printed this; 0.116 does not
+    try { error make {msg: boom} } finally { print 'cleanup' }
+    print 'after'   # 0.115 printed this; 0.116 does not
 }
 try { g } catch {|e| $e.msg }           # prints "cleanup", => boom
 try { 42 } finally {|x| print $x }      # prints 42, => 42
@@ -815,13 +815,13 @@ timeit --output { 'text' }  # => {time: ..., output: text}
 ### `str escape-regex` (v0.112)
 
 ```nushell
-".*" | str escape-regex  # => "\.\*"
+'.*' | str escape-regex  # => "\.\*"
 ```
 
 ### `into duration` parses hh:mm:ss (v0.112)
 
 ```nushell
-"16:59:58" | into duration  # => 16hr 59min 58sec
+'16:59:58' | into duration  # => 16hr 59min 58sec
 ```
 
 ### Spread `null` as empty (v0.107)
@@ -860,11 +860,11 @@ http get :8000          # => http://localhost:8000
 
 ```nushell
 # before:
-$env.config.filesize.format = "auto"
+$env.config.filesize.format = 'auto'
 $env.config.filesize.metric = true
 
 # after:
-$env.config.filesize.unit = "metric"   # or "binary", "kB", "KiB", etc.
+$env.config.filesize.unit = 'metric'   # or "binary", "kB", "KiB", etc.
 $env.config.filesize.precision = 1     # decimal places, or null
 ```
 

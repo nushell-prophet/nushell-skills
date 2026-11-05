@@ -23,7 +23,7 @@ Everything below was checked against Nushell 0.116.2; 0.116.1 changed streams, b
 - `tui debug` adds `screen`, `widgets` (the tree with each `rect`), `focus` (`{order, default}`) and `pages`.
 
 ```nushell
-ls | tui label --titlebar "files" | tui table | tui run | get selected.name
+ls | tui label --titlebar 'files' | tui table | tui run | get selected.name
 tui textbox --id name | tui run | get values.name
 ```
 
@@ -63,12 +63,12 @@ The list widgets, `tui label`, `tui log` and `tui progress` also take `--data` a
 
 ```nushell
 ls
-| tui label --titlebar "files"
+| tui label --titlebar 'files'
 | tui split --sizes [60% 1fr] [
-    (tui box "list" [ (tui search --bind /) (tui table --columns [name type size]) ])
+    (tui box 'list' [ (tui search --bind /) (tui table --columns [name type size]) ])
     (tui preview { nu-highlight })
   ]
-| tui label --status "enter: pick  /: filter  q: quit"
+| tui label --status 'enter: pick  /: filter  q: quit'
 | tui run
 ```
 
@@ -112,7 +112,7 @@ tui split [ (tui table --data (ps)) (tui table --data (ls)) ] | tui run  # the s
 
 ```nushell
 ls | tui split [(tui tree --walk) (tui table --from tree-0 {|node| ls $node.name })] | tui run
-ls | tui table | tui label {|row| $"size: ($row.size)" } | tui run
+ls | tui table | tui label {|row| $'size: ($row.size)' } | tui run
 $env.config.keybindings | tui split [(tui table) (tui preview {|row| $row.event | to nuon })] | tui run
 ```
 
@@ -156,10 +156,10 @@ Both take the same input, so only the last command changes.
 [{name: a} {name: b}] | tui table | tui debug --keys [down enter] | select action selected
 # => {action: submit, selected: {name: b}}
 
-[{name: alpha} {name: beta}] | tui search --bind / | tui table | tui debug --keys "/,type:be,tab,enter" | get selected.name
+[{name: alpha} {name: beta}] | tui search --bind / | tui table | tui debug --keys '/,type:be,tab,enter' | get selected.name
 # => beta
 
-tui label "Delete everything?" | tui button Yes | tui button No | tui debug --keys [tab enter] | get selected
+tui label 'Delete everything?' | tui button Yes | tui button No | tui debug --keys [tab enter] | get selected
 # => No
 
 [a b c] | tui table | tui debug --keys [down down down] --until {|s| $s.values.table-0.index == 1 } | get values.table-0.index

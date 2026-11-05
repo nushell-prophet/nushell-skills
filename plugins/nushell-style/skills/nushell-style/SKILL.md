@@ -144,7 +144,7 @@ Leverage implicit features:
 - `update field {|row| $row.field | str uppercase}` → `update field { str uppercase }` — closure receives field value directly
 - `each {|x| $x | str trim}` → `each { str trim }` — `$in` implicit, pipeline flows
 - `$list | each { str trim }` → `$list | str trim` — many commands accept `list<string>` directly (see below)
-- `where {|row| $row.status == "active"}` → `where status == "active"` — `where` has field shorthand
+- `where {|row| $row.status == 'active'}` → `where status == 'active'` — `where` has field shorthand
 - `$data | each { $in | process }` → `$data | each { process }` — `$in` passed automatically to first command
 
 **Principle:** If an advanced user knows how `update`, `each`, `where` work, they shouldn't need to parse redundant variable declarations.
@@ -163,6 +163,7 @@ Leverage implicit features:
 - Syntax check (human) — prefer `nu-check file.nu` (returns `true`/`false`), avoid `source file.nu`
 - Syntax check (agent) — prefer `dotnu diagnose file.nu`, avoid raw `nu --ide-check` and `nu-check` (see Agent Tip above)
 - Membership — prefer `in` operator, avoid multiple `or` conditions
+- Empty check — prefer `is-empty` / `is-not-empty`, avoid `($x | length) == 0`
 - Field extraction — prefer `get --optional`, avoid `each {$in.field?} | compact`
 - Negation — prefer `$x !~ ...`, avoid `not ($x =~ ...)`
 - List element ops — prefer `$list | str trim`, avoid `$list | each { str trim }`
@@ -206,6 +207,37 @@ $list | url encode                   # $list | each { url encode }
 
 **Shape caveat:** `split row` on a list flattens all results into a single list (`['a,b' 'c,d'] | split row ','` → `[a b c d]`), unlike `each { split row ',' }` which keeps one sublist per element.
 Other `split` commands (`chars`, `words`) keep sublists.
+
+---
+
+## String Quoting
+
+Take the first form that can hold the text:
+
+1. **Bare word** — a word in data: a list item, a path part, a `match` arm, a record value.
+   Not for a word that parses as a value (`true`, `false`, `null`, a number, `1sec`, `10mb`), and not for a command argument that starts with `-`.
+   Also a glob as a command argument (`ls *.md`):
+   quotes make the pattern literal text, so `ls '*.md'` looks for a file named `*.md`.
+2. **Single quotes** `'...'` — any fixed text.
+   Nothing inside is processed, so a regex goes here too: `'(?<=a:)b'`.
+3. **Raw string** `r#'...'#` — fixed text that holds a `'`, or spans lines.
+4. **Single-quoted interpolation** `$'...'` — interpolation with no escape and no literal `(`.
+5. **Backtick** `` `...` `` — a path or glob with spaces, as a command argument; at the head of a pipeline it runs as a command.
+6. **Double quotes** `"..."` — only when an escape is needed: `"\n"`, `"\t"`, `"\""`.
+7. **Double-quoted interpolation** `$"..."` — interpolation together with an escape or a literal `(` (see the Agent Tip above).
+
+```nushell
+# Preferred                          # Avoid
+[Edit Write]                         # ["Edit" "Write"]
+[$dir patches] | path join           # [$dir "patches"] | path join
+match $kind { absolute => 1 }        # match $kind { "absolute" => 1 }
+'hello world'                        # "hello world"
+$'Package: ($pkg.name)'              # $"Package: ($pkg.name)"
+$"($n) rows\n"                       # (the escape needs double quotes)
+```
+
+`\'` is not an escape in `'...'` or `$'...'`: the `'` ends the string, so the line either fails to parse or silently gives a wrong value.
+Text with a `'` and interpolation goes to `$"..."`: `$"'($pkg)@($ver)':"`.
 
 ---
 
@@ -350,32 +382,32 @@ When a file is named after the command (e.g., `greet.nu`), the command **must** 
 # File: greet.nu
 
 # WRONG — "Can't export ... named same as the module"
-export def greet [name: string] { $"Hello ($name)" }
+export def greet [name: string] { $'Hello ($name)' }
 
 # CORRECT — `main` becomes the module's default command
-export def main [name: string] { $"Hello ($name)" }
+export def main [name: string] { $'Hello ($name)' }
 ```
 
-After `use greet.nu`, call it as `greet "world"` — `main` is replaced by the module name.
+After `use greet.nu`, call it as `greet world` — `main` is replaced by the module name.
 This applies to `def`, `extern`, and `const`.
 
 ### A command name is prose, not code
 
-A quoted `def "…"` name may contain spaces, and that is the whole point of the multi-word form.
+A quoted `def '…'` name may contain spaces, and that is the whole point of the multi-word form.
 Use **letters, digits, spaces and hyphens** — nothing else.
 Write what the command does, in words.
 Never embed a code fragment, a type, a literal or an operator in the name:
 
 ```nushell
 # WRONG — a code fragment in the name; says nothing a reader could not get from the body
-def "a record {a: 1} round-trips" [] { ... }
+def 'a record {a: 1} round-trips' [] { ... }
 
 # WRONG — the apostrophe English wants here takes the whole file down (see below)
 def "the signer's endorsement" [] { ... }
 
 # CORRECT — prose, and it survives being re-parsed
-def "a single-field record round-trips" [] { ... }
-def "the endorsement of the signer" [] { ... }
+def 'a single-field record round-trips' [] { ... }
+def 'the endorsement of the signer' [] { ... }
 ```
 
 Why this is not merely a style preference: a command name is *data that other tools put back into source code*. nutest builds its suite descriptor by interpolating every test name into generated Nushell:
@@ -411,6 +443,8 @@ Ordinary builtins stay shadowable — `def ls` still works, and `%ls` reaches th
 - Use empty `else { }` for pass-through
 - Use `match` for type dispatch
 - Use `in` for membership testing
+- Use `is-empty` / `is-not-empty` for empty checks
+- Quote strings by the ladder in String Quoting: a bare word or `'...'` first, `"..."` only for an escape
 - Use `get --optional` for field extraction
 - Build a `get`/`update` path as a cell-path value (`$.a.b`, `into cell-path`), not an interpolated string (see `references/patterns.md`)
 - Use `scan` for stateful transforms

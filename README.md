@@ -38,6 +38,10 @@ nu toolkit.nu vendor           # Copy from ~/.claude/skills into plugin director
 nu toolkit.nu install-locally  # Copy from plugin directories to ~/.claude/skills for testing
 ```
 
+## Credits
+
+The String Quoting ladder and the empty-check rule of nushell-style are adapted from [hustcer/nushell-pro](https://github.com/hustcer/nushell-pro) (MIT).
+
 ## License
 
 MIT

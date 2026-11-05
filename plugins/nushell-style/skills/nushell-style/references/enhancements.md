@@ -55,7 +55,7 @@ for event in (watch . --glob=**/*.rs) { cargo test }
 watch . {|op path| if $op == Write { lint $path } }
 
 # after: pipe into normal commands
-watch . | where operation == Write and path like "*.md" | each { md-lint $in.path }
+watch . | where operation == Write and path like '*.md' | each { md-lint $in.path }
 ```
 
 ### `par-each` streams results as they complete (v0.112)
@@ -83,7 +83,7 @@ Resolution: cwd / `NU_LIB_DIRS` / explicit path (not `PATH`).
 
 ```nushell
 # shout.nu contains just:  str uppercase
-"Hello Nushell!" | run shout.nu | str camel-case
+'Hello Nushell!' | run shout.nu | str camel-case
 
 # re-running a file that changes on disk: use --full-reparse
 watch . --glob=*.nu | each { run --full-reparse ./test.nu }
@@ -115,8 +115,8 @@ A `return` inside `try` runs `finally` and then leaves the command; the statemen
 
 ```nushell
 try { 111 } finally {|v| print $v }                        # prints 111
-try { error make "x" } catch { 'caught' } finally { print $in }   # prints caught
-try { error make "boom" } finally {|e| print $e.msg }       # prints boom, then the error propagates
+try { error make 'x' } catch { 'caught' } finally { print $in }   # prints caught
+try { error make 'boom' } finally {|e| print $e.msg }       # prints boom, then the error propagates
 ```
 
 Before 0.116 this was not reliable: after `return` the statements after `try` still ran, `break` and `continue` skipped `finally`, and an inner `finally` was skipped when an outer `catch` handled the error.
@@ -125,15 +125,15 @@ Scripts that must run on 0.115 or older cannot rely on `finally` for cleanup in 
 ### Simplified `error make` (v0.110)
 
 ```nushell
-error make "something went wrong"   # string shorthand
+error make 'something went wrong'   # string shorthand
 error make                          # bare error with source span
-{msg: "oops"} | error make          # piped input becomes an `inner` error; msg is "originates from here"
+{msg: 'oops'} | error make          # piped input becomes an `inner` error; msg is "originates from here"
 ```
 
 ### Automatic error chaining in catch (v0.110)
 
 ```nushell
-try { error make "inner" } catch { error make "outer" }
+try { error make 'inner' } catch { error make 'outer' }
 # "outer" automatically wraps "inner"
 ```
 
@@ -141,9 +141,9 @@ try { error make "inner" } catch { error make "outer" }
 
 ```nushell
 error make {
-    msg: "parse error"
-    src: {path: "/tmp/config.yaml"}
-    labels: [{text: "bad value" span: {start: 10 end: 15}}]
+    msg: 'parse error'
+    src: {path: '/tmp/config.yaml'}
+    labels: [{text: 'bad value' span: {start: 10 end: 15}}]
 }
 ```
 
@@ -233,7 +233,7 @@ $record | transpose k v | where v != null | transpose --header-row
 Returns default for empty strings, lists, records, binary — not just null.
 
 ```nushell
-"" | default --empty "fallback"   # => "fallback"
+'' | default --empty 'fallback'   # => "fallback"
 ```
 
 ### `default` with lazy closure (v0.105)
@@ -268,7 +268,7 @@ $table | group-by category --prune
 ### `join --prefix` / `--suffix` (v0.111)
 
 ```nushell
-$left | join $right key --suffix "_right"
+$left | join $right key --suffix '_right'
 ```
 
 ### `drop column --left` (v0.111)
@@ -313,7 +313,7 @@ Quote the name to target a key that contains a dot.
 ```nushell
 {} | default 5 a.b                        # => {a: {b: 5}}
 [{a: {}} {a: {b: 1}}] | default 0 a.b     # => [[a]; [{b: 0}] [{b: 1}]]
-{} | default 5 "a.b"                      # => {"a.b": 5}
+{} | default 5 'a.b'                      # => {"a.b": 5}
 ```
 
 ### Spread `null` as empty (v0.107)
@@ -330,7 +330,7 @@ let extra = if $cond { {key: val} } else { null }
 ### Table literal columns support variables (v0.108)
 
 ```nushell
-let col = "name"
+let col = 'name'
 [[$col age]; [Alice 30]]
 ```
 
@@ -423,7 +423,7 @@ $bytes | drop 3b              # => 5 bytes
 
 # split a big file into 10MiB parts
 open --raw file.7z | chunks 10MiB | enumerate | each {|c|
-    $c.item | save $"file.7z.($c.index + 1)"
+    $c.item | save $'file.7z.($c.index + 1)'
 }
 ```
 
@@ -448,7 +448,7 @@ An optional cell path restricts the operation to named columns; the rest pass th
 
 ```nushell
 let safe = $user_input | str escape-regex
-$data | where name like $"^($safe)$"
+$data | where name like $'^($safe)$'
 ```
 
 Escapes for the `fancy-regex` flavor Nushell uses everywhere — see `regex.md`.
@@ -458,8 +458,8 @@ Escapes for the `fancy-regex` flavor Nushell uses everywhere — see `regex.md`.
 The whole match arrives as `$in`; capture groups arrive as the closure's parameters, one per group.
 
 ```nushell
-"foo123bar" | str replace --regex '\d+' { into int | $in * 2 | into string }   # => foo246bar
-"a1b22" | str replace --all --regex '(\d)(\d)?' {|d1 d2| $"<($d1)($d2)>" }     # => a<1>b<22>
+'foo123bar' | str replace --regex '\d+' { into int | $in * 2 | into string }   # => foo246bar
+'a1b22' | str replace --all --regex '(\d)(\d)?' {|d1 d2| $'<($d1)($d2)>' }     # => a<1>b<22>
 ```
 
 A closure that declares a parameter when the regex has no group fails with `Missing parameter`.
@@ -467,19 +467,19 @@ A closure that declares a parameter when the regex has no group fails with `Miss
 ### `parse` with `_` placeholder (v0.105)
 
 ```nushell
-"hello world" | parse "{word} {_}"   # discards second field
+'hello world' | parse '{word} {_}'   # discards second field
 ```
 
 ### `str length --chars` (v0.108)
 
 ```nushell
-"hällo" | str length --chars  # => 5 (not byte count)
+'hällo' | str length --chars  # => 5 (not byte count)
 ```
 
 ### `str expand` with zero-padded ranges (v0.103)
 
 ```nushell
-"file{00..10}.txt" | str expand
+'file{00..10}.txt' | str expand
 ```
 
 ### `into string --group-digits` (v0.103)
@@ -491,7 +491,7 @@ A closure that declares a parameter when the regex has no group fails with `Miss
 ### `find --no-highlight` (v0.102)
 
 ```nushell
-$data | find "term" --no-highlight  # no ANSI in output
+$data | find 'term' --no-highlight  # no ANSI in output
 ```
 
 ### `char eol` — platform line ending (v0.103)
@@ -512,9 +512,9 @@ char back_slash      # => \   (also: bslash)
 ### `into float` accepts a comma decimal separator (v0.116)
 
 ```nushell
-"1,5" | into float       # => 1.5
-"1,000.5" | into float   # error: Ambiguity in conversion
-"1,000" | into float     # => 1.0 — the comma is read as a decimal point, not a thousands separator
+'1,5' | into float       # => 1.5
+'1,000.5' | into float   # error: Ambiguity in conversion
+'1,000' | into float     # => 1.0 — the comma is read as a decimal point, not a thousands separator
 ```
 
 On 0.115 all three were errors.
@@ -523,7 +523,7 @@ Strip thousands separators yourself before converting (`str replace --all ',' ''
 ### `hash sha512` (v0.116)
 
 ```nushell
-"abc" | hash sha512   # 128 hex characters; --binary for raw bytes
+'abc' | hash sha512   # 128 hex characters; --binary for raw bytes
 ```
 
 ### `split row --right` / `split column --right` (v0.114)
@@ -582,13 +582,13 @@ Since 0.116 `into string` on a semver is typed as `string`, so it also fits a ty
 ### `date from-human` (v0.104)
 
 ```nushell
-date from-human "next Friday at 6pm"
+date from-human 'next Friday at 6pm'
 ```
 
 ### `into datetime` from record (v0.104)
 
 ```nushell
-{year: 2025 month: 3 day: 30 hour: 12 minute: 15 second: 59 timezone: "+02:00"}
+{year: 2025 month: 3 day: 30 hour: 12 minute: 15 second: 59 timezone: '+02:00'}
 | into datetime
 ```
 
@@ -597,7 +597,7 @@ date from-human "next Friday at 6pm"
 ```nushell
 {week: 10 day: 1 hour: 2} | into duration
 1.5 | into duration --unit day
-"16:59:58" | into duration    # => 16hr 59min 58sec
+'16:59:58' | into duration    # => 16hr 59min 58sec
 ```
 
 ### `timeit --output` (v0.110)
@@ -609,7 +609,7 @@ timeit --output { some-command }  # => {time: 14328, output: <result>}
 ### `%J` / `%Q` date format specifiers (v0.108)
 
 ```nushell
-date now | format date "%J_%Q"   # => 20250918_131144
+date now | format date '%J_%Q'   # => 20250918_131144
 ```
 
 ### `seq date` accepts any duration increment (v0.102)
@@ -639,14 +639,14 @@ def foo [param: oneof<binary, string>] { .. }
 ### `@deprecated` attribute (v0.105)
 
 ```nushell
-@deprecated "Use new-cmd" --since "0.105.0" --remove "0.110.0"
+@deprecated 'Use new-cmd' --since '0.105.0' --remove '0.110.0'
 def old-cmd [] { ... }
 ```
 
 ### `@example`, `@search-terms`, `@category` (v0.103)
 
 ```nushell
-@example "double 5" { 5 | double } --result 10
+@example 'double 5' { 5 | double } --result 10
 @search-terms [multiply scale]
 @category math
 def double []: [int -> int] { $in * 2 }
@@ -670,7 +670,7 @@ Useful for wrappers that forward arguments to another tool.
 ```nushell
 # script.nu
 def main [a: external_arg, ...rest: external_arg] {
-    $"($a) ($a | describe) | ($rest | describe)"
+    $'($a) ($a | describe) | ($rest | describe)'
 }
 ```
 
@@ -698,7 +698,7 @@ do { def local-cmd [] { 1 }; scope commands | where name == 'local-cmd' | length
 `scope commands` also carries `deprecation_info` — deprecated commands and flags are now machine-readable:
 
 ```nushell
-scope commands | where name == "str downcase" | first | get deprecation_info.0.help
+scope commands | where name == 'str downcase' | first | get deprecation_info.0.help
 # => Use `str lowercase` instead.
 ```
 
@@ -715,7 +715,7 @@ module m {
     export def bar [] { helper }
 }
 use m
-view source "m bar" --dependencies
+view source 'm bar' --dependencies
 # const LIMIT = 42
 #
 # def "m bar" [] { helper }
@@ -753,7 +753,7 @@ http get --pool https://api.example.com/b
 ```nushell
 http get --allow-errors $url
 | metadata access {|m|
-    if $m.http_response.status != 200 { error make "failed" } else { }
+    if $m.http_response.status != 200 { error make 'failed' } else { }
 }
 | lines | each { from json }
 ```
@@ -773,13 +773,13 @@ http get --unix-socket /var/run/docker.sock http://localhost/containers/json
 ### `url parse --base` (v0.112)
 
 ```nushell
-"/path/page" | url parse --base "https://example.com"
+'/path/page' | url parse --base 'https://example.com'
 ```
 
 ### `url split-query` (v0.100)
 
 ```nushell
-"a=1&b=2" | url split-query  # => [[key, value]; [a, 1], [b, 2]]
+'a=1&b=2' | url split-query  # => [[key, value]; [a, 1], [b, 2]]
 ```
 
 ### Error responses use the body as message (v0.114)
@@ -818,7 +818,7 @@ def go [dir: string@[left up right down]] { }
 ### Substring algorithm (v0.104)
 
 ```nushell
-$env.config.completions.algorithm = "substring"
+$env.config.completions.algorithm = 'substring'
 ```
 
 ---
@@ -830,7 +830,7 @@ $env.config.completions.algorithm = "substring"
 Call the original even when shadowed.
 
 ```nushell
-def ls [] { echo "custom" }
+def ls [] { echo 'custom' }
 %ls  # => real ls output
 ```
 
@@ -858,8 +858,8 @@ Unlike aliases, the expanded text is visible and editable before submission.
 
 ```nushell
 $env.config.abbreviations = {
-    gco: "git checkout"
-    ll: "ls -la"
+    gco: 'git checkout'
+    ll: 'ls -la'
 }
 # typing `gco<space>` expands to `git checkout `
 ```
@@ -889,7 +889,7 @@ job kill $id
 ### Inter-job messaging (v0.104)
 
 ```nushell
-"hello" | job send $target_id   # the message is the pipeline input; id 0 is the main thread
+'hello' | job send $target_id   # the message is the pipeline input; id 0 is the main thread
 job recv                        # blocks until a message arrives
 ```
 
@@ -976,7 +976,7 @@ Output over the limit is truncated, with a warning when you read it.
 An arm pattern may now be a parenthesized const expression, so a path or prefix kept in a `const` can be matched without a chain of `if`s.
 
 ```nushell
-match "test" { ('t' + 'es' + 't') => { 'OK' } }   # => OK
+match 'test' { ('t' + 'es' + 't') => { 'OK' } }   # => OK
 
 const ROOT = '/srv/app'
 match $dir {
@@ -1091,7 +1091,7 @@ Round-tripping a TOML file no longer strips comments, blank lines, or inline-tab
 `Cargo.toml` style files can now be programmatically edited without losing context.
 
 ```nushell
-open Cargo.toml | update package.version "1.1.0" | save --force Cargo.toml
+open Cargo.toml | update package.version '1.1.0' | save --force Cargo.toml
 # comments above [package] and on untouched keys survive;
 # the trailing comment on the key you changed is dropped
 ```
@@ -1102,7 +1102,7 @@ A `mkdir ($path | path dirname)` before `save --force` is no longer needed.
 Without `--force`, a missing parent is still an error (`Directory not found`).
 
 ```nushell
-"hi" | save --force build/out/report.txt   # creates build/out/ first
+'hi' | save --force build/out/report.txt   # creates build/out/ first
 ```
 
 ### `to md --list` (v0.110)
@@ -1157,7 +1157,7 @@ open --raw file | bytes split 0x[00] | each { decode }
 ### `source null` / `use null` — conditional sourcing (v0.102)
 
 ```nushell
-const file = if ("local.nu" | path exists) { "local.nu" } else { null }
+const file = if ('local.nu' | path exists) { 'local.nu' } else { null }
 source $file  # no-op when null
 ```
 
@@ -1169,7 +1169,7 @@ source $file  # no-op when null
 
 ```nushell
 use std/clip
-"data" | clip copy
+'data' | clip copy
 clip paste
 ```
 
@@ -1180,14 +1180,14 @@ Flattens nested structures.
 
 ```nushell
 use std-rfc/iter *
-{a: {b: 1 c: [2 3]}} | recurse | where ($it.item | describe) == "int"
+{a: {b: 1 c: [2 3]}} | recurse | where ($it.item | describe) == 'int'
 ```
 
 ### `std-rfc/iter only` — assert exactly one element (v0.106)
 
 ```nushell
 use std-rfc/iter *
-ls | where name == "foo.txt" | only modified
+ls | where name == 'foo.txt' | only modified
 ```
 
 ### `std-rfc/random choice` (v0.107)
@@ -1217,7 +1217,7 @@ SQLite-backed, supports named tables (v0.107).
 
 ```nushell
 use std-rfc/kv *
-"data" | kv set mykey
+'data' | kv set mykey
 kv get mykey
 kv set key val --table project_settings
 ```
@@ -1250,7 +1250,7 @@ log info 'request done' --context {user: Ana, ms: 42}
 
 ```nushell
 use std-rfc/str *
-["foobar" "foobaz" "foo123"] | lcp
+[foobar foobaz foo123] | lcp
 # => {prefix: foo, rest: [bar, baz, "123"], success: true}
 ```
 
@@ -1275,8 +1275,8 @@ Import the module without `*` — the commands are named `with-params` etc. insi
 
 ```nushell
 use std-rfc/url
-"https://example.com/a?x=1" | url with-params {y: 2}                        # => https://example.com/a?y=2
-"https://example.com/a?x=1" | url replace --host example.org --path b       # => https://example.org/b?x=1
+'https://example.com/a?x=1' | url with-params {y: 2}                        # => https://example.com/a?y=2
+'https://example.com/a?x=1' | url replace --host example.org --path b       # => https://example.org/b?x=1
 ```
 
 ### `std-rfc/pb` — terminal progress bars via OSC 9;4 (v0.113)
@@ -1319,14 +1319,14 @@ ls | input list --fuzzy --per-column
 ### Table modes: `"single"` (v0.105), `"double"` (v0.106)
 
 ```nushell
-$env.config.table.mode = "single"   # thin lines, sharp corners
-$env.config.table.mode = "double"   # double-line box drawing
+$env.config.table.mode = 'single'   # thin lines, sharp corners
+$env.config.table.mode = 'double'   # double-line box drawing
 ```
 
 ### `config use-colors` (v0.102)
 
 ```nushell
-if (config use-colors) { $"(ansi green)ok(ansi reset)" } else { "ok" }
+if (config use-colors) { $'(ansi green)ok(ansi reset)' } else { 'ok' }
 ```
 
 ### `random uuid` with version (v0.103)
@@ -1353,7 +1353,7 @@ Plain `mkdir` still succeeds silently on an existing directory.
 With `--fail-if-exists` it errors (`File exists`) — a cheap lock or "run once" guard.
 
 ```nushell
-try { mkdir --fail-if-exists .lock } catch { error make "another run is active" }
+try { mkdir --fail-if-exists .lock } catch { error make 'another run is active' }
 ```
 
 ### `idx` — in-memory filesystem index (v0.113)
@@ -1363,7 +1363,7 @@ Persisted with `export`/`import`.
 
 ```nushell
 idx init ~/repos                       # build index
-idx find "skill"                       # fuzzy match files and dirs
+idx find 'skill'                       # fuzzy match files and dirs
 idx search --regex 'TODO\(\w+\)'       # content search across indexed files
 idx dirs                               # which directories are indexed
 idx status                             # memory / counts
@@ -1377,7 +1377,7 @@ Watching stays on by default (`--no-watch` disables it), and the new `idx watch`
 
 ```nushell
 idx init . --wait
-idx watch "**/*.rs" --ignore [target] | where kind == "modified" | each {|e| lint $e.path }
+idx watch '**/*.rs' --ignore [target] | where kind == 'modified' | each {|e| lint $e.path }
 idx watch --max-events 1 --timeout 5sec   # terminate cleanly
 ```
 
@@ -1389,7 +1389,7 @@ Enable nushell-level backtraces for debugging error chains.
 
 ```nushell
 # point errors at pipeline source
-ls | metadata access {|m| error make {msg: "bad" label: {text: "here" span: $m.span}} }
+ls | metadata access {|m| error make {msg: 'bad' label: {text: 'here' span: $m.span}} }
 
 # enable path rendering in custom tables
 glob * | wrap path | metadata set --path-columns [path]
@@ -1423,7 +1423,7 @@ Previously they were read-only.
 Named gradients replace having to spell out start/end hex codes.
 
 ```nushell
-"banner" | ansi gradient --fgnamed rainbow
+'banner' | ansi gradient --fgnamed rainbow
 ansi gradient --list   # show all named palettes
 ```
 

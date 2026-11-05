@@ -99,14 +99,14 @@ When a command body starts with a pipeline command (`each`, `where`, `select`, e
 ```nushell
 # Preferred: pipeline command receives input directly
 export def extract-agents []: table -> table {
-    where name? == "Task"
+    where name? == 'Task'
     | each { ... }
 }
 
 # Avoid: redundant $in
 export def extract-agents []: table -> table {
     $in
-    | where name? == "Task"
+    | where name? == 'Task'
     | each { ... }
 }
 ```
@@ -222,7 +222,7 @@ let pipeline = [{str uppercase} {str reverse}]
         {|| do $prev | do $step }
     }
 
-"abc" | do $pipeline   # => CBA
+'abc' | do $pipeline   # => CBA
 ```
 
 The seed `{|| $in }` is the identity closure, so an empty list yields a pass-through.
@@ -248,7 +248,7 @@ Use short-named parameters (`|b|`, `|r|`, `|x|`) when the closure has multiple o
 
 # Simple single operation - $in is fine
 | each { $in + 1 }
-| each { $"prefix: ($in)" }
+| each { $'prefix: ($in)' }
 
 # Field extraction - use get, not each
 | get line
@@ -332,12 +332,12 @@ When a command has to behave differently depending on what type it was piped, do
 `peek` stashes the first `n` elements in the pipeline metadata while the stream keeps flowing, and `metadata access` reads them:
 
 ```nushell
-export def "into list" []: any -> list {
+export def 'into list' []: any -> list {
     peek | metadata access {|md|
         match $md.peek.type {
-            "range" => { each {|| } }
-            "list" => { }
-            "record" => { transpose key value }
+            range => { each {|| } }
+            list => { }
+            record => { transpose key value }
             _ => { [$in] }
         }
     }
@@ -368,7 +368,7 @@ Check what the branches actually separate before reaching for the idiom; `descri
 ```nushell
 [1 2 3] | peek 2 | metadata access {|md| $md.peek }   # => {type: list, stream: false, value: [1, 2]}
 [] | peek 1 | metadata access {|md| $md.peek }        # => {type: list, stream: false, value: []}
-"x" | peek 1 | metadata access {|md| $md.peek }       # => {type: string, stream: false}
+'x' | peek 1 | metadata access {|md| $md.peek }       # => {type: string, stream: false}
 ```
 
 With a count, then, the empty case is `value: []` rather than a missing field; `peek 2` is how `std-rfc/iter only` tells "exactly one" from "more than one".
@@ -416,10 +416,10 @@ let loose = $.a.b | split cell-path | update optional true | into cell-path
 {} | get $loose        # => null
 
 # build an accessor from data
-let dynamic = ["users" 0 "name"]
+let dynamic = [users 0 name]
     | each {|s| {value: $s, optional: false, insensitive: false} }
     | into cell-path
-{users: [{name: "ada"}]} | get $dynamic   # => ada
+{users: [{name: 'ada'}]} | get $dynamic   # => ada
 ```
 
 A list index must stay an `int` in the `value` field — `"0"` as a string makes `get` look for a *column* named `0` and fail with `column_not_found`.
@@ -431,10 +431,10 @@ Use this instead of building a path as a string and interpolating it into `get`:
 
 ```nushell
 # Preferred
-| where name? in ["Edit" "Write"]
+| where name? in [Edit Write]
 
 # Avoid
-| where { ($in.name? == "Edit") or ($in.name? == "Write") }
+| where { ($in.name? == 'Edit') or ($in.name? == 'Write') }
 ```
 
 ### `get --optional` for Field Extraction
@@ -481,7 +481,7 @@ For simple conditions on lists, use row condition syntax (`$it`) instead of clos
 
 # Closure IS needed when piping or multiple operations
 | where {|i| $i.1 | path exists }
-| where { $in | str starts-with "test" }
+| where { $in | str starts-with 'test' }
 ```
 
 A bare boolean column is a row condition too, but write it as a `$it` cell path: `where $it.valid`, `where not $it.valid`.
@@ -497,13 +497,13 @@ Not `where valid == true` / `where valid == false`: `== false` silently drops th
 The whole of `std/assert` is built on them.
 
 ```nushell
-def "assert even" [n: int] {
+def 'assert even' [n: int] {
     if $n mod 2 != 0 {
         error make {
-            msg: "not an even number"
-            label: {text: $"($n) is odd", span: (metadata $n).span}
-            help: "pass a multiple of two"
-            code: "demo::assert::not_even"
+            msg: 'not an even number'
+            label: {text: $'($n) is odd', span: (metadata $n).span}
+            help: 'pass a multiple of two'
+            code: 'demo::assert::not_even'
         }
     }
 }
@@ -533,14 +533,14 @@ Under `--unspanned` the label is dropped and only `msg` and `help:` render, so t
 ```nushell
 # --unspanned kept — the label is silently swallowed
 export def with-unspanned [n: int] {
-    error make --unspanned {msg: "…" label: {text: "points here" span: (metadata $n).span} help: "the help line"}
+    error make --unspanned {msg: '…' label: {text: 'points here' span: (metadata $n).span} help: 'the help line'}
 }
 # =>   x …
 # =>   help: the help line
 
 # --unspanned dropped — the caret appears, help: unchanged
 export def without-unspanned [n: int] {
-    error make {msg: "…" label: {text: "points here" span: (metadata $n).span} help: "the help line"}
+    error make {msg: '…' label: {text: 'points here' span: (metadata $n).span} help: 'the help line'}
 }
 # =>   x …
 # =>  1 | without-unspanned 42
@@ -553,7 +553,7 @@ Keep `--unspanned` wherever there is no caller argument to point at; drop it whe
 For an error that needs none of the above, the string form is enough:
 
 ```nushell
-error make "something went wrong"
+error make 'something went wrong'
 ```
 
 Input piped into `error make` is not a shorthand for the argument: it is chained in as an *inner* error.
@@ -595,9 +595,9 @@ On 0.116.2 `oneof` is checked at parse time only: a command declared `-> oneof<s
 Document commands with executable examples using the built-in `@example` attribute (`attr example` — no import needed; `dotnu examples-update` keeps the `--result` values current):
 
 ```nushell
-@example "generate marker for block 3" {
+@example 'generate marker for block 3' {
     code-block-marker 3
-} --result "#code-block-marker-open-3"
+} --result '#code-block-marker-open-3'
 export def code-block-marker [
     index?: int
     --end
@@ -614,8 +614,8 @@ Both land in `scope commands`:
 
 ```nushell
 @category math
-@search-terms "multiply" "scale"
-@example "double five" { 5 | double } --result 10
+@search-terms 'multiply' 'scale'
+@example 'double five' { 5 | double } --result 10
 export def double []: int -> int { $in * 2 }
 ```
 
@@ -780,7 +780,7 @@ Inside that module the bare name now resolves to the custom command, and the fai
 ```nushell
 # bad.nu
 use ./helper.nu *
-export def update [] { "custom update" }
+export def update [] { 'custom update' }
 ```
 
 ```
@@ -804,7 +804,7 @@ export def touch-rows []: table -> table {
 
 # and in the shadowing file's own bodies
 export def length [left: list right: int] {
-    if ($left | %length) != $right { error make {msg: "wrong length"} }
+    if ($left | %length) != $right { error make {msg: 'wrong length'} }
 }
 ```
 
@@ -825,8 +825,8 @@ Prefer `%`; it needs no declaration, survives being copied into another file, an
 const fence_options = [
     [short long description];
 
-    [O no-output "execute code without outputting results"]
-    [N no-run "do not execute code in block"]
+    [O no-output 'execute code without outputting results']
+    [N no-run 'do not execute code in block']
     [t try "execute block inside `try {}` for error handling"]
 ]
 
