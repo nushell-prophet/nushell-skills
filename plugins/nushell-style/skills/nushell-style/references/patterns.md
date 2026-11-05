@@ -479,10 +479,13 @@ For simple conditions on lists, use row condition syntax (`$it`) instead of clos
 | where { $in =~ $UUID_PATTERN }
 | where { $in > 0 }
 
-# Closure IS needed when piping or multiple operations
-| where {|i| $i.1 | path exists }
-| where { $in | str starts-with 'test' }
+# A pipe in the condition needs parentheses, not a closure
+| where ($it.1 | path exists)
+| where ($it | str starts-with 'test')
 ```
+
+Without the parentheses, `where $it | str starts-with 'test'` ends the condition at `$it`, and the result is `[]`.
+Keep a closure for a predicate held in a variable: `where $pred`.
 
 A bare boolean column is a row condition too, but write it as a `$it` cell path: `where $it.valid`, `where not $it.valid`.
 The bare form (`where valid`) runs, and the topiary grammar cannot parse it, so the whole file stops formatting.
@@ -587,7 +590,8 @@ export def run [
 
 A command that returns a value or null declares `oneof<T, nothing>`, not `any`: `]: nothing -> oneof<string, nothing>`.
 `any` was the only choice before `oneof` existed; keep it for a value that really can be of any type, or a pass-through of the input.
-When the body can end in `error make`, the parser may reject `oneof<...>` with `output_type_mismatch`; then `any` stays, and `dotnu diagnose` shows which case it is.
+When `error make` is the last statement of the body (also after an early `return`), the parser rejects an output type that does not allow `error` (`string`, `nothing`, `oneof<string, nothing>`) with `output_type_mismatch`; declare `oneof<string, nothing, error>` there instead of falling back to `any`.
+An `error make` inside an `if`, `match` or `try` branch does not trigger it.
 On 0.116.2 `oneof` is checked at parse time only: a command declared `-> oneof<string, nothing>` that returns an int raises no runtime error.
 
 ### @example Attributes
@@ -731,7 +735,9 @@ Use meaningful labels instead of pattern matching throughout:
 
 ### Module Exports for Testing
 
-**Key pattern:** Nushell has no private/public distinction within a file.
+**Key pattern:** a `def` without `export` is private to its module.
+A test cannot reach it: `use commands.nu helper` fails with `export_not_found`, and `use commands.nu *` does not bring it in.
+So one file cannot hide a helper from users and still test it.
 Use a two-file pattern:
 
 1. **commands.nu** — export ALL commands (public + helpers) for testability

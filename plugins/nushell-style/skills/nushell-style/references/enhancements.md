@@ -571,7 +571,9 @@ Also new in 0.115:
 - `into semver` accepts a list, and a cell path to convert in place: `$nu.os-info | into semver kernel_version`, `["1.2.0" "0.3.12"] | into semver`.
 - A single semver no longer renders as a one-row table, and semver values print in `cyan_bold`.
 
-Note: semver is a custom value, so `to nuon` on it fails — and `try` does not catch that error (0.115.1 and 0.116.0).
+Note: semver is a custom value, so `to nuon` on it fails — and `try` does not catch that error (0.115.1 and 0.116; run on 0.116.0 and on a build after 0.116.1).
+A closure fails the same way, so the trap is `to nuon` on any value it cannot write, not semver alone.
+When `to nuon` is not the last statement of the `try` body, no error shows at all.
 Convert with `into string` or `into record` before serializing; `to json` already writes it as a string.
 Since 0.116 `into string` on a semver is typed as `string`, so it also fits a typed position such as `path join` (0.115 rejected it at parse time).
 
@@ -647,14 +649,15 @@ def old-cmd [] { ... }
 
 ```nushell
 @example 'double 5' { 5 | double } --result 10
-@search-terms [multiply scale]
+@search-terms multiply scale
 @category math
 def double []: [int -> int] { $in * 2 }
 ```
 
 ### `describe --detailed` (v0.104)
 
-Returns Rust type, Nushell type, and value.
+Returns a record that always has `type`, `detailed_type` and `rust_type`; the other fields depend on the value.
+A list adds `length` and `value`, a record adds `columns` and has no `value`, a byte stream adds `origin` and `metadata`.
 
 ### `get` is const-evaluable (v0.102)
 
@@ -680,6 +683,18 @@ nu script.nu 0001 true 007
 
 nu script.nu 0001 -- --verbose 'x y'
 # => rest gets ["--verbose", "x y"]
+```
+
+A `glob` value expands when it reaches an external command.
+So a wrapper forwards a quoted `'*.md'` from the shell as the matching file names, not as the pattern.
+Convert with `into string` when the external must get the text as typed:
+
+```nushell
+# wrap.nu, run as: nu wrap.nu '*.md'
+def main [a: external_arg] {
+    ^echo $a                   # => a.md b.md
+    ^echo ($a | into string)   # => *.md
+}
 ```
 
 ### `scope` reports local scopes, `scope commands` reports deprecations (v0.115)

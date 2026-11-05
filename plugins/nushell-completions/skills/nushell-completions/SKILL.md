@@ -100,7 +100,7 @@ Filtering by default:
 
 - A **parameter** completer (`string@c`) returns every candidate; nushell filters and sorts them against the typed text.
 - A **command-wide** (`@complete`) or **external** completer is expected to filter by itself: its list is shown as returned, unfiltered and in its own order.
-- Set `options.filter` to change either default — except that `filter: true` is ignored for an `@complete` completer in 0.116.0 (its list stays unfiltered).
+- Set `options.filter` to change either default — except that `filter: true` is ignored for an `@complete` completer in 0.116 (its list stays unfiltered; run on 0.116.0 and on a build after 0.116.1, and the 0.116.1 source says the same).
 
 Envelope keys:
 

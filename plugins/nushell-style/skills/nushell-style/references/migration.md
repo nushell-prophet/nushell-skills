@@ -18,7 +18,7 @@ Versions noted as `(v0.NNN)`.
 - `into value --columns` → `detect type --columns` — removed 0.112
 - `random dice` (built-in) → `use std/random; random dice` — removed 0.112
 - `filter` → `where` (accepts stored closures) — deprecated 0.105
-- `do -s` / `do -p` → `do --suppress-errors` / long form — removed 0.104
+- `do -s` / `do -p` (short for `--ignore-shell-errors` / `--ignore-program-errors`) → `do --ignore-errors (-i)` — removed 0.104
 - `do --ignore-shell-errors` → `do --ignore-errors (-i)` — deprecated 0.101
 - `do --ignore-program-errors` → `do --ignore-errors (-i)` — deprecated 0.101
 - `job tag` → `job describe` — 0.112
@@ -38,7 +38,7 @@ Versions noted as `(v0.NNN)`.
 - `metadata set`: `--datasource-ls` → `--path-columns [name]` — removed 0.113 (deprecated 0.111)
 - `kill`: `-0` / `-9` shorthand → `--signal 0` / `--signal 9` — removed 0.113
 - `watch`: closure argument → bare `watch path` stream + `for`/`each` — deprecated 0.113
-- `grid`: implicit record handling → explicit `(column)` argument — removed 0.114 (deprecated 0.113)
+- `grid`: a single record as input → a list or table — removed 0.114 (deprecated 0.113); the implicit `name` column stays (`ls | grid`), despite the 0.114 release note
 - `from xlsx` / `from ods`: `--header-row` → `--noheaders` / `--first-row` — removed 0.114 (added 0.113)
 - `std/iter scan`: positional init + `--noinit` → `--fold` (omit for no initial value) — 0.114
 - `to yaml`: `--compact-list-indent` → drop it (compact is the default) — removed 0.116.
@@ -307,9 +307,13 @@ Scripts whose annotations only "passed" because the value was never checked will
 Disable if needed:
 
 ```nushell
-NU_EXPERIMENTAL_OPTIONS="enforce-runtime-annotations=false" nu
-# or: nu --experimental-options '[enforce-runtime-annotations=false]'
+nu --experimental-options '[enforce-runtime-annotations=false]' script.nu   # the flag goes before the script
 ```
+
+The environment variable `NU_EXPERIMENTAL_OPTIONS="enforce-runtime-annotations=false"` works for an interactive `nu` (source-checked).
+A script reads it only together with `--config` or `--env-config`;
+`nu --commands` reads it only together with `--config`, `--env-config` or `--login`.
+`--no-config-file` turns it off in every mode (`should_disable_experimental_options` in `src/experimental_options.rs`).
 
 ### Much stricter parse-time type checking (v0.114)
 
@@ -319,7 +323,7 @@ Annotations that previously "seemed fine" may now be rejected — usually they w
 - Command output types are inferred from pipeline input type (`"foo" | str uppercase | let x` → `$x` is `string`, not `any`)
 - `$in` is typed from the surrounding pipeline (`2 | $in + "foo"` is now a parse error)
 - `let` bindings mid-/end-pipeline get the pipeline input type
-- Optional params and flags *without a default* are now `oneof<T, nothing>`, not `T` — code that assumed `T` may need a `default` value or a null check
+- Optional params and typed flags *without a default* are now `oneof<T, nothing>`, not `T` — code that assumed `T` may need a `default` value or a null check; a switch (`--verbose` with no type) stays `bool`, `false` when absent
 - Inside a `def`, the body is checked against the declared input/output signature (`def foo []: string -> any { accepts-int }` is a parse error)
 - `if`/`match` expression output types are unions of branch types; without a fallback branch, `nothing` is included
 
@@ -480,9 +484,9 @@ open --raw file.md   # for raw string
 open file.md --raw | from md --verbose   # full AST as before
 ```
 
-### `parse` no longer auto-splits external streams (v0.113)
+### `parse` no longer auto-splits streams (v0.113)
 
-Byte/string streams from external processes are no longer implicitly split by lines before `parse`.
+Byte/string streams — from an external process or from a file (`open app.log`) — are no longer implicitly split by lines before `parse`.
 Pipe through `lines` first.
 
 ```nushell
@@ -518,9 +522,11 @@ mv --verbose src dst   # columns: source, destination, message
 rm --verbose old.txt   # columns: path, deleted, error
 ```
 
-### `to yaml` quoting changed in 0.113 and 0.114 (superseded)
+### `to yaml` quoting changed in 0.113.0 and 0.113.1 (superseded)
 
-0.113 quoted ambiguous strings like `off` and `/dev/stdout`; 0.114 quoted fewer of them.
+Up to 0.112 `to yaml` wrote `off` without quotes (release notes only).
+0.113.0 (#18010) quoted every string;
+0.113.1 (#18298, repeated in the 0.114 notes) quoted only strings YAML would read as something else, like `off`, and left `/dev/stdout` plain (release notes only).
 The 0.115 rework (next entry) replaced both, so compare YAML text against 0.115+ output only.
 
 ### YAML reworked — `from yaml` defaults to YAML 1.2 (v0.115)
@@ -557,11 +563,11 @@ Tags are real now: an unknown tag errors instead of being silently dropped.
 `to yaml` errors on values that cannot round-trip (closures, etc.) instead of mangling them.
 Choose the fallback explicitly: `--non-roundtrip null` writes `null`, `--serialize` writes a lossy string form.
 Since 0.116 a bare `null` works as well as the string `"null"` (in 0.115 only the string did).
-`--non-roundtrip lossy` is listed in the error text but rejected with `Incompatible parameters` in 0.115 and 0.116 — use `--serialize`.
+`--non-roundtrip lossy` is listed in the error text but rejected with `Incompatible parameters` in 0.115 and 0.116, unless `--serialize` is also given — and then it changes nothing, so use `--serialize`.
 
 ```nushell
 # {|| $in } | to yaml                     # error: Found non-roundtrippable closure
-{|| $in } | to yaml --non-roundtrip null  # => null
+{|| $in } | to yaml --non-roundtrip 'null'  # => null (a bare null works only since 0.116)
 {|| $in } | to yaml --serialize          # => !closure "{|| $in }"
 ```
 
@@ -766,7 +772,7 @@ job kill $id
 ```nushell
 @example 'double 2' { 2 | double } --result 4
 @deprecated 'Use new-cmd' --since '0.105.0'
-@search-terms ["math" "multiply"]
+@search-terms math multiply
 @category 'math'
 @test
 def 'test add' [] { assert equal (1 + 1) 2 }
@@ -888,7 +894,7 @@ Every completer — a parameter completer, `@complete`, the external completer a
 The old positional forms of parameter and command completers still run for now, with a `nu::shell::deprecated` warning; the bridge will be removed.
 Migrate:
 
-- `def comp [context: string, pos: int]` → `def comp [place: record]`: the old `context` was the current command's text, which is `$place.command` (not `$buffer`, the whole line); `$place.cursor` replaces `pos`
+- `def comp [context: string, pos: int]` → `def comp [place: record]`: the old `context` was the current command's text, which is `$place.command` (not `$buffer`, which is the line up to the cursor, including what stands before a `|`); `$place.command` is a list of words, not a string; `$place.cursor` replaces `pos`
 - `def comp [spans]` and external `{|spans| ...}` → `[place: record]` / `{|place| ...}`; `$place.command` is the old `spans`
 - menu `source: {|buffer, position| ...}` → `{|token| ...}`, `{|place| ...}` or `{|buffer| ...}`
 
