@@ -1,5 +1,5 @@
 {
   "name": "nu-cmd-stack",
   "description": "Hand commands to the user as a nu-cmd-stack file instead of a code block to copy — the user loads it with `cmd-stack load` at their own pace and runs the commands with ctrl+alt+k, and the agent reads which history row ran each one, with its exit status.",
-  "version": "0.1.0"
+  "version": "0.1.1"
 }

@@ -29,6 +29,17 @@ Then install the plugins you want:
 - **nu-cmd-stack** — hands commands to you as a [nu-cmd-stack](https://github.com/nushell-prophet/nu-cmd-stack) file instead of a code block to copy.
   You load it with `cmd-stack load` when you are ready and run the commands with `ctrl+alt+k`; the agent reads which history row ran them, with the exit status.
 
+## Modules
+
+Some skills drive Nushell modules by the same author, each published on GitHub:
+
+- [claude-nu](https://github.com/nushell-prophet/claude-nu) — claude-nu and nushell-literate-programming
+- [nu-cmd-stack](https://github.com/nushell-prophet/nu-cmd-stack) — nu-cmd-stack
+- [nu-history-tools](https://github.com/nushell-prophet/nu-history-tools) — the write side of nushell-history
+- [numd](https://github.com/nushell-prophet/numd), [dotnu](https://github.com/nushell-prophet/dotnu), [nu-goodies](https://github.com/nushell-prophet/nu-goodies), [nu-kv](https://github.com/nushell-prophet/nu-kv) — nushell-literate-programming
+
+[cozy](https://github.com/nushell-prophet/cozy), a terminal environment for AI sandboxes, loads all of them out of the box, except nu-history-tools.
+
 ## Development
 
 `toolkit.nu` provides convenience commands for skill development:

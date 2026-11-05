@@ -52,13 +52,13 @@ When in doubt, hand it over: a wrong handoff costs thirty seconds, a wrong takeo
 
 Four modules, all preloaded in cozy sandboxes (elsewhere: `use numd`, `use dotnu/`, `use nu-goodies *`, `use claude-nu`):
 
-- **numd** — owns markdown with executable ```` ```nu ```` blocks.
+- [**numd**](https://github.com/nushell-prophet/numd) — owns markdown with executable ```` ```nu ```` blocks.
   Core command: `numd render file.md`
-- **dotnu** — owns `.nu` scripts that embed their own output, plus module analysis.
+- [**dotnu**](https://github.com/nushell-prophet/dotnu) — owns `.nu` scripts that embed their own output, plus module analysis.
   Core command: `dotnu embeds-update file.nu`
-- **nu-goodies** — owns capturing and presenting what happened in the terminal.
+- [**nu-goodies**](https://github.com/nushell-prophet/nu-goodies) — owns capturing and presenting what happened in the terminal.
   Core commands: `example`, `copy-out`
-- **claude-nu** — owns Claude Code sessions as data and as markdown.
+- [**claude-nu**](https://github.com/nushell-prophet/claude-nu) — owns Claude Code sessions as data and as markdown.
   Core command: `claude-nu export-session`
 
 ### Which tool, when

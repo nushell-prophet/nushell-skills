@@ -12,8 +12,8 @@ So write the commands to a stack file:
 the user loads it with `cmd-stack load <Tab>` when ready,
 and runs the commands one by one with `ctrl+alt+k` and Enter.
 
-Use it where the user has nu-cmd-stack with `cmd-stack load`;
-in cozy, the module is `~/repos/nu-cmd-stack/cmd-stack`.
+Use it where the user has [nu-cmd-stack](https://github.com/nushell-prophet/nu-cmd-stack) with `cmd-stack load`;
+cozy loads it in every interactive nu out of the box, from `~/repos/nu-cmd-stack/cmd-stack`.
 A command for another machine — for example, the host of a container — goes as a code block.
 
 ## Write the file

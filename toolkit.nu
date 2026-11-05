@@ -4,6 +4,27 @@
 const skills_global_dir = '~/.claude/skills'
 const managed_skills = ['nushell-style' 'nushell-completions' 'nushell-history' 'nushell-literate-programming' 'claude-nu' 'nu-cmd-stack']
 
+const repo_dir = path self | path dirname
+
+# Strings that name the machine of the maintainer or his mono workflow.
+# Why: every exported file reaches a public reader, and a plugin file also reaches
+# the agent of every user who installs it.
+const private_strings = ['/Users/' 'ai-sandbox-dev-container' 'wtr/' 'mono-land']
+
+# The files that `check` skips: the `exclude` of this repo in mono.yml, which never reach
+# the recipient; this file, which holds the strings themselves; and nushell-release-fold.
+# Not read from mono.yml because: this file ships to the recipient, which has no mono.yml.
+# Why nushell-release-fold: the maintainer keeps it published as it is; it is the release
+# workflow of this repo in the mono, and the plugin system never installs `.claude/skills/`.
+const skipped = [
+    ':!todo'
+    ':!CLAUDE.local.md'
+    ':!.claude/settings.json'
+    ':!.claude/memory'
+    ':!toolkit.nu'
+    ':!.claude/skills/nushell-release-fold'
+]
+
 # Check if a path has uncommitted changes in its git repository
 def has-uncommitted-changes [path: path]: nothing -> bool {
     if not ($path | path exists) { return false }
@@ -25,6 +46,32 @@ def skill-plugin-dir [skill: string]: nothing -> string {
 }
 
 export def main [] { }
+
+# Stop when a file that the export publishes names the machine of the maintainer or his mono workflow.
+# `gate` in mono.yml runs it before every export and every `/mono-land`.
+@example "Check the files on disk" { nu toolkit.nu check }
+@example "Check a commit" { nu toolkit.nu check --rev HEAD }
+export def 'main check' [
+    --rev: string # check this commit instead of the files on disk
+]: nothing -> nothing {
+    let patterns = $private_strings | each {|s| ['-e' $s] } | flatten
+    let tree = if $rev == null { [] } else { [$rev] }
+    let found = ^git -C $repo_dir grep --line-number --fixed-strings ...$patterns ...$tree -- . ...$skipped | complete
+
+    match $found.exit_code {
+        0 => {
+            let lines = $found.stdout | lines
+            let hits = if $rev == null { $lines } else { $lines | str replace $"($rev):" '' }
+
+            error make --unspanned {
+                msg: 'an exported file names the machine of the maintainer or his mono workflow'
+                help: ($hits | str join (char nl))
+            }
+        }
+        1 => null
+        _ => { error make --unspanned {msg: ($found.stderr | str trim)} }
+    }
+}
 
 # Copy skills from ~/.claude/skills into plugin directories
 @example "Vendor all skills" { nu toolkit.nu vendor }

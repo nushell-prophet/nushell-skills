@@ -4,7 +4,7 @@ numd and dotnu are the engines; nu-goodies and claude-nu supply the everyday on-
 
 ## nu-goodies — capture and presentation helpers
 
-Load with `use nu-goodies *`.
+Load with `use nu-goodies *` from a clone of [nu-goodies](https://github.com/nushell-prophet/nu-goodies); cozy loads it out of the box.
 The commands below all feed the same `# =>` annotation convention that numd and dotnu read and write — nu-goodies is a *producer* of literate snippets.
 
 ### `example` — share the command you just ran
@@ -53,7 +53,7 @@ Dumps the commands of the current session (or directory) into a `.nu` file — t
 
 ## claude-nu — sessions as documents, Claude as a pipeline stage
 
-Load with `use claude-nu`.
+Load with `use claude-nu` from a clone of [claude-nu](https://github.com/nushell-prophet/claude-nu); cozy loads it out of the box.
 Claude Code stores every session as JSONL under `~/.claude/projects/`; claude-nu parses that into tables you can `where`/`sort-by` like anything else.
 
 ### Reading sessions

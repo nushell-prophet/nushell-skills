@@ -84,6 +84,9 @@ nu toolkit.nu vendor --no-commit
 
 # Force overwrite even with uncommitted changes in destination
 nu toolkit.nu install-locally --force
+
+# Fail when an exported file names the maintainer's machine or mono workflow (the export gate in mono.yml)
+nu toolkit.nu check
 ```
 
 ## Development Workflow
@@ -98,30 +101,27 @@ The canonical source of skill content can live in either location depending on t
 
 The managed skills list is defined as `const managed_skills` in `toolkit.nu`.
 
-## Local Nushell Sources (fact-check against these, not WebFetch)
+## Who Reads a Skill
 
-Directories in the workspace root, `$env.WORKSPACE_DIR` (next to the mono), hold canonical Nushell material.
-A `../` path does not reach them from a worktree of this project, so name them from that variable, which the cozy sandbox sets.
-In Nushell write `($env.WORKSPACE_DIR)/...`: a bare `$env.WORKSPACE_DIR/...` fails with `column_not_found`; from Bash it is `$WORKSPACE_DIR/...`.
-When updating skills for a new Nushell release or verifying a claim, read these instead of fetching the web:
+Three agents read the skills of `plugins/`.
+One works for an external user who installs the plugin,
+one for a cozy user,
+and one for the maintainer in the mono.
+Before a line goes into a skill, decide which of them needs it.
 
-- `($env.WORKSPACE_DIR)/nushell-docs/` — sparse shallow clone of nushell.github.io (`blog/`, `book/`, `cookbook/`).
-  Release notes: `blog/<date>-nushell_v0_<minor>_<patch>.md`.
-  Refresh with `cozy docs nushell --output-dir ($env.WORKSPACE_DIR)/nushell-docs` (`cozy/cozy-module/docs.nu` in the mono); the default target is `./nushell-docs`, relative to the current directory.
-  It pulls an existing checkout or clones a fresh one with this same sparse list.
-  Command signatures are not in this checkout — read `($env.WORKSPACE_DIR)/upstream-big-repos/nushell/` for those.
-  Default lookup target — small and fast to grep.
-- `($env.WORKSPACE_DIR)/upstream-big-repos/nushell.github.io/` — full clone incl. `lang-guide/`, `contributor-book/`, translations.
-  The user works in it (branches, stashes) — no destructive git commands.
-- `($env.WORKSPACE_DIR)/upstream-big-repos/nushell/` — Nushell source.
-  Ground truth for command signatures (`crates/nu-command/`, `crates/nu-cli/`) and std (`crates/nu-std/std/`).
-  Release-note prose is sometimes imprecise — verify flags and behavior here.
+- Any Nushell user: write the line in the skill, with no machine paths and no names of an environment.
+  Opinions about Nushell style are the product, so they go here too.
+- A cozy user: write the portable form first, then one aside for cozy ("in cozy, ...; elsewhere, ...").
+  An aside longer than two lines goes to `cozy/docker-files/global-claude.md` of the mono.
+- A module of the author (claude-nu, nu-cmd-stack, nu-history-tools, numd, dotnu, nu-goodies, nu-kv): link its GitHub repo,
+  and say whether cozy loads it out of the box.
+  The *Modules* section of `README.md` lists these modules; add a new module there too.
+- Only the maintainer (the mono, its worktrees, the paths of his machine): never write the line in `plugins/`.
+  Instructions for work on this repo go to `CLAUDE.local.md`,
+  which the export leaves out.
 
-## Highest-Priority Guidance Lives Elsewhere
-
-The skills in this repo aren't always loaded — a session only pulls a skill in when its trigger matches.
-But Nushell is the main tool in the cozy sandbox environment, so the most critical pitfalls and rules must not depend on skill activation.
-Put those in `cozy/docker-files/global-claude.md` of the mono (baked into every sandbox session as global memory); keep this repo's skills for the full, detailed guidance.
+`nu toolkit.nu check` is the export gate for the last case:
+it fails when an exported file names the machine of the maintainer or his mono workflow.
 
 ## Editing Skills
 

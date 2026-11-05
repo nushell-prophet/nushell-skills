@@ -24,25 +24,25 @@
       "name": "nushell-literate-programming",
       "source": "./plugins/nushell-literate-programming",
       "description": "A common space for user and agent in the Nushell terminal — the agent proposes, the user runs, both share the `# =>` dialect. numd (executable markdown), dotnu (scripts that embed their own output), REPL capture, and nu-goodies/claude-nu companions, framed to grow the user's fluency instead of replacing it. Bundles the Common Space output style",
-      "version": "0.3.4"
+      "version": "0.3.5"
     },
     {
       "name": "nushell-history",
       "source": "./plugins/nushell-history",
       "description": "Inspect and rewrite the Nushell sqlite command history — `history --long | where ...` recipes and `nu-history-tools` mutation flows (retag cwd, remove, etc.)",
-      "version": "0.1.1"
+      "version": "0.1.3"
     },
     {
       "name": "claude-nu",
       "source": "./plugins/claude-nu",
       "description": "Mine Claude Code session transcripts with claude-nu instead of jq or python — what the user said, what agents ran and what came back, raw records, per-session numbers, one scope model for all of them.",
-      "version": "0.1.1"
+      "version": "0.1.2"
     },
     {
       "name": "nu-cmd-stack",
       "source": "./plugins/nu-cmd-stack",
       "description": "Hand commands to the user as a nu-cmd-stack file instead of a code block to copy — the user loads it with `cmd-stack load` at their own pace and runs the commands with ctrl+alt+k, and the agent reads which history row ran each one, with its exit status.",
-      "version": "0.1.0"
+      "version": "0.1.1"
     }
   ]
 }

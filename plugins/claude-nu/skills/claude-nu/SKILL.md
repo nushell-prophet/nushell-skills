@@ -14,7 +14,7 @@ Do not parse the transcripts by hand; when claude-nu cannot answer, `claude-nu r
 
 In a cozy sandbox it is autoloaded for interactive nu, including the nushell MCP `evaluate` tool.
 From the Bash tool, `nu --commands` skips autoload: `nu --config ~/.config/nushell/autoload/modules-core.nu --commands '...'`, or put `use ~/repos/claude-nu/claude-nu` at the top of a script file (a bare `use claude-nu` is not found: `~/repos` is not in `NU_LIB_DIRS`) and run `nu file.nu` — nu inside bash quotes is painful.
-Elsewhere: `use /path/to/claude-nu/claude-nu`.
+Elsewhere: clone [claude-nu](https://github.com/nushell-prophet/claude-nu), then `use /path/to/claude-nu/claude-nu`.
 End every pipeline you are going to read with `| to nuon`.
 
 ## The one rule: scope is to the left of the pipe

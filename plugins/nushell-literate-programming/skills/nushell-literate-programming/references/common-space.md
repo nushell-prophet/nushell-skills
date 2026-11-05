@@ -17,7 +17,7 @@ In a cozy sandbox you and the user share:
 
 - **sqlite history** — carries every command the user ran, with `cwd`, `duration`, `exit_status`.
   Read it with `history --long | last 10`.
-- **The `kv` store** — carries any Nushell value either of you parks; host-mounted, survives the sandbox.
+- **The `kv` store** ([nu-kv](https://github.com/nushell-prophet/nu-kv)) — carries any Nushell value either of you parks; host-mounted, survives the sandbox.
   Read and write it with `kv get <key>` / `kv set <key>`.
 - **Files + git** — carry documents, capture files, diffs.
   Read them the usual way.

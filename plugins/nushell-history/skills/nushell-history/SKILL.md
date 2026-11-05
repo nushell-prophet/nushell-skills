@@ -24,13 +24,13 @@ Two traps when running inside an agent's nushell instance (MCP server, embedded 
 - The `history` builtin reads whatever the *current instance's* history config points to, which may be the agent's own (often empty) store, not the user's.
 
 In the cozy container the file is `/home/agent/.config/nushell/history.sqlite3` — that is the user's real history, the one their interactive panes write to.
-The `cwd` values inside it look like macOS paths (`/Users/user/git/...`) because the workspace is mounted there; that is the *same* machine you are on, not the host.
-A `$nu.history-path` of `/home/agent/...` while the user's prompt shows `/Users/user/...` is normal — never conclude from it that you are looking at a different machine's history.
+The `cwd` values inside it look like macOS paths (under `/Users`) because the workspace is mounted at its host path; that is the *same* machine you are on, not the host.
+A `$nu.history-path` of `/home/agent/...` while the user's prompt shows a macOS path is normal — never conclude from it that you are looking at a different machine's history.
 
 With no nushell session of your own (bash tool only), read it directly; open it read-only so a stray write can never touch the user's history:
 
 ```sh
-sqlite3 'file:/home/agent/.config/nushell/history.sqlite3?mode=ro' \
+sqlite3 "file:$(nu --commands '$nu.history-path | str replace txt sqlite3')?mode=ro" \
   "SELECT id, session_id, exit_status, command_line FROM history ORDER BY id DESC LIMIT 20;"
 ```
 
@@ -89,10 +89,11 @@ If the user references "what I just tried", "my last commands", or asks you to i
 
 ## Mutation
 
-The `nu-history-tools` module (at `/Users/user/git/ai-sandbox-dev-container/nu-history-tools`) provides the write side:
+The [nu-history-tools](https://github.com/nushell-prophet/nu-history-tools) module provides the write side.
+Clone it once (`git clone https://github.com/nushell-prophet/nu-history-tools`), then load it from the clone:
 
 ```nu
-use ~/repos/nu-history-tools/nu-history-tools *   # or the absolute path above
+use /path/to/nu-history-tools/nu-history-tools *
 ```
 
 ### Retag cwd (move exercises out of the wrong directory)
@@ -106,7 +107,7 @@ Friendly names (`item_id`, `command`, `duration`) are auto-translated to sqlite 
 history --long
 | where cwd =~ 'git-learning'
 | where command =~ '(?i)apt|unminimize|dpkg'
-| update cwd '/Users/user/git/apt-learning'
+| update cwd ($nu.home-dir | path join apt-learning)
 | select item_id cwd
 | update-entries
 ```
